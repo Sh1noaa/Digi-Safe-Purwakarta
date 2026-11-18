@@ -1,0 +1,809 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@700;800&display=swap');
+@import 'tailwindcss';
+@config '../../tailwind.config.js';
+
+@layer base {
+    html {
+        scroll-behavior: smooth;
+        font-family: 'Inter', sans-serif;
+        color: #0A0A0A;
+        background-color: #FFFFFF;
+    }
+
+    h1, h2, h3, h4, .font-heading {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        letter-spacing: -0.02em;
+    }
+}
+
+/* animasi float kartu hero */
+@keyframes floatCard {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-8px);
+    }
+}
+
+.animate-float-slow {
+    animation: floatCard 6.5s ease-in-out infinite;
+}
+
+.animate-float-delayed {
+    animation: floatCard 7.4s ease-in-out 1.1s infinite;
+}
+
+.animate-float-alt {
+    animation: floatCard 8s ease-in-out 2.2s infinite;
+}
+
+/* perspektif 3d kartu hero beranda */
+.hero-carousel-stage {
+    perspective: 1100px;
+    transform-style: preserve-3d;
+}
+
+@media (min-width: 1024px) {
+    .hero-slot-1 {
+        transform: perspective(900px) rotateY(-34deg) scale(0.88);
+        transform-origin: center center;
+        filter: blur(0.6px);
+        opacity: 0.9;
+    }
+
+    .hero-slot-2 {
+        transform: perspective(900px) rotateY(-20deg) scale(0.95);
+        transform-origin: center center;
+    }
+
+    .hero-slot-3 {
+        transform: perspective(900px) rotateY(-8deg) scale(0.99);
+        transform-origin: center center;
+    }
+
+    .hero-slot-4 {
+        transform: perspective(900px) rotateY(0deg) scale(1.02);
+        transform-origin: center center;
+    }
+
+    .hero-slot-5 {
+        transform: perspective(900px) rotateY(14deg) scale(0.98);
+        transform-origin: center center;
+    }
+
+    .hero-slot-6 {
+        transform: perspective(900px) rotateY(24deg) scale(0.93);
+        transform-origin: center center;
+    }
+
+    .hero-slot-7 {
+        transform: perspective(900px) rotateY(36deg) scale(0.86);
+        transform-origin: center center;
+        filter: blur(0.6px);
+        opacity: 0.88;
+    }
+}
+
+.hero-glass-blue {
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.45) 0%, rgba(125, 198, 255, 0.28) 55%, rgba(255, 255, 255, 0.48) 100%);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    box-shadow: 0 16px 36px rgba(10, 55, 110, 0.16), inset 0 1px 1px rgba(255, 255, 255, 0.7);
+}
+
+.hero-glass-edge {
+    background: linear-gradient(180deg, rgba(215, 238, 255, 0.48) 0%, rgba(255, 255, 255, 0.65) 60%, rgba(130, 195, 90, 0.55) 100%);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+/* style kartu bento halaman edukasi */
+.bento-glass {
+    background: linear-gradient(155deg, rgba(37, 99, 235, 0.86) 0%, rgba(14, 165, 233, 0.82) 100%);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    box-shadow: 0 12px 32px rgba(30, 64, 175, 0.16);
+}
+
+.bento-glass:hover {
+    border-color: rgba(255, 255, 255, 0.85);
+    box-shadow: 0 22px 44px rgba(30, 64, 175, 0.24);
+}
+
+.bento-glass-olive {
+    background: linear-gradient(160deg, rgba(15, 23, 42, 0.90) 0%, rgba(30, 58, 138, 0.86) 100%);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.18);
+}
+
+.bento-glass-olive:hover {
+    border-color: rgba(255, 255, 255, 0.7);
+    box-shadow: 0 22px 46px rgba(15, 23, 42, 0.26);
+}
+
+.bento-card-white {
+    background: rgba(255, 255, 255, 0.90);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(203, 213, 225, 0.72);
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+}
+
+.bento-card-white:hover {
+    border-color: rgba(59, 130, 246, 0.45);
+    box-shadow: 0 22px 46px rgba(15, 55, 115, 0.14);
+}
+
+/* efek animasi partikel garis scanner habit pada section tentang kami */
+@keyframes scannerSparkle {
+    0%, 100% {
+        opacity: 0.35;
+        transform: translateY(0) scale(0.9);
+    }
+    50% {
+        opacity: 1;
+        transform: translateY(-4px) scale(1.15);
+    }
+}
+
+.habit-dissolve-left {
+    -webkit-mask-image: linear-gradient(to left, rgba(0, 0, 0, 0.92) 8%, rgba(0, 0, 0, 0.38) 58%, rgba(0, 0, 0, 0.08) 100%);
+    mask-image: linear-gradient(to left, rgba(0, 0, 0, 0.92) 8%, rgba(0, 0, 0, 0.38) 58%, rgba(0, 0, 0, 0.08) 100%);
+    filter: blur(1px);
+}
+
+.scanner-beam-glow {
+    background: linear-gradient(180deg, #1E88E5 0%, #38BDF8 65%, rgba(56, 189, 248, 0.15) 100%);
+    box-shadow: 0 0 18px 2px rgba(30, 136, 229, 0.45);
+}
+
+.scanner-sparkle {
+    animation: scannerSparkle 2.8s ease-in-out infinite;
+}
+
+/* latar grid kertas putih halus untuk header kartu layanan */
+.service-white-grid {
+    background-color: #FFFFFF;
+    background-image:
+        radial-gradient(ellipse at center, transparent 42%, rgba(255, 255, 255, 0.92) 100%),
+        linear-gradient(to right, rgba(148, 163, 184, 0.24) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(148, 163, 184, 0.24) 1px, transparent 1px);
+    background-size: 100% 100%, 16px 16px, 16px 16px;
+    background-position: center, center top, center top;
+}
+
+/* utilitas halaman edukasi di bawah */
+
+/* kanvas dot grid & kartu node flowchart halaman auth */
+.auth-dot-canvas {
+    background-color: #F8FAFC;
+    background-image: radial-gradient(#CBD5E1 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+
+.flow-node {
+    background-color: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+                border-color 0.25s ease,
+                box-shadow 0.25s ease;
+}
+
+.flow-node:hover,
+.flow-node:focus-within {
+    border-color: #3B82F6;
+    transform: scale(1.02);
+    box-shadow: 0 12px 26px rgba(59, 130, 246, 0.11);
+}
+
+@keyframes flowDash {
+    to {
+        stroke-dashoffset: -28;
+    }
+}
+
+.flow-line-dashed {
+    stroke-dasharray: 5 5;
+    animation: flowDash 3s linear infinite;
+}
+
+/* animasi burung melintas (beragam kawanan burung di langit beranda) */
+@keyframes birdGlideAcross {
+    0% {
+        transform: translate3d(-14vw, 18px, 0) scale(0.75);
+        opacity: 0;
+    }
+    8% {
+        opacity: 0.72;
+    }
+    50% {
+        transform: translate3d(48vw, -16px, 0) scale(0.92);
+        opacity: 0.85;
+    }
+    90% {
+        opacity: 0.65;
+    }
+    100% {
+        transform: translate3d(114vw, -38px, 0) scale(0.72);
+        opacity: 0;
+    }
+}
+
+@keyframes birdGlideReverse {
+    0% {
+        transform: translate3d(110vw, 10px, 0) scale(0.7);
+        opacity: 0;
+    }
+    10% {
+        opacity: 0.6;
+    }
+    50% {
+        transform: translate3d(52vw, -18px, 0) scale(0.84);
+        opacity: 0.75;
+    }
+    90% {
+        opacity: 0.55;
+    }
+    100% {
+        transform: translate3d(-15vw, -30px, 0) scale(0.65);
+        opacity: 0;
+    }
+}
+
+@keyframes birdGlideHigh {
+    0% {
+        transform: translate3d(-10vw, 0px, 0) scale(0.65);
+        opacity: 0;
+    }
+    12% {
+        opacity: 0.55;
+    }
+    50% {
+        transform: translate3d(45vw, 14px, 0) scale(0.78);
+        opacity: 0.68;
+    }
+    90% {
+        opacity: 0.48;
+    }
+    100% {
+        transform: translate3d(108vw, -14px, 0) scale(0.6);
+        opacity: 0;
+    }
+}
+
+@keyframes birdWing {
+    0%, 100% {
+        transform: scaleY(1) translateY(0px);
+    }
+    50% {
+        transform: scaleY(0.45) translateY(2px);
+    }
+}
+
+.bird-flock {
+    position: absolute;
+    top: 14%;
+    left: 0;
+    pointer-events: none;
+    z-index: 4;
+    animation: birdGlideAcross 22s linear infinite;
+}
+
+.bird-flock-2 {
+    position: absolute;
+    top: 26%;
+    left: 0;
+    pointer-events: none;
+    z-index: 4;
+    animation: birdGlideAcross 29s linear -9s infinite;
+}
+
+.bird-flock-3 {
+    position: absolute;
+    top: 9%;
+    left: 0;
+    pointer-events: none;
+    z-index: 4;
+    animation: birdGlideReverse 26s linear -5s infinite;
+}
+
+.bird-flock-4 {
+    position: absolute;
+    top: 34%;
+    left: 0;
+    pointer-events: none;
+    z-index: 4;
+    animation: birdGlideHigh 34s linear -16s infinite;
+}
+
+.bird-flock-5 {
+    position: absolute;
+    top: 20%;
+    left: 0;
+    pointer-events: none;
+    z-index: 4;
+    animation: birdGlideReverse 31s linear -19s infinite;
+}
+
+.bird-wing-1 {
+    animation: birdWing 1.15s ease-in-out infinite;
+    transform-origin: center;
+}
+
+.bird-wing-2 {
+    animation: birdWing 1.3s ease-in-out 0.35s infinite;
+    transform-origin: center;
+}
+
+.bird-wing-3 {
+    animation: birdWing 1.05s ease-in-out 0.65s infinite;
+    transform-origin: center;
+}
+
+.shadow-neutral {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+
+/* efek reveal saat scroll */
+.reveal {
+    opacity: 0;
+    transform: translateY(22px);
+    transition: opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: opacity, transform;
+}
+
+.reveal.reveal-active {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.reveal-delay-1 {
+    transition-delay: 90ms;
+}
+
+.reveal-delay-2 {
+    transition-delay: 180ms;
+}
+
+.reveal-delay-3 {
+    transition-delay: 270ms;
+}
+
+@property --edu-flex {
+    syntax: '<number>';
+    inherits: false;
+    initial-value: 4;
+}
+
+/* baris & transisi fluid bento halaman edukasi (ditempatkan setelah .reveal agar tidak tertimpa) */
+.edu-bento-row {
+    transition:
+        opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1),
+        transform 0.65s cubic-bezier(0.22, 1, 0.36, 1),
+        height 540ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (min-width: 1024px) {
+    .edu-bento-row {
+        height: 245px;
+    }
+
+    .edu-bento-row.row-hovered {
+        height: 335px;
+    }
+}
+
+.edu-card-fluid {
+    flex: 1 1 auto;
+    transform: scale(1);
+    z-index: 1;
+    transition-property: flex-grow, transform, box-shadow, border-color, background-color;
+    transition-duration: 540ms, 480ms, 480ms, 320ms, 320ms;
+    transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+    transition-delay: 0ms;
+    will-change: flex-grow, transform;
+}
+
+@media (min-width: 1024px) {
+    .edu-card-fluid {
+        flex-grow: var(--edu-flex, 4);
+        flex-shrink: 1;
+        flex-basis: 0%;
+        min-width: 0;
+    }
+}
+
+.edu-card-fluid.is-hovered {
+    transform: scale(1.05);
+    z-index: 30;
+    box-shadow: 0 24px 52px rgba(15, 45, 110, 0.22);
+}
+
+/* animasi scroll vertikal halaman testimoni */
+@keyframes verticalMarquee {
+    0% {
+        transform: translateY(0%);
+    }
+    100% {
+        transform: translateY(-50%);
+    }
+}
+
+.testi-scroll-track {
+    animation: verticalMarquee 28s linear infinite;
+}
+
+.testi-scroll-track:hover {
+    animation-play-state: paused;
+}
+
+.testi-pill-glass {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 250, 252, 0.92) 100%);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1.5px solid rgba(255, 255, 255, 0.95);
+    box-shadow: 0 22px 50px rgba(15, 23, 42, 0.09), inset 0 2px 4px rgba(255, 255, 255, 0.9);
+}
+
+/* animasi marquee horizontal dari kanan ke kiri untuk daftar user di beranda */
+@keyframes horizontalUserMarquee {
+    0% {
+        transform: translate3d(0%, 0, 0);
+    }
+    100% {
+        transform: translate3d(-50%, 0, 0);
+    }
+}
+
+.user-marquee-track {
+    display: flex;
+    width: max-content;
+    animation: horizontalUserMarquee 42s linear infinite;
+}
+
+.user-marquee-track:hover {
+    animation-play-state: paused;
+}
+
+/* Global dark mode overrides */
+html.dark,
+html.dark body {
+    background-color: #0B1120 !important;
+    color: #F1F5F9 !important;
+}
+
+html.dark section.bg-white,
+html.dark .bg-white {
+    background-color: #111827 !important;
+    color: #F1F5F9;
+}
+
+html.dark .bg-white\/95,
+html.dark .bg-white\/90 {
+    background-color: rgba(17, 24, 39, 0.94) !important;
+    color: #F1F5F9;
+}
+
+html.dark .bg-\[\#F8FAFC\],
+html.dark .bg-\[\#F8FAFC\]\/60,
+html.dark .bg-\[\#F8FAFC\]\/80,
+html.dark .bg-\[\#F7F8FC\],
+html.dark .bg-\[\#F6F7F9\],
+html.dark .bg-\[\#F6F8FB\],
+html.dark .bg-\[\#F5F6F9\],
+html.dark .bg-\[\#F4F6F9\],
+html.dark .bg-\[\#F3F4F6\],
+html.dark .bg-\[\#FAFAFA\]\/70,
+html.dark .bg-gray-50,
+html.dark .bg-gray-50\/50,
+html.dark .bg-gray-50\/70,
+html.dark .bg-gray-50\/80,
+html.dark .bg-slate-50 {
+    background-color: #162032 !important;
+    color: #E2E8F0;
+}
+
+html.dark .bg-\[\#F0F8FF\],
+html.dark .bg-\[\#F0F8FF\]\/70,
+html.dark .bg-\[\#EFF6FF\] {
+    background-color: #132238 !important;
+}
+
+html.dark .bg-amber-50 {
+    background-color: rgba(245, 158, 11, 0.14) !important;
+}
+
+html.dark .bg-emerald-50 {
+    background-color: rgba(16, 185, 129, 0.14) !important;
+}
+
+html.dark .bg-red-50 {
+    background-color: rgba(239, 68, 68, 0.14) !important;
+}
+
+html.dark .hover\:bg-gray-50:hover,
+html.dark .hover\:bg-gray-100:hover {
+    background-color: #1E293B !important;
+}
+
+html.dark .bg-\[\#DBEAFE\],
+html.dark .bg-\[\#DBEAFE\]\/70,
+html.dark .bg-\[\#DBEAFE\]\/60 {
+    background-color: rgba(30, 136, 229, 0.2) !important;
+}
+
+html.dark .bg-gray-100,
+html.dark .bg-gray-200 {
+    background-color: #1E293B !important;
+}
+
+html.dark .border-gray-100,
+html.dark .border-gray-200,
+html.dark .border-gray-200\/80,
+html.dark .border-gray-200\/90,
+html.dark .border-gray-200\/75,
+html.dark .border-slate-200,
+html.dark .border-white {
+    border-color: #243247 !important;
+}
+
+html.dark .divide-gray-100 > :not(:last-child) {
+    border-color: #1E293B !important;
+}
+
+html.dark .text-ink,
+html.dark .text-\[\#0A0A0A\],
+html.dark .text-gray-900,
+html.dark .text-gray-800,
+html.dark .text-slate-900,
+html.dark .text-slate-800,
+html.dark .text-black {
+    color: #F1F5F9 !important;
+}
+
+html.dark .text-ink\/90,
+html.dark .text-ink\/85,
+html.dark .text-ink\/80,
+html.dark .text-ink\/75,
+html.dark .text-ink\/70,
+html.dark .text-\[\#0A0A0A\]\/80,
+html.dark .text-\[\#0A0A0A\]\/70,
+html.dark .text-gray-700,
+html.dark .text-slate-700 {
+    color: #CBD5E1 !important;
+}
+
+html.dark .text-muted,
+html.dark .text-ink\/60,
+html.dark .text-gray-600,
+html.dark .text-gray-500,
+html.dark .text-gray-400,
+html.dark .text-slate-600 {
+    color: #94A3B8 !important;
+}
+
+/* Pastikan teks di atas tombol/badge neon lime tetap kontras gelap */
+html.dark .bg-lime,
+html.dark .bg-lime\/35,
+html.dark .bg-lime\/40,
+html.dark .bg-lime\/50,
+html.dark .bg-lime\/55,
+html.dark .bg-lime *,
+html.dark .bg-lime.text-ink,
+html.dark .text-ink.bg-lime {
+    color: #0A0A0A !important;
+}
+
+html.dark .bg-ink {
+    background-color: #1E293B !important;
+    color: #F8FAFC !important;
+    border-color: #334155 !important;
+}
+
+html.dark .bg-ink:hover {
+    background-color: #1E88E5 !important;
+}
+
+html.dark .bg-ink .text-lime {
+    color: #C6F432 !important;
+}
+
+html.dark input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+html.dark textarea,
+html.dark select {
+    background-color: #0F172A !important;
+    border-color: #334155 !important;
+    color: #F1F5F9 !important;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+    color: #64748B !important;
+}
+
+html.dark .bento-card-white {
+    background: rgba(17, 24, 39, 0.94) !important;
+    border-color: rgba(51, 65, 85, 0.85) !important;
+    color: #F1F5F9 !important;
+}
+
+html.dark .testi-pill-glass {
+    background: linear-gradient(135deg, rgba(17, 24, 39, 0.96) 0%, rgba(22, 32, 50, 0.94) 100%) !important;
+    border-color: rgba(51, 65, 85, 0.9) !important;
+}
+
+html.dark .from-\[\#F6F8FB\] {
+    --tw-gradient-from: #162032 !important;
+}
+
+html.dark footer {
+    background-color: #0B1120 !important;
+    border-color: #1E293B !important;
+}
+
+html.dark .shadow-neutral {
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.42) !important;
+}
+
+/* 3 kartu folder-tab Beranda: charcoal-slate lembut di Light, light-slate lembut di Dark */
+.service-folder-frame {
+    background-color: #2C3545;
+    border-color: #364154;
+}
+
+.service-folder-fill {
+    background-color: #252C38;
+}
+
+.service-folder-notch {
+    color: #252C38;
+}
+
+.service-folder-title,
+.service-folder-num {
+    color: #F8FAFC;
+}
+
+.service-folder-desc,
+.service-folder-unit {
+    color: #94A3B8;
+}
+
+.service-folder-footer {
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+.service-folder-link {
+    color: #7DD3FC;
+}
+
+.service-folder-subcard {
+    background-color: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+.service-folder-subcard-title {
+    color: #F8FAFC;
+}
+
+html.dark .service-folder-frame {
+    background-color: #CBD5E1 !important;
+    border-color: #B6C3D4 !important;
+}
+
+html.dark .service-folder-fill {
+    background-color: #DFE6F0 !important;
+}
+
+html.dark .service-folder-notch {
+    color: #DFE6F0 !important;
+}
+
+html.dark .service-folder-grid {
+    background-color: #CBD5E1 !important;
+    background-image:
+        radial-gradient(ellipse at center, transparent 42%, rgba(203, 213, 225, 0.92) 100%),
+        linear-gradient(to right, rgba(71, 85, 105, 0.18) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(71, 85, 105, 0.18) 1px, transparent 1px) !important;
+}
+
+html.dark .service-folder-grid-label {
+    color: #1E293B !important;
+}
+
+html.dark .service-folder-title,
+html.dark .service-folder-num {
+    color: #0F172A !important;
+}
+
+html.dark .group:hover .service-folder-title {
+    color: #1D4ED8 !important;
+}
+
+html.dark .service-folder-desc,
+html.dark .service-folder-unit {
+    color: #475569 !important;
+}
+
+html.dark .service-folder-footer {
+    border-color: rgba(15, 23, 42, 0.12) !important;
+}
+
+html.dark .service-folder-link {
+    color: #1D4ED8 !important;
+}
+
+html.dark .service-folder-subcard {
+    background-color: rgba(15, 23, 42, 0.06) !important;
+    border-color: rgba(15, 23, 42, 0.12) !important;
+}
+
+html.dark .service-folder-subcard-title {
+    color: #0F172A !important;
+}
+
+/* Smooth Q&A accordion & tabs */
+.faq-accordion-panel {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    transition:
+        grid-template-rows 0.36s cubic-bezier(0.22, 1, 0.36, 1),
+        opacity 0.28s ease;
+}
+
+.faq-accordion-panel.is-open {
+    grid-template-rows: 1fr;
+    opacity: 1;
+}
+
+.faq-accordion-inner {
+    overflow: hidden;
+}
+
+.faq-plus-icon {
+    transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1), color 0.2s ease;
+}
+
+.faq-plus-icon.is-open {
+    transform: rotate(45deg);
+}
+
+.faq-tab-card {
+    transition:
+        transform 0.22s ease,
+        border-color 0.22s ease,
+        background-color 0.22s ease,
+        box-shadow 0.22s ease;
+}
+
+html.dark .faq-section-surface {
+    background-color: #0B1120 !important;
+    border-color: #1E293B !important;
+}
+
+html.dark .faq-tab-card {
+    background-color: #111827 !important;
+    border-color: #243247 !important;
+    color: #CBD5E1 !important;
+}
+
+html.dark .faq-tab-card.is-active {
+    background-color: #162338 !important;
+    border-color: #1E88E5 !important;
+    color: #F8FAFC !important;
+    box-shadow: 0 12px 30px rgba(30, 136, 229, 0.18) !important;
+}
+
+html.dark .faq-row-border {
+    border-color: #1E293B !important;
+}

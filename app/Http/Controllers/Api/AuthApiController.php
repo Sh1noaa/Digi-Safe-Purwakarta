@@ -1,0 +1,151 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Controller;
+use App\Models\ApiToken;
+use App\Models\User;
+use App\Services\ApiResourceFormatter;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
+
+class AuthApiController extends Controller
+{
+    public function login(Request $request): JsonResponse
+    {
+        $isEn = app()->getLocale() === 'en';
+
+        $validated = $request->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required', 'string'],
+            'device_name' => ['nullable', 'string', 'max:80'],
+        ]);
+
+        $user = User::query()->where('email', $validated['email'])->first();
+
+        if (! $user || ! Hash::check($validated['password'], (string) $user->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => $isEn ? 'Invalid email or password.' : 'Email atau password salah.',
+            ], 422);
+        }
+
+        $token = ApiToken::issueFor($user, (string) ($validated['device_name'] ?? 'flutter_apk'));
+
+        return response()->json([
+            'success' => true,
+            'message' => $isEn ? 'Signed in successfully.' : 'Berhasil masuk ke akun Digi-Safe.',
+            'token' => $token,
+            'user' => ApiResourceFormatter::formatUser($user, $user, true),
+        ]);
+    }
+
+    public function register(Request $request): JsonResponse
+    {
+        $isEn = app()->getLocale() === 'en';
+
+        $validated = $request->validate([
+            'nama_lengkap' => ['required', 'string', 'max:100'],
+            'username' => ['required', 'string', 'max:50', 'alpha_dash', 'unique:users,username'],
+            'email' => ['required', 'string', 'email', 'max:100', 'unique:users,email'],
+            'password' => ['required', 'string', 'min:8'],
+            'device_name' => ['nullable', 'string', 'max:80'],
+        ]);
+
+        $user = User::create([
+            'nama_lengkap' => $validated['nama_lengkap'],
+            'username' => $validated['username'],
+            'email' => Str::lower($validated['email']),
+            'password' => Hash::make($validated['password']),
+            'role' => 'user',
+        ]);
+
+        $token = ApiToken::issueFor($user, (string) ($validated['device_name'] ?? 'flutter_apk'));
+
+        return response()->json([
+            'success' => true,
+            'message' => $isEn ? 'Account created successfully!' : 'Akun baru berhasil dibuat!',
+            'token' => $token,
+            'user' => ApiResourceFormatter::formatUser($user, $user, true),
+        ], 201);
+    }
+
+    public function googleTokenLogin(Request $request): JsonResponse
+    {
+        $isEn = app()->getLocale() === 'en';
+
+        $validated = $request->validate([
+            'id_token' => ['nullable', 'string'],
+            'access_token' => ['nullable', 'string'],
+            'device_name' => ['nullable', 'string', 'max:80'],
+        ]);
+
+        $googleData = null;
+
+        if (! empty($validated['id_token'])) {
+            $resp = Http::timeout(12)->get('https://oauth2.googleapis.com/tokeninfo', [
+                'id_token' => $validated['id_token'],
+            ]);
+            if ($resp->successful()) {
+                $googleData = $resp->json();
+            }
+        } elseif (! empty($validated['access_token'])) {
+            $resp = Http::withToken($validated['access_token'])
+                ->timeout(12)
+                ->get('https://www.googleapis.com/oauth2/v3/userinfo');
+            if ($resp->successful()) {
+                $googleData = $resp->json();
+            }
+        }
+
+        if (! is_array($googleData) || empty($googleData['sub']) || empty($googleData['email'])) {
+            return response()->json([
+                'success' => false,
+                'message' => $isEn ? 'Invalid Google token.' : 'Token Google tidak valid.',
+            ], 422);
+        }
+
+        $user = AuthController::findOrCreateGoogleUser(
+            (string) $googleData['sub'],
+            Str::lower(trim((string) $googleData['email'])),
+            trim((string) ($googleData['name'] ?? '')),
+            trim((string) ($googleData['picture'] ?? ''))
+        );
+
+        $token = ApiToken::issueFor($user, (string) ($validated['device_name'] ?? 'flutter_google'));
+
+        return response()->json([
+            'success' => true,
+            'message' => $isEn ? 'Signed in with Google.' : 'Berhasil masuk dengan akun Google.',
+            'token' => $token,
+            'user' => ApiResourceFormatter::formatUser($user, $user, true),
+        ]);
+    }
+
+    public function me(): JsonResponse
+    {
+        /** @var User $user */
+        $user = Auth::user();
+
+        return response()->json([
+            'success' => true,
+            'user' => ApiResourceFormatter::formatUser($user, $user, true),
+        ]);
+    }
+
+    public function logout(Request $request): JsonResponse
+    {
+        ApiToken::revokeFromRequest($request);
+
+        return response()->json([
+            'success' => true,
+            'message' => app()->getLocale() === 'en' ? 'Signed out successfully.' : 'Berhasil keluar dari akun.',
+        ]);
+    }
+}
+

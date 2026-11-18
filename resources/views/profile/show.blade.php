@@ -1,0 +1,626 @@
+@extends('layouts.app')
+
+@section('title', ($profileUser->nama_lengkap ?: $profileUser->username) . ' — Profil Digi-Safe Purwakarta')
+
+@section('content')
+
+    <section
+        x-data="{
+            open: {{ $errors->any() ? 'true' : 'false' }},
+            settingsOpen: false,
+            friendsModalOpen: false,
+            previewUrl: null,
+            bannerPreviewUrl: null,
+            specialtyRole: @js(old('specialty_role', $profileUser->specialty_role ?? '')),
+            friendStatus: @js($friendRelation ?? 'none'),
+            friendBusy: false,
+            async handleFriendAction(action) {
+                if (this.friendBusy) return;
+                this.friendBusy = true;
+                try {
+                    const csrf = document.querySelector('meta[name=csrf-token]')?.content || '';
+                    const uid = {{ (int) $profileUser->id }};
+                    let url = `/friends/request/${uid}`;
+                    let method = 'POST';
+                    if (action === 'accept') url = `/friends/accept/${uid}`;
+                    if (action === 'decline') url = `/friends/decline/${uid}`;
+                    if (action === 'remove') { url = `/friends/${uid}`; method = 'DELETE'; }
+
+                    const res = await fetch(url, {
+                        method,
+                        headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf }
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.status) this.friendStatus = data.status;
+                    }
+                } finally {
+                    this.friendBusy = false;
+                }
+            }
+        }"
+        class="min-h-screen bg-[#F8FAFC] pt-28 sm:pt-32 pb-24 px-4 sm:px-6 lg:px-8 flex items-center"
+    >
+        <div class="max-w-4xl w-full mx-auto">
+
+            <!-- notifikasi sukses / error -->
+            @if (session('success'))
+                <div class="mb-7 rounded-2xl bg-lime/35 border border-lime px-5 py-3.5 flex items-center gap-3 text-xs font-semibold text-ink shadow-2xs">
+                    <span class="w-6 h-6 rounded-full bg-ink text-lime flex items-center justify-center shrink-0">
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                    </span>
+                    <span>{{ session('success') }}</span>
+                </div>
+            @endif
+
+            @if ($errors->any())
+                <div class="mb-7 rounded-2xl bg-red-50 border border-red-200 px-5 py-3.5 text-xs text-red-700 shadow-2xs">
+                    <p class="font-bold mb-1">{{ __('ui.profile.check_data_error') }}</p>
+                    <ul class="list-disc list-inside space-y-0.5">
+                        @foreach ($errors->all() as $err)
+                            <li>{{ $err }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
+            @if ($isOwnProfile && $privacy['is_private_profile'])
+                <div class="mb-5 rounded-2xl bg-amber-50 border border-amber-200 px-4 py-3 text-xs font-semibold text-amber-800 flex items-center gap-2.5">
+                    <span>🔒</span>
+                    <span>{{ __('ui.profile.private_self_notice') }}</span>
+                </div>
+            @endif
+
+            <!-- wrapper relatif untuk persegi panjang biru di belakang sisi kiri kartu sesuai referensi -->
+            <div class="relative my-6 sm:my-8">
+
+                <!-- bentuk persegi panjang biru solid (#1E88E5) di sisi kiri belakang kartu -->
+                <div
+                    aria-hidden="true"
+                    class="hidden sm:block absolute -left-7 md:-left-10 -top-7 -bottom-7 w-60 md:w-72 rounded-[32px] bg-[#1E88E5] shadow-lg z-0"
+                ></div>
+
+                <!-- kartu profil utama -->
+                <div class="relative z-10 rounded-[28px] bg-white border border-gray-100 shadow-neutral overflow-hidden">
+
+                    <!-- banner atas (SELALU TAMPIL meski mode privat: foto/gif custom atau gradient default) -->
+                    <div
+                        class="relative h-40 sm:h-48 w-full overflow-hidden"
+                        style="background: linear-gradient(118deg, #F59E0B 0%, #FB923C 28%, #FDA4AF 58%, #67E8F9 84%, #38BDF8 100%);"
+                    >
+                        @if ($profileUser->banner_url)
+                            <img
+                                src="{{ $profileUser->banner_url }}"
+                                alt="Banner {{ $profileUser->nama_lengkap ?: $profileUser->username }}"
+                                class="w-full h-full object-cover"
+                            >
+                        @else
+                            <div
+                                class="absolute inset-0 opacity-45"
+                                style="background: radial-gradient(circle at 72% 25%, rgba(255, 255, 255, 0.55) 0%, transparent 55%);"
+                            ></div>
+                        @endif
+
+                        @if ($isOwnProfile)
+                            <button
+                                type="button"
+                                @click="open = true"
+                                title="Ubah Banner & Profil"
+                                class="absolute top-4 right-4 inline-flex items-center gap-1.5 rounded-full bg-white/95 hover:bg-white text-ink px-3.5 py-2 text-[11px] font-heading font-bold shadow-sm transition-transform hover:scale-105 cursor-pointer"
+                            >
+                                <svg class="w-3.5 h-3.5 text-sky" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                </svg>
+                                <span>{{ __('ui.profile.edit_btn') }}</span>
+                            </button>
+                        @elseif ($isPrivateForVisitor)
+                            <span class="absolute top-4 right-4 inline-flex items-center gap-1.5 rounded-full bg-ink/85 text-lime px-3.5 py-1.5 text-[11px] font-heading font-bold backdrop-blur-xs">
+                                <span>🔒</span>
+                                <span>{{ __('ui.profile.private_account_badge') }}</span>
+                            </span>
+                        @endif
+                    </div>
+
+                    <!-- konten kartu di bawah banner -->
+                    <div class="px-6 sm:px-10 pb-8 sm:pb-10">
+
+                        <!-- avatar bulat overlap dengan border putih 4px (SELALU TAMPIL) -->
+                        <div class="-mt-14 sm:-mt-16 mb-4 flex items-end justify-between">
+                            <div class="relative inline-block">
+                                <x-user-avatar
+                                    :user="$profileUser"
+                                    size="profile"
+                                    class="border-4 border-white shadow-md bg-white"
+                                />
+                            </div>
+                        </div>
+
+                        @if ($isPrivateForVisitor)
+                            <!-- MODE PRIVAT UNTUK PENGUNJUNG: Hanya Nama, Foto Profil (PP), dan Banner -->
+                            <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-gray-100">
+                                <div>
+                                    <div class="flex flex-wrap items-center gap-2.5">
+                                        <h1 class="font-heading font-extrabold text-2xl sm:text-3xl text-ink tracking-tight">
+                                            {{ $profileUser->nama_lengkap ?: $profileUser->username }}
+                                        </h1>
+                                        <span class="inline-flex items-center gap-1 rounded-full bg-gray-100 border border-gray-200 px-3 py-1 text-[10px] font-extrabold text-muted uppercase tracking-wider">
+                                            <span>🔒 {{ __('ui.profile.private_account_badge') }}</span>
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="flex flex-wrap items-center gap-2.5">
+                                    @auth
+                                        <template x-if="friendStatus === 'accepted'">
+                                            <button
+                                                type="button"
+                                                @click="handleFriendAction('remove')"
+                                                :disabled="friendBusy"
+                                                class="inline-flex items-center gap-1.5 rounded-full bg-lime text-ink border border-lime font-heading font-bold text-xs px-5 py-2.5 transition-colors cursor-pointer"
+                                            >
+                                                <span>✓ Berteman</span>
+                                            </button>
+                                        </template>
+                                        <template x-if="friendStatus === 'pending_outgoing'">
+                                            <button
+                                                type="button"
+                                                @click="handleFriendAction('remove')"
+                                                :disabled="friendBusy"
+                                                class="inline-flex items-center gap-1.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 font-heading font-bold text-xs px-5 py-2.5 transition-colors cursor-pointer"
+                                            >
+                                                <span>Menunggu Konfirmasi</span>
+                                            </button>
+                                        </template>
+                                        <template x-if="friendStatus === 'pending_incoming'">
+                                            <button
+                                                type="button"
+                                                @click="handleFriendAction('accept')"
+                                                :disabled="friendBusy"
+                                                class="inline-flex items-center gap-1.5 rounded-full bg-sky text-white border border-sky font-heading font-bold text-xs px-5 py-2.5 transition-colors cursor-pointer"
+                                            >
+                                                <span>Konfirmasi Pertemanan ✓</span>
+                                            </button>
+                                        </template>
+                                        <template x-if="friendStatus === 'none' || friendStatus === 'declined'">
+                                            <button
+                                                type="button"
+                                                @click="handleFriendAction('request')"
+                                                :disabled="friendBusy"
+                                                class="inline-flex items-center gap-1.5 rounded-full bg-ink hover:bg-sky text-white border border-ink font-heading font-bold text-xs px-5 py-2.5 transition-colors cursor-pointer"
+                                            >
+                                                <span>+ Tambah Teman</span>
+                                            </button>
+                                        </template>
+
+                                        <button
+                                            type="button"
+                                            @click="window.dispatchEvent(new CustomEvent('open-chat-with', { detail: { userId: {{ (int) $profileUser->id }} } }))"
+                                            class="inline-flex items-center gap-1.5 rounded-full bg-[#1E63E9] hover:bg-ink text-white font-heading font-bold text-xs px-5 py-2.5 transition-colors cursor-pointer"
+                                        >
+                                            <span>Chat</span>
+                                        </button>
+                                    @endauth
+
+                                    <a
+                                        href="{{ route('forum.index') }}"
+                                        class="inline-flex items-center justify-center rounded-full bg-white border border-gray-300 hover:border-ink text-ink font-heading font-bold text-xs px-5 py-2.5 transition-colors"
+                                    >
+                                        {{ __('ui.profile.back_forum') }}
+                                    </a>
+                                </div>
+                            </div>
+
+                            <div class="mt-7 rounded-2xl bg-[#F8FAFC] border border-dashed border-gray-200 p-8 text-center">
+                                <div class="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center mx-auto mb-3 text-xl">
+                                    🔒
+                                </div>
+                                <h2 class="font-heading font-extrabold text-base text-ink">{{ __('ui.profile.private_title') }}</h2>
+                                <p class="mt-1.5 text-xs text-muted max-w-md mx-auto leading-relaxed">
+                                    {{ __('ui.profile.private_desc') }}
+                                </p>
+                            </div>
+                        @else
+                            <!-- PROFIL LENGKAP (Untuk Pemilik Sendiri atau Pengunjung Non-Privat dengan Kontrol Privasi Granular) -->
+                            <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+
+                                <!-- kolom kiri -->
+                                <div class="md:col-span-6">
+                                    <div class="flex flex-wrap items-center gap-2.5">
+                                        <h1 class="font-heading font-extrabold text-2xl sm:text-3xl text-ink tracking-tight">
+                                            {{ $profileUser->nama_lengkap ?: $profileUser->username }}
+                                        </h1>
+
+                                        @if ($profileUser->isOwner())
+                                            <span class="inline-flex items-center gap-1 rounded-full bg-ink text-lime px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider">
+                                                <svg class="w-3 h-3 text-lime" viewBox="0 0 24 24" fill="currentColor">
+                                                    <path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14v2H5v-2z" />
+                                                </svg>
+                                                <span>Owner</span>
+                                            </span>
+                                        @elseif ($profileUser->isAdmin())
+                                            <span class="rounded-full bg-lime text-ink px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider">
+                                                Admin
+                                            </span>
+                                        @endif
+
+                                        @if (filled($profileUser->specialty_role))
+                                            <span class="inline-flex items-center gap-1 rounded-full bg-[#EFF6FF] border border-sky/25 text-sky px-3 py-1 text-[11px] font-heading font-bold">
+                                                <span>{{ $profileUser->specialty_role }}</span>
+                                            </span>
+                                        @endif
+                                    </div>
+
+                                    <p class="mt-1 text-xs sm:text-sm font-medium text-muted">
+                                        {{ $profileUser->role_label }} • <span class="text-ink/80 font-semibold">&#64;{{ $profileUser->username }}</span>
+                                    </p>
+
+                                    <div class="mt-2.5 flex flex-wrap items-center gap-2">
+                                        <button
+                                            type="button"
+                                            @click="friendsModalOpen = true"
+                                            class="inline-flex items-center gap-2 rounded-full bg-[#F8FAFC] hover:bg-[#EFF6FF] border border-gray-200 hover:border-sky/40 px-3.5 py-1.5 text-xs font-heading font-bold text-ink transition-colors cursor-pointer"
+                                        >
+                                            <svg class="w-3.5 h-3.5 text-sky" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                                                <circle cx="9" cy="7" r="4" />
+                                                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                                                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                                            </svg>
+                                            <span>{{ $friendsCount }} {{ app()->getLocale() === 'en' ? 'Friends' : 'Teman' }}</span>
+                                        </button>
+                                    </div>
+
+                                    @if ($isOwnProfile || ! $privacy['hide_location'])
+                                        <p class="mt-1.5 text-xs sm:text-sm text-muted leading-relaxed">
+                                            {{ $profileUser->bio ?: 'Purwakarta, Jawa Barat, Indonesia' }}
+                                            @if ($isOwnProfile && $privacy['hide_location'])
+                                                <span class="ml-1 inline-block rounded-full bg-amber-100 text-amber-800 px-2 py-0.5 text-[10px] font-bold">Hidden</span>
+                                            @endif
+                                        </p>
+                                    @else
+                                        <p class="mt-1.5 text-xs italic text-muted">
+                                            🔒 {{ __('ui.profile.hidden_location') }}
+                                        </p>
+                                    @endif
+
+                                    @if ($isOwnProfile && ! $privacy['hide_email'])
+                                        <p class="mt-1 text-[11px] text-muted">{{ $profileUser->email }}</p>
+                                    @endif
+
+                                    <!-- tombol aksi terpisah: Edit Profil vs Pengaturan -->
+                                    <div class="mt-5 flex flex-wrap items-center gap-3">
+                                        @if ($isOwnProfile)
+                                            <button
+                                                type="button"
+                                                @click="open = true"
+                                                class="inline-flex items-center gap-2 rounded-full bg-ink hover:bg-sky text-white font-heading font-bold text-xs px-6 py-2.5 shadow-2xs transition-colors cursor-pointer"
+                                            >
+                                                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                                </svg>
+                                                <span>{{ __('ui.profile.edit_btn') }}</span>
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                @click="settingsOpen = true"
+                                                class="inline-flex items-center gap-2 rounded-full bg-white border border-ink/75 hover:border-sky hover:text-sky text-ink font-heading font-bold text-xs px-6 py-2.5 transition-colors cursor-pointer"
+                                            >
+                                                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <circle cx="12" cy="12" r="3" />
+                                                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                                                </svg>
+                                                <span>{{ __('ui.profile.settings_btn') }}</span>
+                                            </button>
+                                        @else
+                                            @auth
+                                                <template x-if="friendStatus === 'accepted'">
+                                                    <button
+                                                        type="button"
+                                                        @click="handleFriendAction('remove')"
+                                                        :disabled="friendBusy"
+                                                        class="inline-flex items-center gap-1.5 rounded-full bg-lime text-ink border border-lime font-heading font-bold text-xs px-5 py-2.5 transition-colors cursor-pointer"
+                                                    >
+                                                        <span>✓ Berteman</span>
+                                                    </button>
+                                                </template>
+                                                <template x-if="friendStatus === 'pending_outgoing'">
+                                                    <button
+                                                        type="button"
+                                                        @click="handleFriendAction('remove')"
+                                                        :disabled="friendBusy"
+                                                        class="inline-flex items-center gap-1.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 font-heading font-bold text-xs px-5 py-2.5 transition-colors cursor-pointer"
+                                                    >
+                                                        <span>Menunggu Konfirmasi</span>
+                                                    </button>
+                                                </template>
+                                                <template x-if="friendStatus === 'pending_incoming'">
+                                                    <button
+                                                        type="button"
+                                                        @click="handleFriendAction('accept')"
+                                                        :disabled="friendBusy"
+                                                        class="inline-flex items-center gap-1.5 rounded-full bg-sky text-white border border-sky font-heading font-bold text-xs px-5 py-2.5 transition-colors cursor-pointer"
+                                                    >
+                                                        <span>Konfirmasi Pertemanan ✓</span>
+                                                    </button>
+                                                </template>
+                                                <template x-if="friendStatus === 'none' || friendStatus === 'declined'">
+                                                    <button
+                                                        type="button"
+                                                        @click="handleFriendAction('request')"
+                                                        :disabled="friendBusy"
+                                                        class="inline-flex items-center gap-1.5 rounded-full bg-ink hover:bg-sky text-white border border-ink font-heading font-bold text-xs px-5 py-2.5 transition-colors cursor-pointer"
+                                                    >
+                                                        <span>+ Tambah Teman</span>
+                                                    </button>
+                                                </template>
+
+                                                <button
+                                                    type="button"
+                                                    @click="window.dispatchEvent(new CustomEvent('open-chat-with', { detail: { userId: {{ (int) $profileUser->id }} } }))"
+                                                    class="inline-flex items-center gap-1.5 rounded-full bg-[#1E63E9] hover:bg-ink text-white font-heading font-bold text-xs px-5 py-2.5 transition-colors cursor-pointer"
+                                                >
+                                                    <span>Chat</span>
+                                                </button>
+                                            @else
+                                                <a
+                                                    href="{{ route('login') }}"
+                                                    class="inline-flex items-center gap-2 rounded-full bg-ink hover:bg-sky text-white font-heading font-bold text-xs px-6 py-2.5 transition-colors"
+                                                >
+                                                    <span>+ Tambah Teman / Chat</span>
+                                                </a>
+                                            @endauth
+
+                                            <a
+                                                href="{{ route('forum.index') }}"
+                                                class="inline-flex items-center justify-center rounded-full bg-white border border-gray-300 hover:border-ink text-ink font-heading font-bold text-xs px-5 py-2.5 transition-colors"
+                                            >
+                                                {{ __('ui.profile.back_forum') }}
+                                            </a>
+                                        @endif
+                                    </div>
+                                </div>
+
+                                <!-- kolom kanan (current role & lencana achievement dari minigame) -->
+                                <div class="md:col-span-6 md:text-right flex flex-col md:items-end justify-between space-y-5">
+                                    <div>
+                                        <div class="inline-flex items-center gap-1.5 text-xs font-semibold text-muted mb-2">
+                                            <span>{{ __('ui.profile.current_role') }}</span>
+                                            <svg class="w-4 h-4 text-ink/70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                                <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+                                                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <span class="inline-block rounded-full bg-[#F8FAFC] border border-gray-200/80 px-4 py-1.5 text-xs font-heading font-bold text-ink">
+                                                {{ $profileUser->display_role }}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <div class="inline-flex items-center gap-1.5 text-xs font-semibold text-muted mb-2">
+                                            <span>{{ __('ui.profile.badges_title') }}</span>
+                                            <svg class="w-4 h-4 text-ink/70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                                            </svg>
+                                        </div>
+
+                                        @if (! $isOwnProfile && $privacy['hide_badges'])
+                                            <p class="text-[11px] italic text-muted">🔒 {{ __('ui.profile.hidden_section') }}</p>
+                                        @elseif (count($badges) > 0)
+                                            <div class="flex flex-wrap md:justify-end gap-2">
+                                                @foreach ($badges as $badge)
+                                                    @if ($badge === 'New Player')
+                                                        <span
+                                                            title="Otomatis diberikan untuk pemain baru dan hilang setelah 1 bulan"
+                                                            class="inline-flex items-center gap-1.5 rounded-full bg-[#DBEAFE] border border-sky/30 px-3.5 py-1 text-[11px] font-heading font-bold text-sky"
+                                                        >
+                                                            <span class="w-1.5 h-1.5 rounded-full bg-sky"></span>
+                                                            <span>New Player</span>
+                                                        </span>
+                                                    @else
+                                                        <span
+                                                            title="Diraih dari pencapaian Minigame"
+                                                            class="inline-flex items-center gap-1.5 rounded-full bg-lime/35 border border-lime px-3.5 py-1 text-[11px] font-heading font-bold text-ink"
+                                                        >
+                                                            <svg class="w-3 h-3 text-ink" viewBox="0 0 24 24" fill="currentColor">
+                                                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                                                            </svg>
+                                                            <span>{{ $badge }}</span>
+                                                        </span>
+                                                    @endif
+                                                @endforeach
+                                            </div>
+                                        @else
+                                            <p class="text-[11px] text-muted">{{ __('ui.profile.no_badges') }}</p>
+                                        @endif
+
+                                        <p class="mt-2 text-[10px] text-muted">
+                                            {{ __('ui.profile.badge_hint') }}
+                                        </p>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <!-- baris bawah: 3 kotak card info tambahan (menghormati pengaturan privasi) -->
+                            <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+
+                                <!-- kotak 1: total skor minigame -->
+                                @if ($isOwnProfile || ! $privacy['hide_minigame_stats'])
+                                    <a
+                                        href="{{ route('minigame.index') }}"
+                                        class="group rounded-2xl bg-[#F8FAFC] border border-gray-200/75 hover:border-sky p-4 sm:p-5 flex items-center justify-between gap-3 transition-all"
+                                    >
+                                        <div>
+                                            <h2 class="font-heading font-bold text-sm text-ink">
+                                                {{ __('ui.profile.total_score', ['score' => number_format($totalSkor)]) }}
+                                            </h2>
+                                            <p class="mt-1 text-[11px] text-muted leading-relaxed">
+                                                {{ __('ui.profile.score_desc', ['top' => $topSkor, 'matches' => $totalMain]) }}
+                                            </p>
+                                        </div>
+                                        <span class="w-8 h-8 rounded-full border border-sky/40 text-sky group-hover:bg-sky group-hover:text-white flex items-center justify-center shrink-0 transition-colors">
+                                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <line x1="5" y1="12" x2="19" y2="12" />
+                                                <polyline points="12 5 19 12 12 19" />
+                                            </svg>
+                                        </span>
+                                    </a>
+                                @else
+                                    <div class="rounded-2xl bg-[#F8FAFC] border border-gray-200/75 p-4 sm:p-5 flex items-center justify-center text-center text-[11px] text-muted">
+                                        🔒 {{ __('ui.profile.hidden_section') }}
+                                    </div>
+                                @endif
+
+                                <!-- kotak 2: jumlah ulasan testimoni -->
+                                @if ($isOwnProfile || ! $privacy['hide_activity'])
+                                    <a
+                                        href="{{ route('testimoni.index') }}"
+                                        class="group rounded-2xl bg-[#F8FAFC] border border-gray-200/75 hover:border-sky p-4 sm:p-5 flex items-center justify-between gap-3 transition-all"
+                                    >
+                                        <div>
+                                            <h2 class="font-heading font-bold text-sm text-ink">
+                                                {{ __('ui.profile.total_reviews', ['count' => $totalUlasan]) }}
+                                            </h2>
+                                            <p class="mt-1 text-[11px] text-muted leading-relaxed">
+                                                {{ __('ui.profile.reviews_desc') }}
+                                            </p>
+                                        </div>
+                                        <span class="w-8 h-8 rounded-full border border-sky/40 text-sky group-hover:bg-sky group-hover:text-white flex items-center justify-center shrink-0 transition-colors">
+                                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <line x1="5" y1="12" x2="19" y2="12" />
+                                                <polyline points="12 5 19 12 12 19" />
+                                            </svg>
+                                        </span>
+                                    </a>
+                                @else
+                                    <div class="rounded-2xl bg-[#F8FAFC] border border-gray-200/75 p-4 sm:p-5 flex items-center justify-center text-center text-[11px] text-muted">
+                                        🔒 {{ __('ui.profile.hidden_section') }}
+                                    </div>
+                                @endif
+
+                                <!-- kotak 3: total diskusi forum -->
+                                @if ($isOwnProfile || ! $privacy['hide_activity'])
+                                    <a
+                                        href="{{ route('forum.index') }}"
+                                        class="group rounded-2xl bg-[#F8FAFC] border border-gray-200/75 hover:border-sky p-4 sm:p-5 flex items-center justify-between gap-3 transition-all"
+                                    >
+                                        <div>
+                                            <h2 class="font-heading font-bold text-sm text-ink">
+                                                {{ __('ui.profile.total_discussions', ['count' => $totalDiskusi]) }}
+                                            </h2>
+                                            <p class="mt-1 text-[11px] text-muted leading-relaxed">
+                                                {{ __('ui.profile.discussions_desc', ['threads' => $totalThread, 'replies' => $totalJawaban]) }}
+                                            </p>
+                                        </div>
+                                        <span class="w-8 h-8 rounded-full border border-sky/40 text-sky group-hover:bg-sky group-hover:text-white flex items-center justify-center shrink-0 transition-colors">
+                                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <line x1="5" y1="12" x2="19" y2="12" />
+                                                <polyline points="12 5 19 12 12 19" />
+                                            </svg>
+                                        </span>
+                                    </a>
+                                @else
+                                    <div class="rounded-2xl bg-[#F8FAFC] border border-gray-200/75 p-4 sm:p-5 flex items-center justify-center text-center text-[11px] text-muted">
+                                        🔒 {{ __('ui.profile.hidden_section') }}
+                                    </div>
+                                @endif
+
+                            </div>
+                        @endif
+
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- modal edit profil & banner -->
+        @include('profile.edit')
+
+        <!-- modal pengaturan terpisah (Bahasa, Dark/Light Mode, Privasi) -->
+        @include('profile.settings-modal')
+
+        <!-- modal pop-up daftar teman -->
+        <div
+            x-show="friendsModalOpen"
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+            style="display: none; background: rgba(10, 10, 10, 0.52);"
+            class="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xs"
+            @keydown.escape.window="friendsModalOpen = false"
+        >
+            <div
+                @click.outside="friendsModalOpen = false"
+                class="w-full max-w-md max-h-[82vh] rounded-[24px] bg-white border border-gray-200/80 shadow-neutral flex flex-col overflow-hidden"
+            >
+                <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+                    <div>
+                        <h3 class="font-heading font-extrabold text-base text-ink">
+                            {{ app()->getLocale() === 'en' ? 'Friends List' : 'Daftar Teman' }} ({{ $friendsCount }})
+                        </h3>
+                        <p class="text-[11px] text-muted">
+                            {{ $profileUser->nama_lengkap ?: $profileUser->username }}
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        @click="friendsModalOpen = false"
+                        class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-ink flex items-center justify-center cursor-pointer"
+                    >
+                        &times;
+                    </button>
+                </div>
+
+                <div class="flex-1 overflow-y-auto p-4 space-y-2.5 bg-[#F8FAFC]">
+                    @if ($friendsList->isEmpty())
+                        <div class="py-10 text-center text-xs text-muted">
+                            {{ app()->getLocale() === 'en' ? 'No friends yet.' : 'Belum memiliki teman yang terhubung.' }}
+                        </div>
+                    @else
+                        @foreach ($friendsList as $friendUser)
+                            <div class="rounded-2xl bg-white border border-gray-100 p-3 flex items-center justify-between gap-3 shadow-2xs">
+                                <a href="{{ route('profile.show', $friendUser->id) }}" class="flex items-center gap-3 min-w-0 group">
+                                    <x-user-avatar :user="$friendUser" size="sm" />
+                                    <div class="min-w-0">
+                                        <p class="font-heading font-bold text-xs text-ink group-hover:text-sky truncate">
+                                            {{ $friendUser->nama_lengkap ?: $friendUser->username }}
+                                        </p>
+                                        <p class="text-[10px] text-muted truncate">
+                                            {{ $friendUser->specialty_role ?: ('@' . $friendUser->username) }}
+                                        </p>
+                                    </div>
+                                </a>
+
+                                @auth
+                                    @if (Auth::id() !== $friendUser->id)
+                                        <button
+                                            type="button"
+                                            @click="friendsModalOpen = false; window.dispatchEvent(new CustomEvent('open-chat-with', { detail: { userId: {{ (int) $friendUser->id }} } }))"
+                                            class="shrink-0 rounded-full bg-[#1E63E9] hover:bg-ink text-white text-[11px] font-bold px-3.5 py-1.5 transition-colors cursor-pointer"
+                                        >
+                                            Chat
+                                        </button>
+                                    @endif
+                                @endauth
+                            </div>
+                        @endforeach
+                    @endif
+                </div>
+            </div>
+        </div>
+
+    </section>
+
+@endsection

@@ -1,0 +1,23 @@
+<IfModule mod_rewrite.c>
+    <IfModule mod_negotiation.c>
+        Options -MultiViews -Indexes
+    </IfModule>
+
+    RewriteEngine On
+
+    # Pastikan Authorization & X-XSRF-Token header tetap diteruskan ke PHP
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    RewriteCond %{HTTP:x-xsrf-token} .
+    RewriteRule .* - [E=HTTP_X_XSRF_TOKEN:%{HTTP:X-XSRF-Token}]
+
+    # Blokir akses langsung ke file sensitif & direktori internal Laravel
+    RewriteRule ^(\.env.*|\.git.*|\.editorconfig|artisan|composer\.(json|lock)|package(-lock)?\.json|phpunit\.xml|vite\.config\.js|tailwind\.config\.js|.*\.bat|.*\.md|.*\.sql|generate_pdf_doc\.php)$ - [F,L,NC]
+    RewriteRule ^(app|bootstrap|config|database|lang|node_modules|resources|routes|storage|tests|vendor)(/.*)?$ - [F,L,NC]
+
+    # Arahkan seluruh request web secara internal ke folder public/ (kompatibel RumahWeb public_html)
+    RewriteCond %{ENV:REDIRECT_STATUS} ^$
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+

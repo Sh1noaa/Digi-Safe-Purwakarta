@@ -1,0 +1,28 @@
+name: digi_safe_app
+description: "Digi-Safe Purwakarta — Pure Native Flutter Cybersecurity Literacy & Minigame APK"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.10.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  http: ^1.2.2
+  shared_preferences: ^2.3.3
+  google_fonts: ^6.2.1
+  url_launcher: ^6.3.1
+  app_links: ^6.3.3
+  image_picker: ^1.1.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
