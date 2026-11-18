@@ -9,12 +9,16 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
+
+    public const BOT_DIGIKA_EMAIL = 'bot.digika@digisafe.id';
 
     // tabel users hanya memiliki kolom created_at tanpa updated_at
     public $timestamps = false;
@@ -74,6 +78,12 @@ class User extends Authenticatable
                 if (! Schema::hasColumn('users', 'specialty_role')) {
                     $table->string('specialty_role', 80)->nullable();
                 }
+                if (! Schema::hasColumn('users', 'oauth_provider')) {
+                    $table->string('oauth_provider', 30)->nullable();
+                }
+                if (! Schema::hasColumn('users', 'oauth_uid')) {
+                    $table->string('oauth_uid', 120)->nullable();
+                }
             });
         } catch (\Throwable $e) {
             // Abaikan bila DB belum siap
@@ -115,8 +125,54 @@ class User extends Authenticatable
         return in_array($this->role, ['owner', 'admin'], true);
     }
 
+    public function isBot(): bool
+    {
+        return strtolower((string) $this->email) === self::BOT_DIGIKA_EMAIL
+            || strtolower((string) $this->username) === 'bot_digika';
+    }
+
+    public function scopeHumans($query)
+    {
+        return $query->where('email', '!=', self::BOT_DIGIKA_EMAIL)
+            ->where('username', '!=', 'bot_digika');
+    }
+
+    /**
+     * Pastikan akun sistem Bot Digika tersedia untuk mengirim notifikasi evaluasi otomatis.
+     */
+    public static function ensureBotDigika(): self
+    {
+        $bot = static::query()
+            ->where('email', self::BOT_DIGIKA_EMAIL)
+            ->orWhere('username', 'bot_digika')
+            ->first();
+
+        if ($bot) {
+            if ($bot->avatar !== 'images/bot-digika.jpg') {
+                $bot->update(['avatar' => 'images/bot-digika.jpg']);
+            }
+
+            return $bot;
+        }
+
+        return static::create([
+            'username' => 'bot_digika',
+            'email' => self::BOT_DIGIKA_EMAIL,
+            'password' => Hash::make(Str::random(40)),
+            'role' => 'user',
+            'nama_lengkap' => 'Bot Digika',
+            'specialty_role' => 'Sistem Otomatis',
+            'avatar' => 'images/bot-digika.jpg',
+            'bio' => 'Asisten sistem otomatis Digi-Safe Purwakarta yang menyampaikan hasil evaluasi usulan tema edukasi.',
+        ]);
+    }
+
     public function getRoleLabelAttribute(): string
     {
+        if ($this->isBot()) {
+            return app()->getLocale() === 'en' ? 'Digi-Safe Automated System' : 'Sistem Otomatis Digi-Safe';
+        }
+
         $isEn = app()->getLocale() === 'en';
         return match ($this->role) {
             'owner' => $isEn ? 'Platform Owner & Lead Developer' : 'Platform Owner & Lead Developer',
@@ -135,16 +191,40 @@ class User extends Authenticatable
     public static function availableSpecialtyRoles(): array
     {
         return [
-            'Software Engineer',
-            'Web & Mobile Developer',
-            'Pelajar / Mahasiswa',
-            'UI/UX Designer',
-            'Cybersecurity Enthusiast',
-            'Konten Kreator',
-            'Gamer',
-            'Guru / Pendidik',
-            'Wirausaha / UMKM',
-            'Hobi Teknologi',
+            'Cyber Guardian',
+            'Digital Educator',
+            'Phishing Hunter',
+            'Tech Explorer',
+        ];
+    }
+
+    public static function specialtyRoleOptions(bool $isEn = false): array
+    {
+        return [
+            [
+                'value' => 'Cyber Guardian',
+                'label' => 'Cyber Guardian',
+                'desc' => $isEn ? 'Digital safety & anti-scam protector' : 'Pelindung ruang digital & anti-penipuan',
+                'icon' => 'shield',
+            ],
+            [
+                'value' => 'Digital Educator',
+                'label' => 'Digital Educator',
+                'desc' => $isEn ? 'Student, teacher & literacy advocate' : 'Pelajar, guru & penggerak literasi',
+                'icon' => 'book',
+            ],
+            [
+                'value' => 'Phishing Hunter',
+                'label' => 'Phishing Hunter',
+                'desc' => $isEn ? 'Link inspector & threat analyst' : 'Detektif tautan & analis ancaman',
+                'icon' => 'search',
+            ],
+            [
+                'value' => 'Tech Explorer',
+                'label' => 'Tech Explorer',
+                'desc' => $isEn ? 'Developer, creator & IT enthusiast' : 'Developer, kreator & penggiat teknologi',
+                'icon' => 'code',
+            ],
         ];
     }
 

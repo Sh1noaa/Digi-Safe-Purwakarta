@@ -160,10 +160,15 @@ class _TestimoniScreenState extends State<TestimoniScreen> {
     final state = widget.appState;
     final isDark = state.isDark;
 
-    return RefreshIndicator(
-      onRefresh: _loadData,
-      child: ListView(
-        padding: EdgeInsets.zero,
+    return Scaffold(
+      backgroundColor: AppColors.scaffoldBg(isDark),
+      appBar: AppBar(
+        title: Text(state.tr('nav_testimoni'), style: AppTheme.heading(isDark, size: 16)),
+      ),
+      body: RefreshIndicator(
+        onRefresh: _loadData,
+        child: ListView(
+          padding: const EdgeInsets.only(bottom: 32),
         children: [
           // Hero Minimalist Identik Testimoni Web
           Container(
@@ -332,6 +337,7 @@ class _TestimoniScreenState extends State<TestimoniScreen> {
             ),
           ),
         ],
+        ),
       ),
     );
   }

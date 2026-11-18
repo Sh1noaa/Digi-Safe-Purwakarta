@@ -325,7 +325,7 @@
     </section>
 
     <!-- tentang kami -->
-    <section id="tentang-kami" class="py-20 sm:py-28 bg-white">
+    <section id="tentang-kami" class="py-20 sm:py-28 bg-white overflow-hidden">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
 
             <div class="reveal text-center max-w-3xl mx-auto">
@@ -360,25 +360,25 @@
             @php
                 $isEnHome = app()->getLocale() === 'en';
                 $habitRows = $isEnHome ? [
-                    ['bad' => 'Click Phishing Links', 'good' => 'Verify Official Domains', 'offset' => 'pl-2 sm:pl-4'],
-                    ['bad' => 'Reuse Weak Passwords', 'good' => 'Enable 2FA Protection', 'offset' => 'pr-2 sm:pr-4'],
-                    ['bad' => 'Share Secret OTP Codes', 'good' => 'Guard Your OTP Privacy', 'offset' => 'pl-3 sm:pl-6'],
+                    ['bad' => 'Click Phishing Links', 'good' => 'Verify Official Domains', 'offset' => 'sm:pl-4'],
+                    ['bad' => 'Reuse Weak Passwords', 'good' => 'Enable 2FA Protection', 'offset' => 'sm:pr-4'],
+                    ['bad' => 'Share Secret OTP Codes', 'good' => 'Guard Your OTP Privacy', 'offset' => 'sm:pl-6'],
                     ['bad' => 'Install Unknown APKs', 'good' => 'Audit App Permissions', 'offset' => ''],
                 ] : [
-                    ['bad' => 'Klik Link Phishing', 'good' => 'Verifikasi Domain Resmi', 'offset' => 'pl-2 sm:pl-4'],
-                    ['bad' => 'Sandi Lemah & Sama', 'good' => 'Aktifkan Autentikasi 2FA', 'offset' => 'pr-2 sm:pr-4'],
-                    ['bad' => 'Bagikan Kode OTP', 'good' => 'Jaga Kerahasiaan OTP', 'offset' => 'pl-3 sm:pl-6'],
+                    ['bad' => 'Klik Link Phishing', 'good' => 'Verifikasi Domain Resmi', 'offset' => 'sm:pl-4'],
+                    ['bad' => 'Sandi Lemah & Sama', 'good' => 'Aktifkan Autentikasi 2FA', 'offset' => 'sm:pr-4'],
+                    ['bad' => 'Bagikan Kode OTP', 'good' => 'Jaga Kerahasiaan OTP', 'offset' => 'sm:pl-6'],
                     ['bad' => 'Unduh APK Asing', 'good' => 'Cek Izin Aplikasi & APK', 'offset' => ''],
                 ];
             @endphp
 
             <div class="reveal reveal-delay-1 mt-10 max-w-4xl mx-auto">
-                <div class="relative px-2 sm:px-6 pt-14 pb-6 overflow-visible">
+                <div class="relative px-0 sm:px-6 pt-12 sm:pt-14 pb-5 sm:pb-6 overflow-visible">
 
                     <!-- garis scanner biru vertikal di tengah -->
                     <div class="pointer-events-none absolute inset-y-2 left-1/2 -translate-x-1/2 flex flex-col items-center z-20">
-                        <div class="inline-flex items-center gap-2.5 rounded-full bg-gradient-to-r from-[#1D4ED8] to-[#0EA5E9] text-white text-xs sm:text-sm font-heading font-bold px-4 py-2 shadow-md whitespace-nowrap">
-                            <svg class="w-4 h-4 text-lime animate-spin" style="animation-duration: 7s;" viewBox="0 0 24 24" fill="none">
+                        <div class="inline-flex items-center gap-1.5 sm:gap-2.5 rounded-full bg-gradient-to-r from-[#1D4ED8] to-[#0EA5E9] text-white text-[11px] sm:text-sm font-heading font-bold px-3 sm:px-4 py-1.5 sm:py-2 shadow-md ring-1 ring-white/20 whitespace-nowrap">
+                            <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-lime animate-spin" style="animation-duration: 7s;" viewBox="0 0 24 24" fill="none">
                                 <circle cx="12" cy="12" r="9" stroke="rgba(255,255,255,0.3)" stroke-width="3" />
                                 <path d="M12 3a9 9 0 0 1 9 9" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
                             </svg>
@@ -388,8 +388,8 @@
                     </div>
 
                     <!-- cahaya partikel di sepanjang garis scanner -->
-                    <div class="pointer-events-none absolute inset-y-12 left-1/2 -translate-x-1/2 w-28 bg-gradient-to-r from-[#38BDF8]/18 via-[#2563EB]/12 to-transparent blur-md z-10"></div>
-                    <div class="pointer-events-none absolute inset-y-16 left-1/2 -translate-x-1/2 w-14 z-20">
+                    <div class="pointer-events-none absolute inset-y-12 left-1/2 -translate-x-1/2 w-20 sm:w-28 bg-gradient-to-r from-[#38BDF8]/18 via-[#2563EB]/12 to-transparent blur-md z-10"></div>
+                    <div class="pointer-events-none absolute inset-y-16 left-1/2 -translate-x-1/2 w-12 sm:w-14 z-20">
                         <span class="scanner-sparkle absolute top-[14%] left-2 w-1.5 h-1.5 rounded-full bg-sky/70"></span>
                         <span class="scanner-sparkle absolute top-[38%] right-2 w-1.5 h-1.5 rounded-full bg-lime" style="animation-delay: 0.7s;"></span>
                         <span class="scanner-sparkle absolute top-[62%] left-3 w-1 h-1 rounded-full bg-[#38BDF8]" style="animation-delay: 1.3s;"></span>
@@ -397,22 +397,22 @@
                     </div>
 
                     <!-- deretan kebiasaan buruk terhapus -> kebiasaan aman terverifikasi -->
-                    <div class="relative z-10 mt-5 space-y-3.5 sm:space-y-4">
+                    <div class="relative z-10 mt-4 sm:mt-5 space-y-2.5 sm:space-y-4">
                         @foreach ($habitRows as $row)
-                            <div class="grid grid-cols-2 items-center gap-4 sm:gap-7 {{ $row['offset'] }}">
+                            <div class="grid grid-cols-2 items-center gap-2 sm:gap-7 {{ $row['offset'] }}">
                                 <!-- sisi kiri: kebiasaan buruk sedang dihapus/terurai -->
-                                <div class="flex justify-end pr-2 sm:pr-4">
-                                    <span class="habit-dissolve-left inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-4 py-2 text-xs sm:text-sm font-medium text-muted line-through decoration-rose-400/70 select-none">
+                                <div class="flex justify-end pr-1 sm:pr-4 min-w-0">
+                                    <span class="habit-dissolve-left habit-bad-pill inline-flex items-center gap-1 sm:gap-1.5 rounded-full bg-gray-100 border border-gray-200/60 px-2.5 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-sm font-medium text-muted line-through decoration-rose-400/70 select-none whitespace-nowrap max-w-full truncate">
                                         {{ $row['bad'] }}
                                     </span>
                                 </div>
 
                                 <!-- sisi kanan: kebiasaan aman terverifikasi -->
-                                <div class="flex justify-start pl-2 sm:pl-4">
-                                    <span class="inline-flex items-center gap-2.5 rounded-full bg-white px-4 sm:px-5 py-2 text-xs sm:text-sm font-semibold text-ink shadow-xs">
+                                <div class="flex justify-start pl-1 sm:pl-4 min-w-0">
+                                    <span class="habit-good-pill inline-flex items-center gap-1.5 sm:gap-2.5 rounded-full bg-white border border-gray-100 px-2.5 sm:px-5 py-1.5 sm:py-2 text-[10px] sm:text-sm font-semibold text-ink shadow-xs max-w-full min-w-0">
                                         <span class="truncate">{{ $row['good'] }}</span>
-                                        <span class="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0">
-                                            <svg class="w-2.5 h-2.5 sm:w-3 sm:h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                        <span class="w-3.5 h-3.5 sm:w-5 sm:h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0">
+                                            <svg class="w-2 h-2 sm:w-3 sm:h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                                                 <polyline points="20 6 9 17 4 12" />
                                             </svg>
                                         </span>
@@ -788,13 +788,23 @@
             </div>
         </div>
 
-        <!-- Track Marquee Bergerak dari Kanan ke Kiri -->
-        <div class="relative mt-12">
+        <!-- Track Marquee Bergerak Nonstop + Dapat Di-drag Kanan/Kiri & Tetap Bisa Diklik -->
+        <div
+            x-data="memberMarquee()"
+            @pointerdown="handlePointerDown($event)"
+            @click.capture="handleClickCapture($event)"
+            @mouseenter="isHovering = true"
+            @mouseleave="isHovering = false"
+            @dragstart.prevent
+            :class="isDragging ? 'cursor-grabbing' : 'cursor-grab'"
+            style="touch-action: pan-y;"
+            class="relative mt-12 overflow-hidden select-none"
+        >
             <!-- Fade gradasi kiri & kanan agar transisi masuk/keluar tampak halus -->
-            <div class="pointer-events-none absolute inset-y-0 left-0 w-12 sm:w-28 bg-gradient-to-r from-[#F6F8FB] to-transparent z-20"></div>
-            <div class="pointer-events-none absolute inset-y-0 right-0 w-12 sm:w-28 bg-gradient-to-l from-[#F6F8FB] to-transparent z-20"></div>
+            <div class="marquee-fade-left pointer-events-none absolute inset-y-0 left-0 w-12 sm:w-28 z-20"></div>
+            <div class="marquee-fade-right pointer-events-none absolute inset-y-0 right-0 w-12 sm:w-28 z-20"></div>
 
-            <div class="user-marquee-track gap-6 px-3 py-4">
+            <div x-ref="track" class="user-marquee-track gap-6 px-3 py-4">
                 <!-- Loop 1: seluruh user terdaftar -->
                 @foreach ($registeredUsers as $regUser)
                     <div class="w-[290px] sm:w-[310px] shrink-0">

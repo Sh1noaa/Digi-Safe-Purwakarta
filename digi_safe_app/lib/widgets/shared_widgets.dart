@@ -9,6 +9,7 @@ class UserAvatarWidget extends StatelessWidget {
   final String initial;
   final String nameSeed;
   final bool isOwner;
+  final bool isBot;
   final double size;
   final Color? ringColor;
 
@@ -18,6 +19,7 @@ class UserAvatarWidget extends StatelessWidget {
     required this.initial,
     required this.nameSeed,
     this.isOwner = false,
+    this.isBot = false,
     this.size = 36,
     this.ringColor,
   });
@@ -33,17 +35,23 @@ class UserAvatarWidget extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: bg,
+        color: isBot ? Colors.white : bg,
         border: ringColor != null ? Border.all(color: ringColor!, width: 2.2) : null,
       ),
       clipBehavior: Clip.antiAlias,
-      child: (avatarUrl != null && avatarUrl!.isNotEmpty)
-          ? Image.network(
-              avatarUrl!,
+      child: isBot
+          ? Image.asset(
+              'assets/images/bot-digika.jpg',
               fit: BoxFit.cover,
               errorBuilder: (_, _, _) => _fallbackText(fg),
             )
-          : _fallbackText(fg),
+          : (avatarUrl != null && avatarUrl!.isNotEmpty)
+              ? Image.network(
+                  avatarUrl!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => _fallbackText(fg),
+                )
+              : _fallbackText(fg),
     );
   }
 
@@ -119,6 +127,167 @@ class RoleBadgeWidget extends StatelessWidget {
       ),
     );
   }
+}
+
+class SpecialtyRoleOption {
+  final String value;
+  final String descId;
+  final String descEn;
+  final IconData icon;
+  final Color color;
+
+  const SpecialtyRoleOption({
+    required this.value,
+    required this.descId,
+    required this.descEn,
+    required this.icon,
+    required this.color,
+  });
+
+  static const List<SpecialtyRoleOption> all = [
+    SpecialtyRoleOption(
+      value: 'Cyber Guardian',
+      descId: 'Pelindung ruang digital & anti-penipuan',
+      descEn: 'Digital safety & anti-scam protector',
+      icon: Icons.shield_rounded,
+      color: Color(0xFF1E88E5),
+    ),
+    SpecialtyRoleOption(
+      value: 'Digital Educator',
+      descId: 'Pelajar, guru & penggerak literasi',
+      descEn: 'Student, teacher & literacy advocate',
+      icon: Icons.menu_book_rounded,
+      color: Color(0xFF10B981),
+    ),
+    SpecialtyRoleOption(
+      value: 'Phishing Hunter',
+      descId: 'Detektif tautan & analis ancaman',
+      descEn: 'Link inspector & threat analyst',
+      icon: Icons.radar_rounded,
+      color: Color(0xFFF59E0B),
+    ),
+    SpecialtyRoleOption(
+      value: 'Tech Explorer',
+      descId: 'Developer, kreator & penggiat teknologi',
+      descEn: 'Developer, creator & IT enthusiast',
+      icon: Icons.terminal_rounded,
+      color: Color(0xFF7C3AED),
+    ),
+  ];
+
+  static SpecialtyRoleOption? find(String? val) {
+    if (val == null || val.trim().isEmpty) return null;
+    for (final opt in all) {
+      if (opt.value.toLowerCase() == val.trim().toLowerCase()) return opt;
+    }
+    return null;
+  }
+}
+
+class SpecialtyRoleChip extends StatelessWidget {
+  final String? specialtyRole;
+  final bool isDark;
+  final bool compact;
+
+  const SpecialtyRoleChip({
+    super.key,
+    required this.specialtyRole,
+    required this.isDark,
+    this.compact = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (specialtyRole == null || specialtyRole!.trim().isEmpty) {
+      return const SizedBox.shrink();
+    }
+    final opt = SpecialtyRoleOption.find(specialtyRole);
+    final accent = opt?.color ?? AppColors.sky;
+    final icon = opt?.icon ?? Icons.auto_awesome_rounded;
+
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 10, vertical: compact ? 3 : 4),
+      decoration: BoxDecoration(
+        color: accent.withValues(alpha: isDark ? 0.22 : 0.11),
+        borderRadius: BorderRadius.circular(99),
+        border: Border.all(color: accent.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: compact ? 10.5 : 12, color: accent),
+          const SizedBox(width: 4),
+          Text(
+            specialtyRole!,
+            style: TextStyle(
+              color: isDark ? Colors.white : accent,
+              fontSize: compact ? 9.5 : 10.5,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class GoogleGMark extends StatelessWidget {
+  final double size;
+
+  const GoogleGMark({super.key, this.size = 20});
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      size: Size.square(size),
+      painter: _GoogleGPainter(),
+    );
+  }
+}
+
+class _GoogleGPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+    final strokeW = w * 0.21;
+    final rect = Rect.fromLTWH(strokeW / 2, strokeW / 2, w - strokeW, h - strokeW);
+
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeW
+      ..strokeCap = StrokeCap.butt;
+
+    // Red top arc
+    paint.color = const Color(0xFFEA4335);
+    canvas.drawArc(rect, -2.55, 1.85, false, paint);
+
+    // Yellow left arc
+    paint.color = const Color(0xFFFBBC05);
+    canvas.drawArc(rect, 2.38, 1.38, false, paint);
+
+    // Green bottom arc
+    paint.color = const Color(0xFF34A853);
+    canvas.drawArc(rect, 0.72, 1.72, false, paint);
+
+    // Blue right arc + crossbar
+    paint.color = const Color(0xFF4285F4);
+    canvas.drawArc(rect, -0.10, 0.86, false, paint);
+
+    final barPaint = Paint()
+      ..color = const Color(0xFF4285F4)
+      ..style = PaintingStyle.fill;
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(w * 0.50, h * 0.42, w * 0.46, strokeW * 0.92),
+        const Radius.circular(2),
+      ),
+      barPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class DigiSectionKicker extends StatelessWidget {
@@ -223,7 +392,7 @@ class _BirdsPainter extends CustomPainter {
         final flap = math.sin(progress * 18 * math.pi + b * 1.4 + i) * 4.5 * f.scale;
 
         final paint = Paint()
-          ..color = Colors.white.withValues(alpha: f.alpha - b * 0.1)
+          ..color = Colors.white.withValues(alpha: (f.alpha - b * 0.1).clamp(0.1, 1.0))
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1.8 * f.scale
           ..strokeCap = StrokeCap.round;
@@ -241,4 +410,3 @@ class _BirdsPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _BirdsPainter oldDelegate) => oldDelegate.progress != progress;
 }
-

@@ -100,6 +100,9 @@ return [
         'public_space' => 'Ruang Publik',
         'curriculum_footer' => 'Kurikulum Literasi Siber Digi-Safe Purwakarta',
         'finish_reading' => 'Selesai Membaca',
+        'request_btn' => 'Request Tema Edukasi',
+        'request_title' => 'Request Tema Edukasi Baru',
+        'request_sub' => 'Usulkan topik keamanan digital yang ingin Anda pelajari. Tim Admin akan mengevaluasi dan Bot Digika akan mengirim pesan notifikasi otomatis.',
     ],
 
     // Minigame
@@ -355,7 +358,8 @@ return [
         'bio_placeholder' => 'Ceritakan sedikit tentang Anda atau domisili Purwakarta...',
         'avatar_label' => 'Foto Profil (Avatar)',
         'banner_label' => 'Gambar Banner Atas (opsional)',
-        'upload_hint' => 'Format JPG/PNG/WebP maksimal 2MB.',
+        'upload_hint' => 'Format JPG, PNG, WebP, atau GIF animasi (bisa di-crop sebelum disimpan).',
+        'select_role_label' => 'Select Your Role (Maks. 4 Pilihan)',
         'save_changes' => 'Simpan Perubahan',
         'role_owner' => 'Owner',
         'role_admin' => 'Admin',

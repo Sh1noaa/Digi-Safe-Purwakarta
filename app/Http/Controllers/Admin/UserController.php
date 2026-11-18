@@ -13,8 +13,9 @@ class UserController extends Controller
 {
     public function index(): View
     {
-        // daftar pengguna diurutkan dari owner, admin, lalu user
-        $users = User::orderByRaw("FIELD(role, 'owner', 'admin', 'user')")
+        // daftar pengguna diurutkan dari owner, admin, lalu user (kecuali akun sistem Bot Digika)
+        $users = User::humans()
+            ->orderByRaw("FIELD(role, 'owner', 'admin', 'user')")
             ->orderBy('id')
             ->get();
 

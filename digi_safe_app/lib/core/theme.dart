@@ -9,6 +9,8 @@ class AppColors {
   static const Color skyDeep = Color(0xFF1565C0);
   static const Color skySoft = Color(0xFFDBEAFE);
   static const Color skyTint = Color(0xFFF0F8FF);
+  static const Color cobalt = Color(0xFF2D46E6);
+  static const Color cobaltTint = Color(0xFFE9EEFF);
 
   static const Color lime = Color(0xFFC6F432);
   static const Color ink = Color(0xFF0A0A0A);

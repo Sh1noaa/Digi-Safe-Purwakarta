@@ -199,6 +199,28 @@ class S {
     'profile_light': 'Mode Terang',
     'profile_dark': 'Mode Gelap',
     'profile_privacy': 'Kontrol Privasi Profil',
+
+    // Mobile APK Additions (Splash, Auth Landing, Bottom Nav, Request, Chat, Admin)
+    'nav_profil': 'Profil',
+    'splash_kicker': 'digisafe⁺',
+    'splash_title_1': 'Edukasi Keamanan',
+    'splash_title_2': 'Mulai Dari Sini',
+    'splash_cta': 'Mulai Sekarang',
+    'splash_connecting': 'Menghubungkan ke server...',
+    'auth_landing_line1': 'Perisai Digitalmu',
+    'auth_landing_line2': 'Dimulai di Sini!',
+    'auth_continue_email': 'Lanjutkan dengan Email',
+    'auth_continue_register': 'Buat Akun Baru',
+    'auth_or': 'ATAU',
+    'auth_explore_guest': 'Jelajahi',
+    'auth_google_short': 'Google',
+    'edu_request_btn': 'Request Tema Edukasi',
+    'edu_request_history': 'Riwayat Usulan Saya',
+    'bot_digika_name': 'Bot Digika',
+    'chat_inbox': 'Kotak Masuk & Pesan',
+    'admin_panel': 'Panel Kontrol Admin',
+    'leaderboard_title': 'Papan Peringkat 4 Kategori',
+    'pw_checker_title': 'Lab Cek Kekuatan Password',
   };
 
   static const Map<String, String> _en = {
@@ -381,6 +403,27 @@ class S {
     'profile_light': 'Light Mode',
     'profile_dark': 'Dark Mode',
     'profile_privacy': 'Profile Privacy Controls',
+
+    'nav_profil': 'Profile',
+    'splash_kicker': 'digisafe⁺',
+    'splash_title_1': 'Digital Safety',
+    'splash_title_2': 'Starts Here',
+    'splash_cta': 'Get Started',
+    'splash_connecting': 'Syncing with server...',
+    'auth_landing_line1': 'Your Digital Shield',
+    'auth_landing_line2': 'Starts Here!',
+    'auth_continue_email': 'Continue with Email',
+    'auth_continue_register': 'Create New Account',
+    'auth_or': 'OR',
+    'auth_explore_guest': 'Explore',
+    'auth_google_short': 'Google',
+    'edu_request_btn': 'Request Education Topic',
+    'edu_request_history': 'My Topic Requests',
+    'bot_digika_name': 'Bot Digika',
+    'chat_inbox': 'Inbox & Messages',
+    'admin_panel': 'Admin Control Panel',
+    'leaderboard_title': '4-Category Leaderboard',
+    'pw_checker_title': 'Password Strength Lab',
   };
 }
 

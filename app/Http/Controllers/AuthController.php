@@ -124,9 +124,10 @@ class AuthController extends Controller
         } else {
             $state = Str::random(40);
             $request->session()->put('google_oauth_state', $state);
+            Cache::put('google_oauth_web_' . $state, true, now()->addMinutes(10));
         }
 
-        $redirectUri = config('services.google.redirect') ?: route('auth.google.callback');
+        $redirectUri = trim((string) config('services.google.redirect')) ?: route('auth.google.callback');
 
         $query = http_build_query([
             'client_id' => $clientId,
@@ -164,33 +165,44 @@ class AuthController extends Controller
             }
         } else {
             $expectedState = (string) $request->session()->pull('google_oauth_state', '');
-            if ($expectedState === '' || ! hash_equals($expectedState, $incomingState)) {
+            $validCachedWebState = $incomingState !== '' && (bool) Cache::pull('google_oauth_web_' . $incomingState, false);
+            $sessionMatches = $expectedState !== '' && hash_equals($expectedState, $incomingState);
+
+            if (! $sessionMatches && ! $validCachedWebState) {
                 return $failRedirect('Sesi login Google kedaluwarsa. Silakan coba lagi.');
             }
         }
 
-        $clientId = (string) config('services.google.client_id');
-        $clientSecret = (string) config('services.google.client_secret');
-        $redirectUri = config('services.google.redirect') ?: route('auth.google.callback');
+        $clientId = trim((string) config('services.google.client_id'));
+        $clientSecret = trim((string) config('services.google.client_secret'));
+        $redirectUri = trim((string) config('services.google.redirect')) ?: route('auth.google.callback');
 
-        $tokenResponse = Http::asForm()->timeout(15)->post('https://oauth2.googleapis.com/token', [
-            'code' => (string) $request->query('code'),
-            'client_id' => $clientId,
-            'client_secret' => $clientSecret,
-            'redirect_uri' => $redirectUri,
-            'grant_type' => 'authorization_code',
-        ]);
+        try {
+            $tokenResponse = Http::asForm()
+                ->when(app()->environment('local'), fn ($http) => $http->withoutVerifying())
+                ->timeout(15)
+                ->post('https://oauth2.googleapis.com/token', [
+                    'code' => (string) $request->query('code'),
+                    'client_id' => $clientId,
+                    'client_secret' => $clientSecret,
+                    'redirect_uri' => $redirectUri,
+                    'grant_type' => 'authorization_code',
+                ]);
 
-        if (! $tokenResponse->successful() || ! $tokenResponse->json('access_token')) {
-            return $failRedirect('Gagal memverifikasi token dari Google. Pastikan Client ID, Secret, dan Redirect URI sudah sesuai.');
-        }
+            if (! $tokenResponse->successful() || ! $tokenResponse->json('access_token')) {
+                return $failRedirect('Gagal memverifikasi token dari Google. Pastikan Redirect URI (' . $redirectUri . ') sudah terdaftar di Google Cloud Console.');
+            }
 
-        $profileResponse = Http::withToken((string) $tokenResponse->json('access_token'))
-            ->timeout(15)
-            ->get('https://www.googleapis.com/oauth2/v3/userinfo');
+            $profileResponse = Http::withToken((string) $tokenResponse->json('access_token'))
+                ->when(app()->environment('local'), fn ($http) => $http->withoutVerifying())
+                ->timeout(15)
+                ->get('https://www.googleapis.com/oauth2/v3/userinfo');
 
-        if (! $profileResponse->successful()) {
-            return $failRedirect('Gagal mengambil profil akun Google Anda.');
+            if (! $profileResponse->successful()) {
+                return $failRedirect('Gagal mengambil profil akun Google Anda.');
+            }
+        } catch (\Throwable $e) {
+            return $failRedirect('Tidak dapat terhubung ke layanan Google OAuth: ' . $e->getMessage());
         }
 
         $googleUser = $profileResponse->json();
@@ -207,8 +219,9 @@ class AuthController extends Controller
 
         if ($isMobile) {
             $token = ApiToken::issueFor($user, 'flutter_google');
+            $isNew = ($user->wasRecentlyCreated || blank($user->specialty_role)) ? '1' : '0';
 
-            return redirect()->away('digisafe://auth/callback?token=' . urlencode($token));
+            return redirect()->away('digisafe://auth/callback?token=' . urlencode($token) . '&is_new=' . $isNew);
         }
 
         Auth::login($user, true);
@@ -226,6 +239,8 @@ class AuthController extends Controller
      */
     public static function findOrCreateGoogleUser(string $googleId, string $email, string $fullName, string $avatarUrl = ''): User
     {
+        User::ensurePreferenceColumns();
+
         $user = User::query()
             ->where('oauth_provider', 'google')
             ->where('oauth_uid', $googleId)

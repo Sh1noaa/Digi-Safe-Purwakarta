@@ -82,6 +82,7 @@ class UserProfile {
   final String namaLengkap;
   final String inisial;
   final String role;
+  final String? specialtyRole;
   final String roleLabel;
   final bool isOwner;
   final bool isAdmin;
@@ -107,6 +108,7 @@ class UserProfile {
     required this.namaLengkap,
     required this.inisial,
     required this.role,
+    this.specialtyRole,
     required this.roleLabel,
     required this.isOwner,
     required this.isAdmin,
@@ -130,12 +132,14 @@ class UserProfile {
   factory UserProfile.fromJson(Map<String, dynamic> json) {
     final badgesRaw = json['badges'];
     final badges = badgesRaw is List ? badgesRaw.map((e) => e.toString()).toList() : <String>[];
+    final spec = json['specialty_role']?.toString().trim();
     return UserProfile(
       id: _toInt(json['id']),
       username: (json['username'] ?? '').toString(),
       namaLengkap: (json['nama_lengkap'] ?? json['username'] ?? 'User').toString(),
       inisial: (json['inisial'] ?? 'U').toString(),
       role: (json['role'] ?? 'user').toString(),
+      specialtyRole: (spec == null || spec.isEmpty) ? null : spec,
       roleLabel: (json['role_label'] ?? '').toString(),
       isOwner: json['is_owner'] == true,
       isAdmin: json['is_admin'] == true,
@@ -163,6 +167,7 @@ class UserProfile {
         'nama_lengkap': namaLengkap,
         'inisial': inisial,
         'role': role,
+        'specialty_role': specialtyRole,
         'role_label': roleLabel,
         'is_owner': isOwner,
         'is_admin': isAdmin,
@@ -227,6 +232,54 @@ class EdukasiModule {
       );
 }
 
+class EdukasiRequestItem {
+  final int id;
+  final int? userId;
+  final String? userName;
+  final String? username;
+  final String? userAvatar;
+  final String tema;
+  final String kategori;
+  final String preferredType;
+  final String deskripsi;
+  final String status; // pending | approved | rejected
+  final String? adminNote;
+  final bool userNotifiedRead;
+  final String createdAt;
+
+  const EdukasiRequestItem({
+    required this.id,
+    this.userId,
+    this.userName,
+    this.username,
+    this.userAvatar,
+    required this.tema,
+    required this.kategori,
+    required this.preferredType,
+    required this.deskripsi,
+    required this.status,
+    this.adminNote,
+    this.userNotifiedRead = true,
+    required this.createdAt,
+  });
+
+  factory EdukasiRequestItem.fromJson(Map<String, dynamic> json) => EdukasiRequestItem(
+        id: _toInt(json['id']),
+        userId: _toNullableInt(json['user_id']),
+        userName: json['user_name']?.toString(),
+        username: json['username']?.toString(),
+        userAvatar: json['user_avatar']?.toString(),
+        tema: (json['tema'] ?? '').toString(),
+        kategori: (json['kategori'] ?? 'Literasi Siber').toString(),
+        preferredType: (json['preferred_type'] ?? 'teks').toString(),
+        deskripsi: (json['deskripsi'] ?? '').toString(),
+        status: (json['status'] ?? 'pending').toString(),
+        adminNote: json['admin_note']?.toString(),
+        userNotifiedRead: json['user_notified_read'] == true,
+        createdAt: (json['created_at'] ?? '').toString(),
+      );
+}
+
 class MinigameLevel {
   final int id;
   final String slug;
@@ -276,6 +329,7 @@ class DbMinigameQuestion {
   final String kunci;
   final String kunciTeks;
   final String level;
+  final String gameLevel;
 
   const DbMinigameQuestion({
     required this.id,
@@ -284,6 +338,7 @@ class DbMinigameQuestion {
     required this.kunci,
     required this.kunciTeks,
     required this.level,
+    this.gameLevel = 'phishing',
   });
 
   factory DbMinigameQuestion.fromJson(Map<String, dynamic> json) {
@@ -300,7 +355,8 @@ class DbMinigameQuestion {
       opsi: opsiMap,
       kunci: (json['kunci'] ?? 'A').toString(),
       kunciTeks: (json['kunci_teks'] ?? '').toString(),
-      level: (json['level'] ?? 'easy').toString(),
+      level: (json['level'] ?? json['tingkat'] ?? 'easy').toString(),
+      gameLevel: (json['game_level'] ?? 'phishing').toString(),
     );
   }
 }
@@ -362,6 +418,83 @@ class LeaderboardEntry {
         topScore: _toInt(json['top_score']),
         totalScore: _toInt(json['total_score']),
         matchesPlayed: _toInt(json['matches_played']),
+      );
+}
+
+class LeaderboardRowModel {
+  final int id;
+  final int rank;
+  final String nama;
+  final String username;
+  final String inisial;
+  final String? avatarUrl;
+  final String? bannerUrl;
+  final String? specialtyRole;
+  final String bio;
+  final String metricMain;
+  final String metricMobile;
+  final String subtitle;
+  final int stars;
+  final int accuracy;
+  final List<String> badges;
+
+  const LeaderboardRowModel({
+    required this.id,
+    required this.rank,
+    required this.nama,
+    required this.username,
+    required this.inisial,
+    this.avatarUrl,
+    this.bannerUrl,
+    this.specialtyRole,
+    required this.bio,
+    required this.metricMain,
+    required this.metricMobile,
+    required this.subtitle,
+    required this.stars,
+    required this.accuracy,
+    this.badges = const [],
+  });
+
+  factory LeaderboardRowModel.fromJson(Map<String, dynamic> json) => LeaderboardRowModel(
+        id: _toInt(json['id']),
+        rank: _toInt(json['rank'], 1),
+        nama: (json['nama'] ?? 'User').toString(),
+        username: (json['username'] ?? '').toString(),
+        inisial: (json['inisial'] ?? 'U').toString(),
+        avatarUrl: json['avatar_url']?.toString(),
+        bannerUrl: json['banner_url']?.toString(),
+        specialtyRole: json['specialty_role']?.toString(),
+        bio: (json['bio'] ?? '').toString(),
+        metricMain: (json['metric_main'] ?? '').toString(),
+        metricMobile: (json['metric_mobile'] ?? '').toString(),
+        subtitle: (json['subtitle'] ?? '').toString(),
+        stars: _toInt(json['stars'], 5),
+        accuracy: _toInt(json['accuracy']),
+        badges: (json['badges'] as List? ?? []).map((e) => e.toString()).toList(),
+      );
+}
+
+class LeaderboardCategoryModel {
+  final String key;
+  final String label;
+  final String shortLabel;
+  final List<LeaderboardRowModel> rows;
+
+  const LeaderboardCategoryModel({
+    required this.key,
+    required this.label,
+    required this.shortLabel,
+    required this.rows,
+  });
+
+  factory LeaderboardCategoryModel.fromJson(Map<String, dynamic> json) => LeaderboardCategoryModel(
+        key: (json['key'] ?? 'minigame_benar').toString(),
+        label: (json['label'] ?? '').toString(),
+        shortLabel: (json['short'] ?? '').toString(),
+        rows: (json['rows'] as List? ?? [])
+            .map((e) => LeaderboardRowModel.fromJson(e as Map<String, dynamic>))
+            .toList(),
       );
 }
 
@@ -528,6 +661,117 @@ class TestimoniItem {
       );
 }
 
+class ChatUserCompact {
+  final int id;
+  final String nama;
+  final String username;
+  final String inisial;
+  final String? avatarUrl;
+  final String? specialtyRole;
+  final bool isBot;
+  final bool isOwner;
+  final bool isAdmin;
+
+  const ChatUserCompact({
+    required this.id,
+    required this.nama,
+    required this.username,
+    required this.inisial,
+    this.avatarUrl,
+    this.specialtyRole,
+    this.isBot = false,
+    this.isOwner = false,
+    this.isAdmin = false,
+  });
+
+  factory ChatUserCompact.fromJson(Map<String, dynamic> json) {
+    final uname = (json['username'] ?? '').toString();
+    return ChatUserCompact(
+      id: _toInt(json['id']),
+      nama: (json['nama'] ?? json['nama_lengkap'] ?? uname).toString(),
+      username: uname,
+      inisial: (json['inisial'] ?? 'U').toString(),
+      avatarUrl: json['avatar_url']?.toString(),
+      specialtyRole: json['specialty_role']?.toString(),
+      isBot: json['is_bot'] == true || uname == 'bot_digika',
+      isOwner: json['is_owner'] == true,
+      isAdmin: json['is_admin'] == true,
+    );
+  }
+}
+
+class ChatThreadItem {
+  final ChatUserCompact user;
+  final String relation;
+  final String? lastMessage;
+  final bool lastSenderMe;
+  final String lastTime;
+  final int unreadCount;
+
+  const ChatThreadItem({
+    required this.user,
+    required this.relation,
+    this.lastMessage,
+    this.lastSenderMe = false,
+    required this.lastTime,
+    this.unreadCount = 0,
+  });
+
+  factory ChatThreadItem.fromJson(Map<String, dynamic> json) => ChatThreadItem(
+        user: ChatUserCompact.fromJson(json['user'] as Map<String, dynamic>),
+        relation: (json['relation'] ?? 'none').toString(),
+        lastMessage: json['last_message']?.toString(),
+        lastSenderMe: json['last_sender_me'] == true,
+        lastTime: (json['last_time'] ?? '').toString(),
+        unreadCount: _toInt(json['unread_count']),
+      );
+}
+
+class ChatRequestItem {
+  final int friendshipId;
+  final ChatUserCompact user;
+  final String? messagePreview;
+  final String time;
+
+  const ChatRequestItem({
+    required this.friendshipId,
+    required this.user,
+    this.messagePreview,
+    required this.time,
+  });
+
+  factory ChatRequestItem.fromJson(Map<String, dynamic> json) => ChatRequestItem(
+        friendshipId: _toInt(json['friendship_id']),
+        user: ChatUserCompact.fromJson(json['user'] as Map<String, dynamic>),
+        messagePreview: json['message_preview']?.toString(),
+        time: (json['time'] ?? '').toString(),
+      );
+}
+
+class ChatMessageItem {
+  final int id;
+  final int senderId;
+  final bool isMine;
+  final String message;
+  final String time;
+
+  const ChatMessageItem({
+    required this.id,
+    required this.senderId,
+    required this.isMine,
+    required this.message,
+    required this.time,
+  });
+
+  factory ChatMessageItem.fromJson(Map<String, dynamic> json) => ChatMessageItem(
+        id: _toInt(json['id']),
+        senderId: _toInt(json['sender_id']),
+        isMine: json['is_mine'] == true,
+        message: (json['message'] ?? '').toString(),
+        time: (json['time'] ?? '').toString(),
+      );
+}
+
 int _toInt(dynamic v, [int fallback = 0]) {
   if (v is int) return v;
   if (v is double) return v.round();
@@ -542,4 +786,3 @@ int? _toNullableInt(dynamic v) {
   if (v is String) return int.tryParse(v);
   return null;
 }
-

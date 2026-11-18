@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 
 class ProfileApiController extends Controller
 {
@@ -35,6 +36,7 @@ class ProfileApiController extends Controller
         SocialSchemaHelper::ensureReady();
         $validated = $request->validate([
             'nama_lengkap' => ['required', 'string', 'max:100'],
+            'username' => ['nullable', 'string', 'min:3', 'max:50', 'alpha_dash', Rule::unique('users', 'username')->ignore($user->id)],
             'specialty_role' => ['nullable', 'string', 'max:60'],
             'bio' => ['nullable', 'string', 'max:350'],
             'password' => ['nullable', 'string', 'min:8'],
@@ -44,6 +46,7 @@ class ProfileApiController extends Controller
 
         $data = [
             'nama_lengkap' => $validated['nama_lengkap'],
+            'username' => filled($validated['username'] ?? null) ? trim((string) $validated['username']) : $user->username,
             'specialty_role' => filled($validated['specialty_role'] ?? null) ? trim($validated['specialty_role']) : $user->specialty_role,
             'bio' => $validated['bio'] ?? $user->bio,
         ];
@@ -131,6 +134,32 @@ class ProfileApiController extends Controller
         return response()->json([
             'success' => true,
             'message' => __('ui.profile.settings_saved'),
+            'user' => ApiResourceFormatter::formatUser($user, $user, true),
+        ]);
+    }
+
+    public function updateRole(Request $request): JsonResponse
+    {
+        /** @var User $user */
+        $user = Auth::user();
+        SocialSchemaHelper::ensureReady();
+
+        $allowed = User::availableSpecialtyRoles();
+        $validated = $request->validate([
+            'specialty_role' => ['nullable', 'string', 'max:60'],
+        ]);
+
+        $chosen = filled($validated['specialty_role'] ?? null) ? trim((string) $validated['specialty_role']) : null;
+        if ($chosen !== null && ! in_array($chosen, $allowed, true) && $chosen !== $user->specialty_role) {
+            $chosen = $allowed[0];
+        }
+
+        $user->update(['specialty_role' => $chosen]);
+        $user->refresh();
+
+        return response()->json([
+            'success' => true,
+            'message' => app()->getLocale() === 'en' ? 'Your role has been updated.' : 'Role komunitas berhasil diperbarui.',
             'user' => ApiResourceFormatter::formatUser($user, $user, true),
         ]);
     }

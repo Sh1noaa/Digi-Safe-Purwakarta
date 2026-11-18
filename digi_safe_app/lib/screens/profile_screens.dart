@@ -6,7 +6,383 @@ import 'package:image_picker/image_picker.dart';
 import '../core/app_state.dart';
 import '../core/theme.dart';
 import '../models/digisafe_models.dart';
+import '../widgets/image_crop_sheet.dart';
 import '../widgets/shared_widgets.dart';
+import 'admin_screen.dart';
+import 'auth_screens.dart';
+import 'chat_screen.dart';
+import 'leaderboard_screen.dart';
+import 'password_checker_screen.dart';
+import 'tentang_screen.dart';
+import 'testimoni_screen.dart';
+
+/// Tab ke-5 di Bottom Nav Bar (Profil Saya + Pintasan Hub Testimoni, Tentang, Chat, Leaderboard, & Admin Panel)
+class ProfileHubTabScreen extends StatefulWidget {
+  final AppState appState;
+
+  const ProfileHubTabScreen({super.key, required this.appState});
+
+  @override
+  State<ProfileHubTabScreen> createState() => _ProfileHubTabScreenState();
+}
+
+class _ProfileHubTabScreenState extends State<ProfileHubTabScreen> {
+  Future<void> _refresh() async {
+    if (widget.appState.isAuthenticated) {
+      await widget.appState.refreshMe();
+    }
+  }
+
+  void _openEditModal(UserProfile user) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _EditProfileSheet(
+        appState: widget.appState,
+        user: user,
+        onSaved: _refresh,
+      ),
+    );
+  }
+
+  void _openSettingsModal(UserProfile user) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _SettingsSheet(
+        appState: widget.appState,
+        user: user,
+        onSaved: _refresh,
+      ),
+    );
+  }
+
+  void _openRolePickerSheet(UserProfile user) {
+    final isDark = widget.appState.isDark;
+    final isEn = widget.appState.isEn;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.fromLTRB(20, 18, 20, 26),
+        decoration: BoxDecoration(
+          color: AppColors.cardBg(isDark),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Select Your Role', style: AppTheme.heading(isDark, size: 18)),
+                    Text(
+                      isEn ? 'Choose 1 community identity role (max 4 options)' : 'Pilih 1 role komunitas Anda (maksimal 4 variasi)',
+                      style: AppTheme.body(isDark, size: 11.5, color: AppColors.textSecondary(isDark)),
+                    ),
+                  ],
+                ),
+                IconButton(onPressed: () => Navigator.pop(ctx), icon: const Icon(Icons.close_rounded)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ...SpecialtyRoleOption.all.map((opt) {
+              final selected = user.specialtyRole == opt.value;
+              return GestureDetector(
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  try {
+                    await widget.appState.updateSpecialtyRole(opt.value);
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(isEn ? 'Role changed to ${opt.value}' : 'Role diubah menjadi ${opt.value}')),
+                      );
+                    }
+                  } catch (e) {
+                    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+                  }
+                },
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.all(13),
+                  decoration: BoxDecoration(
+                    color: selected ? opt.color.withValues(alpha: 0.14) : AppColors.softBg(isDark),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: selected ? opt.color : AppColors.border(isDark), width: selected ? 1.8 : 1),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(color: opt.color.withValues(alpha: 0.18), borderRadius: BorderRadius.circular(12)),
+                        child: Icon(opt.icon, color: opt.color, size: 20),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(opt.value, style: AppTheme.heading(isDark, size: 13.5, color: selected ? opt.color : AppColors.textPrimary(isDark))),
+                            Text(isEn ? opt.descEn : opt.descId, style: AppTheme.body(isDark, size: 11, color: AppColors.textSecondary(isDark))),
+                          ],
+                        ),
+                      ),
+                      if (selected) Icon(Icons.check_circle_rounded, color: opt.color, size: 20),
+                    ],
+                  ),
+                ),
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = widget.appState;
+    final isDark = state.isDark;
+    final isEn = state.isEn;
+    final profile = state.user;
+
+    return RefreshIndicator(
+      onRefresh: _refresh,
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 112),
+        children: [
+          if (!state.isAuthenticated || profile == null) ...[
+            // Kartu Sambutan Tamu untuk Login / Google OAuth
+            Container(
+              padding: const EdgeInsets.all(22),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: isDark ? [const Color(0xFF172554), const Color(0xFF0F172A)] : [const Color(0xFFE0EEFF), Colors.white],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(26),
+                border: Border.all(color: AppColors.sky.withValues(alpha: 0.3)),
+              ),
+              child: Column(
+                children: [
+                  const CircleAvatar(radius: 34, backgroundImage: AssetImage('assets/images/mascot-login.png'), backgroundColor: Colors.white),
+                  const SizedBox(height: 12),
+                  Text(
+                    isEn ? 'Unlock Your Cyber Profile' : 'Aktifkan Profil Warga Sibermu',
+                    textAlign: TextAlign.center,
+                    style: AppTheme.heading(isDark, size: 19),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    isEn
+                        ? 'Save minigame scores, customize avatar & banner with cropper, earn badges, and chat with Bot Digika.'
+                        : 'Simpan skor minigame, pasang foto profil/banner dengan cropper, pilih role, dan terima notif Bot Digika.',
+                    textAlign: TextAlign.center,
+                    style: AppTheme.body(isDark, size: 12, color: AppColors.textSecondary(isDark), height: 1.5),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton.icon(
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => AuthWelcomeScreen(appState: state, popOnSuccess: true)),
+                      ),
+                      icon: const Icon(Icons.login_rounded, size: 18),
+                      label: Text(isEn ? 'Sign In / Create Account / Google' : 'Masuk / Daftar / Google', style: AppTheme.heading(false, size: 13, color: Colors.white)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.cobalt,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(99)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ] else ...[
+            _ProfileCardWidget(
+              profile: profile,
+              isDark: isDark,
+              isEn: isEn,
+              state: state,
+              onEdit: () => _openEditModal(profile),
+              onSettings: () => _openSettingsModal(profile),
+              onSelectRole: () => _openRolePickerSheet(profile),
+            ),
+          ],
+
+          const SizedBox(height: 18),
+          Text(isEn ? 'PLATFORM EXPLORER & TOOLS' : 'EKSPLORASI & ALAT DIGI-SAFE', style: AppTheme.heading(isDark, size: 11, color: AppColors.textSecondary(isDark))),
+          const SizedBox(height: 10),
+
+          if (state.isAuthenticated && profile != null && profile.hasAdminAccess)
+            _HubMenuTile(
+              isDark: isDark,
+              icon: Icons.admin_panel_settings_rounded,
+              color: AppColors.cobalt,
+              title: state.tr('admin_panel'),
+              subtitle: isEn ? 'Evaluate topic requests, edit modules, quiz & users' : 'Evaluasi request tema, modul, soal minigame & hak akses',
+              badge: 'ADMIN',
+              onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => AdminScreen(appState: state))),
+            ),
+
+          if (state.isAuthenticated)
+            _HubMenuTile(
+              isDark: isDark,
+              icon: Icons.mark_chat_unread_rounded,
+              color: AppColors.sky,
+              title: state.tr('chat_inbox'),
+              subtitle: isEn ? 'Bot Digika notifications & citizen chats' : 'Pesan otomatis Bot Digika & obrolan warga siber',
+              badge: state.unreadChatBadge > 0 ? '${state.unreadChatBadge}' : null,
+              onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ChatInboxScreen(appState: state))),
+            ),
+
+          _HubMenuTile(
+            isDark: isDark,
+            icon: Icons.leaderboard_rounded,
+            color: AppColors.emerald,
+            title: state.tr('leaderboard_title'),
+            subtitle: isEn ? 'Correct, Wrong, Forum Answers & Badges rankings' : 'Peringkat Benar, Salah, Penjawab Forum & Lencana',
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => LeaderboardScreen(appState: state))),
+          ),
+          _HubMenuTile(
+            isDark: isDark,
+            icon: Icons.password_rounded,
+            color: const Color(0xFF7C3AED),
+            title: state.tr('pw_checker_title'),
+            subtitle: isEn ? 'Offline password strength & brute-force lab' : 'Uji kekuatan & estimasi waktu bobol password',
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => PasswordCheckerScreen(appState: state))),
+          ),
+          _HubMenuTile(
+            isDark: isDark,
+            icon: Icons.star_rate_rounded,
+            color: AppColors.amber,
+            title: state.tr('nav_testimoni'),
+            subtitle: isEn ? 'Read citizen stories & publish anonymous review' : 'Baca ulasan warga & bagikan pengalaman belajarmu',
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => TestimoniScreen(appState: state))),
+          ),
+          _HubMenuTile(
+            isDark: isDark,
+            icon: Icons.groups_rounded,
+            color: AppColors.skyDeep,
+            title: isEn ? 'Registered Citizens Directory' : 'Direktori Warga Siber Terdaftar',
+            subtitle: isEn ? 'Search & view fellow community profiles' : 'Cari & lihat profil sesama anggota Digi-Safe',
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => UsersDirectoryScreen(appState: state))),
+          ),
+          _HubMenuTile(
+            isDark: isDark,
+            icon: Icons.info_outline_rounded,
+            color: AppColors.muted,
+            title: state.tr('nav_tentang'),
+            subtitle: 'SMK Negeri 2 Purwakarta • Razief Afkar Rusli',
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => TentangScreen(appState: state))),
+          ),
+
+          if (state.isAuthenticated) ...[
+            const SizedBox(height: 10),
+            OutlinedButton.icon(
+              onPressed: () async {
+                await state.logout();
+                if (context.mounted) {
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => AuthWelcomeScreen(appState: state)),
+                    (_) => false,
+                  );
+                }
+              },
+              icon: const Icon(Icons.logout_rounded, color: AppColors.danger, size: 18),
+              label: Text(state.tr('logout'), style: AppTheme.heading(isDark, size: 12.5, color: AppColors.danger)),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                side: BorderSide(color: AppColors.danger.withValues(alpha: 0.35)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _HubMenuTile extends StatelessWidget {
+  final bool isDark;
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String subtitle;
+  final String? badge;
+  final VoidCallback onTap;
+
+  const _HubMenuTile({
+    required this.isDark,
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.subtitle,
+    this.badge,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.cardBg(isDark),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.border(isDark)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(color: color.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(13)),
+              child: Icon(icon, color: color, size: 21),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Flexible(child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.heading(isDark, size: 13.5))),
+                      if (badge != null) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                          decoration: BoxDecoration(color: AppColors.cobalt, borderRadius: BorderRadius.circular(99)),
+                          child: Text(badge!, style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w800)),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.body(isDark, size: 11, color: AppColors.textSecondary(isDark))),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary(isDark)),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class ProfileScreen extends StatefulWidget {
   final AppState appState;
@@ -108,14 +484,68 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ? Center(child: Text(state.tr('loading'), style: AppTheme.body(isDark)))
             : _error != null && _profile == null
                 ? Center(child: Text(_error!, style: AppTheme.body(isDark, color: AppColors.danger)))
-                : _buildContent(_profile!, isDark, isEn, state),
+                : ListView(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 40),
+                    children: [
+                      _ProfileCardWidget(
+                        profile: _profile!,
+                        isDark: isDark,
+                        isEn: isEn,
+                        state: state,
+                        onEdit: () => _openEditModal(_profile!),
+                        onSettings: () => _openSettingsModal(_profile!),
+                      ),
+                      if (!_profile!.isOwnProfile && state.isAuthenticated && _profile!.id != state.user?.id) ...[
+                        const SizedBox(height: 14),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => ChatInboxScreen(appState: state, initialPartnerId: _profile!.id),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.chat_rounded, size: 17, color: Colors.white),
+                            label: Text(isEn ? 'Send Direct Message' : 'Kirim Pesan Langsung', style: AppTheme.heading(false, size: 13, color: Colors.white)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.cobalt,
+                              padding: const EdgeInsets.symmetric(vertical: 13),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(99)),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
       ),
     );
   }
+}
 
-  Widget _buildContent(UserProfile profile, bool isDark, bool isEn, AppState state) {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 40),
+class _ProfileCardWidget extends StatelessWidget {
+  final UserProfile profile;
+  final bool isDark;
+  final bool isEn;
+  final AppState state;
+  final VoidCallback onEdit;
+  final VoidCallback onSettings;
+  final VoidCallback? onSelectRole;
+
+  const _ProfileCardWidget({
+    required this.profile,
+    required this.isDark,
+    required this.isEn,
+    required this.state,
+    required this.onEdit,
+    required this.onSettings,
+    this.onSelectRole,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
       children: [
         if (profile.isOwnProfile && profile.isPrivateProfile)
           Container(
@@ -141,7 +571,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
 
-        // Kartu Profil Utama dengan aksen latar biru di belakang sesuai website
         Stack(
           clipBehavior: Clip.none,
           children: [
@@ -174,7 +603,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Banner
                   SizedBox(
                     height: 135,
                     width: double.infinity,
@@ -213,9 +641,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ],
                     ),
                   ),
-
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 22),
+                    padding: const EdgeInsets.fromLTRB(18, 0, 18, 22),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -234,23 +661,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ringColor: AppColors.cardBg(isDark),
                               ),
                               if (profile.isOwnProfile)
-                                Row(
+                                Wrap(
+                                  spacing: 6,
                                   children: [
                                     _ActionChip(
                                       label: state.tr('profile_edit'),
                                       icon: Icons.edit_rounded,
                                       bg: AppColors.ink,
                                       fg: Colors.white,
-                                      onTap: () => _openEditModal(profile),
+                                      onTap: onEdit,
                                     ),
-                                    const SizedBox(width: 8),
                                     _ActionChip(
                                       label: state.tr('profile_settings'),
                                       icon: Icons.tune_rounded,
                                       bg: AppColors.softBg(isDark),
                                       fg: AppColors.textPrimary(isDark),
                                       border: AppColors.border(isDark),
-                                      onTap: () => _openSettingsModal(profile),
+                                      onTap: onSettings,
                                     ),
                                   ],
                                 ),
@@ -259,7 +686,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
 
                         Transform.translate(
-                          offset: const Offset(0, -16),
+                          offset: const Offset(0, -14),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -268,16 +695,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 runSpacing: 6,
                                 crossAxisAlignment: WrapCrossAlignment.center,
                                 children: [
-                                  Text(profile.namaLengkap, style: AppTheme.heading(isDark, size: 22)),
+                                  Text(profile.namaLengkap, style: AppTheme.heading(isDark, size: 21)),
                                   RoleBadgeWidget(isOwner: profile.isOwner, isAdmin: profile.isAdmin),
+                                  if (!profile.isPrivateForVisitor && profile.specialtyRole != null)
+                                    SpecialtyRoleChip(specialtyRole: profile.specialtyRole, isDark: isDark),
                                 ],
                               ),
+
+                              if (profile.isOwnProfile && onSelectRole != null) ...[
+                                const SizedBox(height: 10),
+                                GestureDetector(
+                                  onTap: onSelectRole,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.sky.withValues(alpha: isDark ? 0.16 : 0.08),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(color: AppColors.sky.withValues(alpha: 0.3)),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.auto_awesome_rounded, size: 14, color: AppColors.sky),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          profile.specialtyRole != null
+                                              ? 'Select Your Role: ${profile.specialtyRole} ▾'
+                                              : 'Select Your Role (Pilih Role) ▾',
+                                          style: AppTheme.heading(isDark, size: 11.5, color: AppColors.sky),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
 
                               if (profile.isPrivateForVisitor) ...[
                                 const SizedBox(height: 16),
                                 Container(
                                   width: double.infinity,
-                                  padding: const EdgeInsets.all(24),
+                                  padding: const EdgeInsets.all(22),
                                   decoration: BoxDecoration(
                                     color: AppColors.softBg(isDark),
                                     borderRadius: BorderRadius.circular(18),
@@ -289,46 +746,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       const SizedBox(height: 8),
                                       Text(state.tr('profile_private_title'), style: AppTheme.heading(isDark, size: 15)),
                                       const SizedBox(height: 6),
-                                      Text(
-                                        state.tr('profile_private_desc'),
-                                        textAlign: TextAlign.center,
-                                        style: AppTheme.body(isDark, size: 12, color: AppColors.textSecondary(isDark)),
-                                      ),
+                                      Text(state.tr('profile_private_desc'), textAlign: TextAlign.center, style: AppTheme.body(isDark, size: 12, color: AppColors.textSecondary(isDark))),
                                     ],
                                   ),
                                 ),
                               ] else ...[
-                                const SizedBox(height: 4),
+                                const SizedBox(height: 6),
                                 Text(
                                   '${profile.roleLabel} • @${profile.username}',
-                                  style: AppTheme.body(isDark, size: 12.5, weight: FontWeight.w500, color: AppColors.textSecondary(isDark)),
+                                  style: AppTheme.body(isDark, size: 12, weight: FontWeight.w500, color: AppColors.textSecondary(isDark)),
                                 ),
                                 const SizedBox(height: 8),
                                 if (profile.locationHidden)
                                   Text('🔒 ${state.tr('profile_hidden')}', style: AppTheme.body(isDark, size: 12, color: AppColors.textSecondary(isDark)))
                                 else
-                                  Text(
-                                    profile.bio ?? 'Purwakarta, Jawa Barat, Indonesia',
-                                    style: AppTheme.body(isDark, size: 13, color: AppColors.textSecondary(isDark), height: 1.5),
-                                  ),
+                                  Text(profile.bio ?? 'Purwakarta, Jawa Barat, Indonesia', style: AppTheme.body(isDark, size: 12.5, color: AppColors.textSecondary(isDark), height: 1.5)),
                                 if (profile.email != null && profile.email!.isNotEmpty) ...[
                                   const SizedBox(height: 4),
                                   Text(profile.email!, style: AppTheme.body(isDark, size: 11.5, color: AppColors.sky)),
                                 ],
 
-                                const SizedBox(height: 18),
-                                Text(
-                                  isEn ? 'ACHIEVEMENT BADGES' : 'LENCANA PENCAPAIAN',
-                                  style: AppTheme.heading(isDark, size: 10.5, color: AppColors.textSecondary(isDark)),
-                                ),
+                                const SizedBox(height: 16),
+                                Text(isEn ? 'ACHIEVEMENT BADGES' : 'LENCANA PENCAPAIAN', style: AppTheme.heading(isDark, size: 10.5, color: AppColors.textSecondary(isDark))),
                                 const SizedBox(height: 8),
                                 if (profile.badgesHidden)
                                   Text('🔒 ${state.tr('profile_hidden')}', style: AppTheme.body(isDark, size: 11.5, color: AppColors.textSecondary(isDark)))
                                 else if (profile.badges.isEmpty)
-                                  Text(
-                                    isEn ? 'Play minigames to unlock badges!' : 'Mainkan minigame untuk membuka lencana!',
-                                    style: AppTheme.body(isDark, size: 12, color: AppColors.textSecondary(isDark)),
-                                  )
+                                  Text(isEn ? 'Play minigames to unlock badges!' : 'Mainkan minigame untuk membuka lencana!', style: AppTheme.body(isDark, size: 12, color: AppColors.textSecondary(isDark)))
                                 else
                                   Wrap(
                                     spacing: 8,
@@ -336,38 +780,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     children: profile.badges.map((b) {
                                       final isNewPlayer = b == 'New Player';
                                       return Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
                                         decoration: BoxDecoration(
-                                          color: isNewPlayer
-                                              ? AppColors.skySoft.withValues(alpha: isDark ? 0.2 : 1)
-                                              : AppColors.lime.withValues(alpha: 0.38),
+                                          color: isNewPlayer ? AppColors.skySoft.withValues(alpha: isDark ? 0.2 : 1) : AppColors.lime.withValues(alpha: 0.38),
                                           borderRadius: BorderRadius.circular(99),
-                                          border: Border.all(
-                                            color: isNewPlayer ? AppColors.sky.withValues(alpha: 0.35) : AppColors.lime,
-                                          ),
+                                          border: Border.all(color: isNewPlayer ? AppColors.sky.withValues(alpha: 0.35) : AppColors.lime),
                                         ),
                                         child: Text(
                                           isNewPlayer ? '• $b' : '★ $b',
-                                          style: AppTheme.heading(
-                                            isDark,
-                                            size: 11,
-                                            color: isNewPlayer ? AppColors.sky : (isDark ? AppColors.lime : AppColors.ink),
-                                          ),
+                                          style: AppTheme.heading(isDark, size: 11, color: isNewPlayer ? AppColors.sky : (isDark ? AppColors.lime : AppColors.ink)),
                                         ),
                                       );
                                     }).toList(),
                                   ),
 
-                                const SizedBox(height: 20),
-                                // 3 Kotak Statistik Profil
+                                const SizedBox(height: 18),
                                 Row(
                                   children: [
                                     Expanded(
                                       child: _ProfileStatTile(
                                         isDark: isDark,
-                                        title: profile.stats.minigameHidden
-                                            ? '🔒'
-                                            : '${profile.stats.totalSkor ?? 0} pts',
+                                        title: profile.stats.minigameHidden ? '🔒' : '${profile.stats.totalSkor ?? 0} pts',
                                         sub: isEn ? 'Minigame Score' : 'Total Skor',
                                       ),
                                     ),
@@ -375,9 +808,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     Expanded(
                                       child: _ProfileStatTile(
                                         isDark: isDark,
-                                        title: profile.stats.activityHidden
-                                            ? '🔒'
-                                            : '${profile.stats.totalDiskusi ?? 0}',
+                                        title: profile.stats.activityHidden ? '🔒' : '${profile.stats.totalDiskusi ?? 0}',
                                         sub: isEn ? 'Forum Posts' : 'Diskusi Forum',
                                       ),
                                     ),
@@ -385,9 +816,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     Expanded(
                                       child: _ProfileStatTile(
                                         isDark: isDark,
-                                        title: profile.stats.activityHidden
-                                            ? '🔒'
-                                            : '${profile.stats.totalUlasan ?? 0}',
+                                        title: profile.stats.activityHidden ? '🔒' : '${profile.stats.totalUlasan ?? 0}',
                                         sub: isEn ? 'Reviews' : 'Ulasan',
                                       ),
                                     ),
@@ -405,23 +834,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ],
         ),
-
-        if (profile.isOwnProfile) ...[
-          const SizedBox(height: 20),
-          OutlinedButton.icon(
-            onPressed: () async {
-              await state.logout();
-              if (mounted) Navigator.of(context).pop();
-            },
-            icon: const Icon(Icons.logout_rounded, color: AppColors.danger, size: 18),
-            label: Text(state.tr('logout'), style: AppTheme.heading(isDark, size: 12.5, color: AppColors.danger)),
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              side: BorderSide(color: AppColors.danger.withValues(alpha: 0.35)),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-            ),
-          ),
-        ],
       ],
     );
   }
@@ -449,7 +861,7 @@ class _ActionChip extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
         decoration: BoxDecoration(
           color: bg,
           borderRadius: BorderRadius.circular(99),
@@ -458,9 +870,9 @@ class _ActionChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 14, color: fg),
+            Icon(icon, size: 13.5, color: fg),
             const SizedBox(width: 5),
-            Text(label, style: TextStyle(color: fg, fontSize: 11.5, fontWeight: FontWeight.w700)),
+            Text(label, style: TextStyle(color: fg, fontSize: 11, fontWeight: FontWeight.w700)),
           ],
         ),
       ),
@@ -478,7 +890,7 @@ class _ProfileStatTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(11),
       decoration: BoxDecoration(
         color: AppColors.softBg(isDark),
         borderRadius: BorderRadius.circular(16),
@@ -486,9 +898,9 @@ class _ProfileStatTile extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Text(title, style: AppTheme.heading(isDark, size: 16)),
+          Text(title, style: AppTheme.heading(isDark, size: 15)),
           const SizedBox(height: 2),
-          Text(sub, textAlign: TextAlign.center, style: AppTheme.body(isDark, size: 10.5, color: AppColors.textSecondary(isDark))),
+          Text(sub, textAlign: TextAlign.center, style: AppTheme.body(isDark, size: 10, color: AppColors.textSecondary(isDark))),
         ],
       ),
     );
@@ -514,6 +926,7 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
   late final TextEditingController _nameCtrl;
   late final TextEditingController _bioCtrl;
   final _passCtrl = TextEditingController();
+  String? _selectedRole;
   File? _avatarFile;
   File? _bannerFile;
   bool _saving = false;
@@ -523,6 +936,7 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
     super.initState();
     _nameCtrl = TextEditingController(text: widget.user.namaLengkap);
     _bioCtrl = TextEditingController(text: widget.user.bio ?? '');
+    _selectedRole = widget.user.specialtyRole;
   }
 
   @override
@@ -533,17 +947,27 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
     super.dispose();
   }
 
-  Future<void> _pickImage(bool isAvatar) async {
+  Future<void> _pickAndCropImage(bool isAvatar) async {
     final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
-    if (picked == null) return;
-    setState(() {
-      if (isAvatar) {
-        _avatarFile = File(picked.path);
-      } else {
-        _bannerFile = File(picked.path);
-      }
-    });
+    final picked = await picker.pickImage(source: ImageSource.gallery);
+    if (picked == null || !mounted) return;
+
+    final cropped = await ImageCropSheet.open(
+      context,
+      sourceFile: File(picked.path),
+      isAvatar: isAvatar,
+      isDark: widget.appState.isDark,
+      isEn: widget.appState.isEn,
+    );
+    if (cropped != null && mounted) {
+      setState(() {
+        if (isAvatar) {
+          _avatarFile = cropped;
+        } else {
+          _bannerFile = cropped;
+        }
+      });
+    }
   }
 
   Future<void> _save() async {
@@ -552,6 +976,7 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
       await widget.appState.updateProfile(
         namaLengkap: _nameCtrl.text,
         bio: _bioCtrl.text,
+        specialtyRole: _selectedRole,
         password: _passCtrl.text.isEmpty ? null : _passCtrl.text,
         avatarFile: _avatarFile,
         bannerFile: _bannerFile,
@@ -578,6 +1003,7 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
     final isEn = widget.appState.isEn;
 
     return Container(
+      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.90),
       padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 24),
       decoration: BoxDecoration(
         color: AppColors.cardBg(isDark),
@@ -588,28 +1014,73 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(widget.appState.tr('profile_edit'), style: AppTheme.heading(isDark, size: 18)),
-            const SizedBox(height: 14),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(widget.appState.tr('profile_edit'), style: AppTheme.heading(isDark, size: 18)),
+                IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close_rounded)),
+              ],
+            ),
+            const SizedBox(height: 10),
             Row(
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: () => _pickImage(true),
-                    icon: const Icon(Icons.face_rounded, size: 16),
-                    label: Text(_avatarFile != null ? 'Avatar ✓' : (isEn ? 'Pick Avatar' : 'Ganti Foto Profil'), style: const TextStyle(fontSize: 12)),
+                    onPressed: () => _pickAndCropImage(true),
+                    icon: const Icon(Icons.crop_square_rounded, size: 16),
+                    label: Text(_avatarFile != null ? 'Avatar Siap ✓' : (isEn ? 'Crop Avatar (1:1)' : 'Foto + Crop (1:1)'), style: const TextStyle(fontSize: 11.5)),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: () => _pickImage(false),
+                    onPressed: () => _pickAndCropImage(false),
                     icon: const Icon(Icons.panorama_rounded, size: 16),
-                    label: Text(_bannerFile != null ? 'Banner ✓' : (isEn ? 'Pick Banner' : 'Ganti Banner'), style: const TextStyle(fontSize: 12)),
+                    label: Text(_bannerFile != null ? 'Banner Siap ✓' : (isEn ? 'Crop Banner (16:5)' : 'Banner + Crop'), style: const TextStyle(fontSize: 11.5)),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
+            Text('Select Your Role', style: AppTheme.heading(isDark, size: 13)),
+            const SizedBox(height: 8),
+            GridView.count(
+              crossAxisCount: 2,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
+              childAspectRatio: 2.3,
+              children: SpecialtyRoleOption.all.map((opt) {
+                final selected = _selectedRole == opt.value;
+                return GestureDetector(
+                  onTap: () => setState(() => _selectedRole = opt.value),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: selected ? opt.color.withValues(alpha: 0.14) : AppColors.softBg(isDark),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: selected ? opt.color : AppColors.border(isDark), width: selected ? 1.8 : 1),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(opt.icon, color: opt.color, size: 18),
+                        const SizedBox(width: 7),
+                        Expanded(
+                          child: Text(
+                            opt.value,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTheme.heading(isDark, size: 11, color: selected ? opt.color : AppColors.textPrimary(isDark)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 14),
             TextField(
               controller: _nameCtrl,
               decoration: InputDecoration(
@@ -984,9 +1455,7 @@ class _UsersDirectoryScreenState extends State<UsersDirectoryScreen> {
                                   children: [
                                     Row(
                                       children: [
-                                        Flexible(
-                                          child: Text(u.namaLengkap, overflow: TextOverflow.ellipsis, style: AppTheme.heading(isDark, size: 14)),
-                                        ),
+                                        Flexible(child: Text(u.namaLengkap, overflow: TextOverflow.ellipsis, style: AppTheme.heading(isDark, size: 14))),
                                         const SizedBox(width: 6),
                                         RoleBadgeWidget(isOwner: u.isOwner, isAdmin: u.isAdmin, compact: true),
                                       ],
@@ -995,6 +1464,10 @@ class _UsersDirectoryScreenState extends State<UsersDirectoryScreen> {
                                       u.isPrivateForVisitor ? '🔒 ${widget.appState.tr('profile_private_badge')}' : '@${u.username}',
                                       style: AppTheme.body(isDark, size: 11.5, color: AppColors.textSecondary(isDark)),
                                     ),
+                                    if (!u.isPrivateForVisitor && u.specialtyRole != null) ...[
+                                      const SizedBox(height: 4),
+                                      SpecialtyRoleChip(specialtyRole: u.specialtyRole, isDark: isDark, compact: true),
+                                    ],
                                   ],
                                 ),
                               ),
@@ -1011,4 +1484,3 @@ class _UsersDirectoryScreenState extends State<UsersDirectoryScreen> {
     );
   }
 }
-

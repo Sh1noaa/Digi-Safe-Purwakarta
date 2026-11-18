@@ -73,6 +73,11 @@
                             <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
                         </svg>
                         <span>Manajemen Edukasi</span>
+                        @if (($adminStats['pending_edukasi_requests'] ?? 0) > 0)
+                            <span class="rounded-full bg-amber-500 text-white px-1.5 py-0.5 text-[9px] font-extrabold">
+                                {{ $adminStats['pending_edukasi_requests'] }}
+                            </span>
+                        @endif
                     </a>
 
                     <a
@@ -213,7 +218,12 @@
                                     </span>
                                     <div class="min-w-0">
                                         <p class="font-heading font-bold text-xs text-ink truncate">Modul Edukasi</p>
-                                        <p class="text-[11px] text-muted truncate">{{ $adminStats['edukasi_teks'] ?? 0 }} Teks • {{ $adminStats['edukasi_link'] ?? 0 }} Link Luar</p>
+                                        <p class="text-[11px] text-muted truncate">
+                                            {{ $adminStats['edukasi_teks'] ?? 0 }} Teks • {{ $adminStats['edukasi_link'] ?? 0 }} Link
+                                            @if (($adminStats['pending_edukasi_requests'] ?? 0) > 0)
+                                                • <span class="text-amber-600 font-bold">{{ $adminStats['pending_edukasi_requests'] }} Request</span>
+                                            @endif
+                                        </p>
                                     </div>
                                 </div>
                                 <span class="rounded-full bg-white border border-gray-200 px-2.5 py-1 text-xs font-extrabold text-ink shrink-0">

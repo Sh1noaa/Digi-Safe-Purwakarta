@@ -24,7 +24,7 @@ class ReportController extends Controller
         MinigameLevel::ensureInitialized();
         JawabanForumVote::ensureTable();
 
-        $users = User::with(['skorGames'])
+        $users = User::humans()->with(['skorGames'])
             ->withCount(['forums', 'jawabanForums', 'testimonis'])
             ->orderByRaw("FIELD(role, 'owner', 'admin', 'user')")
             ->orderBy('id')

@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 
 import '../core/app_state.dart';
 import '../core/theme.dart';
+import '../widgets/curved_nav_bar.dart';
 import '../widgets/shared_widgets.dart';
 import 'auth_screens.dart';
 import 'beranda_screen.dart';
+import 'chat_screen.dart';
 import 'edukasi_screen.dart';
 import 'forum_screen.dart';
 import 'minigame_hub_screen.dart';
 import 'profile_screens.dart';
-import 'tentang_screen.dart';
-import 'testimoni_screen.dart';
 
 class MainShell extends StatefulWidget {
   final AppState appState;
@@ -21,44 +21,102 @@ class MainShell extends StatefulWidget {
   State<MainShell> createState() => _MainShellState();
 }
 
-class _MainShellState extends State<MainShell> {
-  bool _drawerOpen = false;
-
+class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     widget.appState.addListener(_onStateChange);
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     widget.appState.removeListener(_onStateChange);
     super.dispose();
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Sinkronisasi otomatis dengan pembaruan Admin website saat kembali membuka APK
+      widget.appState.bumpContent();
+      widget.appState.refreshMe();
+      widget.appState.refreshUnreadCount();
+    }
+  }
+
   void _onStateChange() {
+    if (!mounted) return;
     final msg = widget.appState.oauthStatusMessage;
-    if (msg != null && msg.isNotEmpty && mounted) {
+    if (msg != null && msg.isNotEmpty) {
       widget.appState.clearOauthStatus();
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
       });
     }
-    if (mounted) setState(() {});
+
+    final alert = widget.appState.latestChatAlert;
+    if (alert != null) {
+      widget.appState.consumeLatestAlert();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final isBot = alert['is_bot'] == true;
+        final sender = (alert['sender_name'] ?? 'Pesan Baru').toString();
+        final preview = (alert['preview'] ?? '').toString();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: isBot ? AppColors.cobalt : AppColors.ink,
+            content: Row(
+              children: [
+                if (isBot)
+                  const CircleAvatar(
+                    radius: 14,
+                    backgroundImage: AssetImage('assets/images/bot-digika.jpg'),
+                  )
+                else
+                  const Icon(Icons.mark_chat_unread_rounded, color: AppColors.lime, size: 18),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(sender, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: Colors.white)),
+                      Text(preview, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, color: Colors.white70)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            action: SnackBarAction(
+              label: widget.appState.isEn ? 'Open' : 'Buka',
+              textColor: AppColors.lime,
+              onPressed: () {
+                final pid = (alert['sender_id'] as num?)?.toInt();
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => ChatInboxScreen(appState: widget.appState, initialPartnerId: pid)),
+                );
+              },
+            ),
+          ),
+        );
+      });
+    }
+    setState(() {});
   }
 
   void _openAuth() {
-    setState(() => _drawerOpen = false);
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => LoginScreen(appState: widget.appState)),
+      MaterialPageRoute(builder: (_) => AuthWelcomeScreen(appState: widget.appState, popOnSuccess: true)),
     );
   }
 
-  void _openProfile() {
-    setState(() => _drawerOpen = false);
+  void _openInbox() {
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => ProfileScreen(appState: widget.appState)),
+      MaterialPageRoute(builder: (_) => ChatInboxScreen(appState: widget.appState)),
     );
   }
 
@@ -66,68 +124,105 @@ class _MainShellState extends State<MainShell> {
   Widget build(BuildContext context) {
     final state = widget.appState;
     final isDark = state.isDark;
-    final currentIdx = state.currentTabIndex;
+    final currentIdx = state.currentTabIndex.clamp(0, 4);
 
     final navItems = [
-      (label: state.tr('nav_beranda'), icon: Icons.home_rounded),
-      (label: state.tr('nav_edukasi'), icon: Icons.menu_book_rounded),
-      (label: state.tr('nav_minigame'), icon: Icons.sports_esports_rounded),
-      (label: state.tr('nav_forum'), icon: Icons.forum_rounded),
-      (label: state.tr('nav_testimoni'), icon: Icons.star_rate_rounded),
-      (label: state.tr('nav_tentang'), icon: Icons.info_outline_rounded),
+      CurvedNavItem(
+        label: state.tr('nav_beranda'),
+        activeIcon: Icons.home_rounded,
+        inactiveIcon: Icons.home_outlined,
+      ),
+      CurvedNavItem(
+        label: state.tr('nav_edukasi'),
+        activeIcon: Icons.menu_book_rounded,
+        inactiveIcon: Icons.menu_book_outlined,
+      ),
+      CurvedNavItem(
+        label: state.tr('nav_minigame'),
+        activeIcon: Icons.sports_esports_rounded,
+        inactiveIcon: Icons.sports_esports_outlined,
+      ),
+      CurvedNavItem(
+        label: state.tr('nav_forum'),
+        activeIcon: Icons.forum_rounded,
+        inactiveIcon: Icons.forum_outlined,
+      ),
+      CurvedNavItem(
+        label: state.tr('nav_profil'),
+        activeIcon: Icons.person_rounded,
+        inactiveIcon: Icons.person_outline_rounded,
+      ),
     ];
 
     return Scaffold(
+      extendBody: true,
       backgroundColor: AppColors.scaffoldBg(isDark),
       body: SafeArea(
         bottom: false,
         child: Column(
           children: [
-            // Sticky Navbar identik dengan header web
+            // Sticky Header Bersih (TANPA tombol hamburger kanan paling pojok sesuai instruksi APK!)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
                 color: AppColors.cardBg(isDark),
                 border: Border(bottom: BorderSide(color: AppColors.border(isDark))),
               ),
               child: Row(
                 children: [
-                  GestureDetector(
-                    onTap: () => state.setTab(0),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 38,
-                          height: 34,
-                          padding: const EdgeInsets.all(8.5),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: const Color(0xFFE5E7EB)),
-                          ),
-                          child: Image.asset('assets/images/logo.png', fit: BoxFit.contain),
-                        ),
-                        const SizedBox(width: 9),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Digi-Safe', style: AppTheme.heading(isDark, size: 15.5, height: 1)),
-                            Text(
-                              'PURWAKARTA',
-                              style: AppTheme.body(isDark, size: 9, weight: FontWeight.w600, color: AppColors.textSecondary(isDark)),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => state.setTab(0),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 34,
+                            height: 34,
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(10),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.05),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ],
+                            child: Image.asset('assets/images/logo.png', fit: BoxFit.contain),
+                          ),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Digi-Safe', maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTheme.heading(isDark, size: 15, height: 1)),
+                                Text(
+                                  'PURWAKARTA',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTheme.body(
+                                    isDark,
+                                    size: 8.5,
+                                    weight: FontWeight.w700,
+                                    color: AppColors.textSecondary(isDark),
+                                  ).copyWith(letterSpacing: 0.9),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  const Spacer(),
+                  const SizedBox(width: 6),
 
-                  // Quick ID / EN pill untuk tamu maupun user
+                  // Quick ID / EN pill
                   GestureDetector(
                     onTap: () => state.toggleGuestLocale(),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
                       decoration: BoxDecoration(
                         color: AppColors.softBg(isDark),
                         borderRadius: BorderRadius.circular(99),
@@ -139,14 +234,14 @@ class _MainShellState extends State<MainShell> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 7),
+                  const SizedBox(width: 5),
 
-                  // Quick Dark / Light icon
+                  // Quick Dark / Light toggle
                   GestureDetector(
                     onTap: () => state.toggleTheme(),
                     child: Container(
-                      width: 32,
-                      height: 32,
+                      width: 30,
+                      height: 30,
                       decoration: BoxDecoration(
                         color: AppColors.softBg(isDark),
                         shape: BoxShape.circle,
@@ -154,18 +249,59 @@ class _MainShellState extends State<MainShell> {
                       ),
                       child: Icon(
                         isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
-                        size: 16,
+                        size: 15,
                         color: isDark ? AppColors.lime : AppColors.ink,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 7),
+                  const SizedBox(width: 5),
+
+                  // Chat / Kotak Masuk & Bot Digika
+                  GestureDetector(
+                    onTap: _openInbox,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Container(
+                          width: 30,
+                          height: 30,
+                          decoration: BoxDecoration(
+                            color: AppColors.softBg(isDark),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: AppColors.border(isDark)),
+                          ),
+                          child: Icon(
+                            Icons.chat_bubble_outline_rounded,
+                            size: 14.5,
+                            color: AppColors.textPrimary(isDark),
+                          ),
+                        ),
+                        if (state.unreadChatBadge > 0)
+                          Positioned(
+                            top: -3,
+                            right: -3,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                              decoration: BoxDecoration(
+                                color: AppColors.cobalt,
+                                borderRadius: BorderRadius.circular(99),
+                              ),
+                              child: Text(
+                                '${state.unreadChatBadge}',
+                                style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w800),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 5),
 
                   if (state.isAuthenticated)
                     GestureDetector(
-                      onTap: _openProfile,
+                      onTap: () => state.setTab(4),
                       child: Container(
-                        padding: const EdgeInsets.fromLTRB(3, 3, 9, 3),
+                        padding: const EdgeInsets.fromLTRB(3, 3, 8, 3),
                         decoration: BoxDecoration(
                           color: AppColors.softBg(isDark),
                           borderRadius: BorderRadius.circular(99),
@@ -179,16 +315,16 @@ class _MainShellState extends State<MainShell> {
                               initial: state.user!.inisial,
                               nameSeed: state.user!.namaLengkap,
                               isOwner: state.user!.isOwner,
-                              size: 26,
+                              size: 24,
                               ringColor: AppColors.lime,
                             ),
-                            const SizedBox(width: 6),
+                            const SizedBox(width: 5),
                             ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 68),
+                              constraints: const BoxConstraints(maxWidth: 56),
                               child: Text(
                                 state.user!.namaLengkap.split(' ').first,
                                 overflow: TextOverflow.ellipsis,
-                                style: AppTheme.heading(isDark, size: 11),
+                                style: AppTheme.heading(isDark, size: 10.5),
                               ),
                             ),
                           ],
@@ -199,139 +335,31 @@ class _MainShellState extends State<MainShell> {
                     GestureDetector(
                       onTap: _openAuth,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
                         decoration: BoxDecoration(
                           color: AppColors.lime,
                           borderRadius: BorderRadius.circular(99),
                         ),
                         child: Text(
                           state.tr('join'),
-                          style: AppTheme.heading(false, size: 11, color: AppColors.ink),
+                          style: AppTheme.heading(false, size: 10.5, color: AppColors.ink),
                         ),
                       ),
                     ),
-                  const SizedBox(width: 6),
-
-                  GestureDetector(
-                    onTap: () => setState(() => _drawerOpen = !_drawerOpen),
-                    child: Container(
-                      width: 34,
-                      height: 34,
-                      decoration: BoxDecoration(
-                        color: AppColors.softBg(isDark),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.border(isDark)),
-                      ),
-                      child: Icon(
-                        _drawerOpen ? Icons.close_rounded : Icons.menu_rounded,
-                        size: 18,
-                        color: AppColors.textPrimary(isDark),
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),
 
-            // Body + Optional Floating Mobile Menu Overlay
+            // Body Content Area (extra bottom padding disediakan oleh masing-masing layar atau wrapper agar tidak tertutup CurvedNotchBottomBar)
             Expanded(
-              child: Stack(
+              child: IndexedStack(
+                index: currentIdx,
                 children: [
-                  IndexedStack(
-                    index: currentIdx,
-                    children: [
-                      BerandaScreen(appState: state),
-                      EdukasiScreen(appState: state),
-                      MinigameHubScreen(appState: state),
-                      ForumScreen(appState: state),
-                      TestimoniScreen(appState: state),
-                      TentangScreen(appState: state),
-                    ],
-                  ),
-                  if (_drawerOpen)
-                    GestureDetector(
-                      onTap: () => setState(() => _drawerOpen = false),
-                      child: Container(
-                        color: Colors.black.withValues(alpha: 0.35),
-                        alignment: Alignment.topCenter,
-                        child: GestureDetector(
-                          onTap: () {},
-                          child: Container(
-                            margin: const EdgeInsets.all(14),
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: AppColors.cardBg(isDark),
-                              borderRadius: BorderRadius.circular(24),
-                              border: Border.all(color: AppColors.border(isDark)),
-                            ),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                ...List.generate(navItems.length, (idx) {
-                                  final item = navItems[idx];
-                                  final active = currentIdx == idx;
-                                  return ListTile(
-                                    dense: true,
-                                    onTap: () {
-                                      setState(() => _drawerOpen = false);
-                                      state.setTab(idx);
-                                    },
-                                    leading: Icon(
-                                      item.icon,
-                                      size: 20,
-                                      color: active ? AppColors.sky : AppColors.textSecondary(isDark),
-                                    ),
-                                    title: Text(
-                                      item.label.toUpperCase(),
-                                      style: AppTheme.heading(
-                                        isDark,
-                                        size: 12,
-                                        color: active ? AppColors.sky : AppColors.textPrimary(isDark),
-                                      ).copyWith(letterSpacing: 1.4),
-                                    ),
-                                    trailing: active
-                                        ? Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                            decoration: BoxDecoration(color: AppColors.lime, borderRadius: BorderRadius.circular(99)),
-                                            child: Text(state.tr('active'), style: AppTheme.heading(false, size: 9.5, color: AppColors.ink)),
-                                          )
-                                        : null,
-                                  );
-                                }),
-                                const Divider(),
-                                if (state.isAuthenticated)
-                                  ListTile(
-                                    dense: true,
-                                    onTap: _openProfile,
-                                    leading: UserAvatarWidget(
-                                      avatarUrl: state.user!.avatarUrl,
-                                      initial: state.user!.inisial,
-                                      nameSeed: state.user!.namaLengkap,
-                                      isOwner: state.user!.isOwner,
-                                      size: 32,
-                                    ),
-                                    title: Text(state.tr('my_profile'), style: AppTheme.heading(isDark, size: 12.5)),
-                                    trailing: const Icon(Icons.chevron_right_rounded),
-                                  )
-                                else
-                                  SizedBox(
-                                    width: double.infinity,
-                                    child: ElevatedButton(
-                                      onPressed: _openAuth,
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: AppColors.lime,
-                                        foregroundColor: AppColors.ink,
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(99)),
-                                      ),
-                                      child: Text(state.tr('join'), style: AppTheme.heading(false, size: 12, color: AppColors.ink)),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+                  BerandaScreen(appState: state),
+                  EdukasiScreen(appState: state),
+                  MinigameHubScreen(appState: state),
+                  ForumScreen(appState: state),
+                  ProfileHubTabScreen(appState: state),
                 ],
               ),
             ),
@@ -339,62 +367,13 @@ class _MainShellState extends State<MainShell> {
         ),
       ),
 
-      // 6-Tab Bottom Navbar sesuai urutan website: Beranda, Edukasi, Minigame, Forum, Testimoni, Tentang
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: AppColors.cardBg(isDark),
-          border: Border(top: BorderSide(color: AppColors.border(isDark))),
-        ),
-        child: SafeArea(
-          top: false,
-          child: SizedBox(
-            height: 62,
-            child: Row(
-              children: List.generate(navItems.length, (idx) {
-                final item = navItems[idx];
-                final active = currentIdx == idx;
-                return Expanded(
-                  child: InkWell(
-                    onTap: () => state.setTab(idx),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: active
-                                ? (isDark ? AppColors.sky.withValues(alpha: 0.22) : AppColors.skySoft)
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(99),
-                          ),
-                          child: Icon(
-                            item.icon,
-                            size: 19,
-                            color: active ? AppColors.sky : AppColors.textSecondary(isDark),
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          item.label,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTheme.heading(
-                            isDark,
-                            size: 9.5,
-                            weight: active ? FontWeight.w800 : FontWeight.w600,
-                            color: active ? AppColors.sky : AppColors.textSecondary(isDark),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }),
-            ),
-          ),
-        ),
+      // Curved Notched Mobile Navigation Bar (Persis Gambar 1, Khusus APK!)
+      bottomNavigationBar: CurvedNotchBottomBar(
+        items: navItems,
+        currentIndex: currentIdx,
+        isDark: isDark,
+        onTap: (idx) => state.setTab(idx),
       ),
     );
   }
 }
-

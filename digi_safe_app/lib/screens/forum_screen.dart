@@ -85,7 +85,7 @@ class _ForumScreenState extends State<ForumScreen> {
 
   List<ForumThread> get _filtered {
     return _forums.where((f) {
-      final catMatch = _category == 'semua' || f.kategori == _category;
+      final catMatch = _category == 'semua' || f.kategori.toLowerCase() == _category.toLowerCase();
       final q = _search.trim().toLowerCase();
       final textMatch = q.isEmpty ||
           f.judul.toLowerCase().contains(q) ||
@@ -95,7 +95,14 @@ class _ForumScreenState extends State<ForumScreen> {
     }).toList();
   }
 
-  String _catLabel(String slug) => widget.appState.tr('forum_cat_$slug');
+  String _catLabel(String slug) {
+    final norm = slug.trim().toLowerCase();
+    final key = (norm == 'semua' || norm == 'all')
+        ? 'forum_cat_all'
+        : (norm == 'privasi data' ? 'forum_cat_privasi' : 'forum_cat_$norm');
+    final translated = widget.appState.tr(key);
+    return translated == key ? slug : translated;
+  }
 
   void _openCreateModal() {
     if (!widget.appState.isAuthenticated) {
@@ -455,7 +462,7 @@ class _ForumScreenState extends State<ForumScreen> {
       body: RefreshIndicator(
         onRefresh: () => _loadForums(),
         child: ListView(
-          padding: EdgeInsets.zero,
+          padding: const EdgeInsets.only(bottom: 112),
           children: [
             // Header Bersih Responsive dengan Teks Biru (sesuai instruksi responsive web!)
             Container(

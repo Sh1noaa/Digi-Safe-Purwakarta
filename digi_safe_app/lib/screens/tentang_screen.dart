@@ -67,10 +67,15 @@ class _TentangScreenState extends State<TentangScreen> {
         .map((e) => Map<String, dynamic>.from(e as Map))
         .toList();
 
-    return RefreshIndicator(
-      onRefresh: _loadData,
-      child: ListView(
-        padding: EdgeInsets.zero,
+    return Scaffold(
+      backgroundColor: AppColors.scaffoldBg(isDark),
+      appBar: AppBar(
+        title: Text(state.tr('nav_tentang'), style: AppTheme.heading(isDark, size: 16)),
+      ),
+      body: RefreshIndicator(
+        onRefresh: _loadData,
+        child: ListView(
+          padding: const EdgeInsets.only(bottom: 32),
         children: [
           // 1. Hero Dokumen Editor bergaya pastel green (identik tentang/index.blade.php)
           Container(
@@ -381,6 +386,7 @@ class _TentangScreenState extends State<TentangScreen> {
             ),
           ),
         ],
+        ),
       ),
     );
   }

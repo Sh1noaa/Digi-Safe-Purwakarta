@@ -10,6 +10,7 @@ use App\Models\Testimoni;
 use App\Models\User;
 use App\Services\SocialSchemaHelper;
 use App\Services\UploadValidationHelper;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
@@ -46,8 +47,8 @@ class ProfileController extends Controller
             'specialty_role' => ['nullable', 'string', 'max:60'],
             'bio' => ['nullable', 'string', 'max:350'],
             'password' => ['nullable', 'string', 'min:8'],
-            'avatar' => UploadValidationHelper::imageRules(3072),
-            'banner' => UploadValidationHelper::imageRules(5120),
+            'avatar' => UploadValidationHelper::imageRules(5120),
+            'banner' => UploadValidationHelper::imageRules(6144),
         ]);
 
         $data = [
@@ -108,6 +109,41 @@ class ProfileController extends Controller
         return redirect()
             ->route('profile.edit')
             ->with('success', 'Profil dan tampilan banner Anda berhasil diperbarui.');
+    }
+
+    public function updateRole(Request $request): RedirectResponse|JsonResponse
+    {
+        SocialSchemaHelper::ensureReady();
+        $user = Auth::user();
+
+        $allowedRoles = User::availableSpecialtyRoles();
+        $validated = $request->validate([
+            'specialty_role' => ['nullable', 'string', 'max:60'],
+        ]);
+
+        $chosen = filled($validated['specialty_role'] ?? null) ? trim((string) $validated['specialty_role']) : null;
+        if ($chosen !== null && ! in_array($chosen, $allowedRoles, true) && $chosen !== $user->specialty_role) {
+            $chosen = $allowedRoles[0];
+        }
+
+        $user->update(['specialty_role' => $chosen]);
+
+        $msg = app()->getLocale() === 'en'
+            ? 'Your role has been updated successfully.'
+            : 'Role Anda berhasil diperbarui.';
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'specialty_role' => $chosen,
+                'display_role' => $user->fresh()->display_role,
+                'message' => $msg,
+            ]);
+        }
+
+        return redirect()
+            ->route('profile.edit')
+            ->with('success', $msg);
     }
 
     public function updateSettings(Request $request): RedirectResponse

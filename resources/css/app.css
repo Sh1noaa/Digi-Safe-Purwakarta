@@ -3,6 +3,11 @@
 @config '../../tailwind.config.js';
 
 @layer base {
+    html, body {
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+
     html {
         scroll-behavior: smooth;
         font-family: 'Inter', sans-serif;
@@ -454,24 +459,32 @@
     box-shadow: 0 22px 50px rgba(15, 23, 42, 0.09), inset 0 2px 4px rgba(255, 255, 255, 0.9);
 }
 
-/* animasi marquee horizontal dari kanan ke kiri untuk daftar user di beranda */
-@keyframes horizontalUserMarquee {
-    0% {
-        transform: translate3d(0%, 0, 0);
-    }
-    100% {
-        transform: translate3d(-50%, 0, 0);
-    }
-}
-
+/* track marquee horizontal untuk daftar user di beranda (dikendalikan halus via JS agar bisa didrag + klik) */
 .user-marquee-track {
     display: flex;
     width: max-content;
-    animation: horizontalUserMarquee 42s linear infinite;
+    will-change: transform;
 }
 
-.user-marquee-track:hover {
-    animation-play-state: paused;
+.marquee-fade-left {
+    background: linear-gradient(to right, #F6F8FB 0%, rgba(246, 248, 251, 0) 100%);
+}
+
+.marquee-fade-right {
+    background: linear-gradient(to left, #F6F8FB 0%, rgba(246, 248, 251, 0) 100%);
+}
+
+html.dark .marquee-fade-left {
+    background: linear-gradient(to right, #162032 0%, rgba(22, 32, 50, 0) 100%);
+}
+
+html.dark .marquee-fade-right {
+    background: linear-gradient(to left, #162032 0%, rgba(22, 32, 50, 0) 100%);
+}
+
+html.dark .edu-section-surface {
+    background-color: #0B1120 !important;
+    background-blend-mode: soft-light;
 }
 
 /* Global dark mode overrides */
@@ -518,16 +531,43 @@ html.dark .bg-\[\#EFF6FF\] {
     background-color: #132238 !important;
 }
 
-html.dark .bg-amber-50 {
-    background-color: rgba(245, 158, 11, 0.14) !important;
+html.dark .bg-amber-50,
+html.dark .bg-amber-100 {
+    background-color: rgba(245, 158, 11, 0.16) !important;
 }
 
-html.dark .bg-emerald-50 {
-    background-color: rgba(16, 185, 129, 0.14) !important;
+html.dark .bg-emerald-50,
+html.dark .bg-emerald-100 {
+    background-color: rgba(16, 185, 129, 0.16) !important;
 }
 
-html.dark .bg-red-50 {
-    background-color: rgba(239, 68, 68, 0.14) !important;
+html.dark .bg-red-50,
+html.dark .bg-rose-50,
+html.dark .bg-rose-100 {
+    background-color: rgba(239, 68, 68, 0.16) !important;
+}
+
+html.dark .bg-indigo-100 {
+    background-color: rgba(99, 102, 241, 0.2) !important;
+}
+
+html.dark .text-indigo-700 {
+    color: #A5B4FC !important;
+}
+
+html.dark .text-amber-900,
+html.dark .text-amber-800,
+html.dark .text-amber-700 {
+    color: #FDE68A !important;
+}
+
+html.dark .text-emerald-700 {
+    color: #6EE7B7 !important;
+}
+
+html.dark .text-rose-700,
+html.dark .text-rose-600 {
+    color: #FDA4AF !important;
 }
 
 html.dark .hover\:bg-gray-50:hover,
@@ -613,8 +653,35 @@ html.dark .bg-ink:hover {
     background-color: #1E88E5 !important;
 }
 
+html.dark .bg-ink.text-white,
+html.dark .bg-ink.text-white *:not(.text-lime) {
+    color: #F8FAFC !important;
+}
+
 html.dark .bg-ink .text-lime {
     color: #C6F432 !important;
+}
+
+html.dark .habit-bad-pill {
+    background-color: rgba(30, 41, 59, 0.72) !important;
+    border-color: rgba(51, 65, 85, 0.75) !important;
+    color: #94A3B8 !important;
+}
+
+html.dark .habit-good-pill {
+    background-color: #1E293B !important;
+    border-color: #334155 !important;
+    color: #F8FAFC !important;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.32) !important;
+}
+
+html.dark .chat-fab-btn {
+    --tw-ring-color: #1E293B !important;
+    box-shadow: 0 12px 28px rgba(14, 165, 233, 0.28) !important;
+}
+
+html.dark .chat-fab-badge {
+    border-color: #0F172A !important;
 }
 
 html.dark input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),

@@ -4,8 +4,8 @@ import 'dart:io';
 
 import 'package:app_links/app_links.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../models/digisafe_models.dart';
 import 'api_client.dart';
@@ -16,19 +16,33 @@ class AppState extends ChangeNotifier {
   static const _userKey = 'digisafe_user_json';
   static const _localeKey = 'digisafe_locale';
   static const _themeKey = 'digisafe_theme';
+  static const _onboardingDonePrefix = 'digisafe_onboarding_done_';
+
+  static const MethodChannel _oauthChannel = MethodChannel('id.web.digisafepurwakarta/oauth');
 
   final ApiClient api = ApiClient();
   final AppLinks _appLinks = AppLinks();
   StreamSubscription<Uri>? _linkSub;
+  Timer? _unreadTimer;
+
+  Completer<Uri?>? _pendingOAuthCompleter;
 
   bool initialized = false;
-  int currentTabIndex = 0; // 0: Beranda, 1: Edukasi, 2: Minigame, 3: Forum, 4: Testimoni, 5: Tentang
+  int currentTabIndex = 0; // 0: Beranda, 1: Edukasi, 2: Minigame, 3: Forum, 4: Profil
   int contentVersion = 0;
 
   String locale = 'id';
   String theme = 'light';
   UserProfile? user;
   String? oauthStatusMessage;
+
+  // Notifikasi chat & Bot Digika
+  int unreadChatBadge = 0;
+  Map<String, dynamic>? latestChatAlert;
+  int _lastSeenAlertMsgId = -1;
+
+  // Warm-loaded cache untuk transisi Splash -> Beranda instan
+  Map<String, dynamic>? warmBerandaJson;
 
   bool get isDark => theme == 'dark';
   bool get isEn => locale == 'en';
@@ -37,7 +51,10 @@ class AppState extends ChangeNotifier {
   String tr(String key, [Map<String, String> params = const {}]) => S.t(key, isEn, params);
 
   void setTab(int idx) {
-    if (idx == currentTabIndex) return;
+    if (idx == currentTabIndex) {
+      bumpContent();
+      return;
+    }
     currentTabIndex = idx;
     notifyListeners();
   }
@@ -68,39 +85,134 @@ class AppState extends ChangeNotifier {
     initialized = true;
     notifyListeners();
 
-    // Sinkronkan profil & preferensi terbaru dari server jika sudah login
+    unawaited(_warmPreload());
     if (savedToken != null && savedToken.isNotEmpty) {
       unawaited(refreshMe());
+      unawaited(refreshUnreadCount());
     }
 
-    _listenDeepLinks();
+    _setupOAuthListeners();
+    _startUnreadPolling();
   }
 
-  void _listenDeepLinks() {
+  Future<void> _warmPreload() async {
+    try {
+      warmBerandaJson = await api.get('/beranda');
+      notifyListeners();
+    } catch (_) {}
+  }
+
+  void _setupOAuthListeners() {
     if (kIsWeb) return;
+
+    _oauthChannel.setMethodCallHandler((call) async {
+      if (call.method == 'onOAuthCallback' && call.arguments is String) {
+        final uri = Uri.tryParse(call.arguments as String);
+        if (uri != null) {
+          _deliverOAuthCallback(uri);
+        }
+      }
+    });
+
+    try {
+      _oauthChannel.invokeMethod<String>('consumeInitialCallback').then((raw) {
+        if (raw != null && raw.isNotEmpty) {
+          final uri = Uri.tryParse(raw);
+          if (uri != null) {
+            _deliverOAuthCallback(uri);
+          }
+        }
+      }).catchError((_) {});
+    } catch (_) {}
+
     _appLinks.getInitialLink().then((uri) {
       if (uri != null) {
-        _handleIncomingUri(uri);
+        _deliverOAuthCallback(uri);
       }
     }).catchError((_) {});
 
-    _linkSub = _appLinks.uriLinkStream.listen(_handleIncomingUri, onError: (_) {});
+    _linkSub = _appLinks.uriLinkStream.listen(_deliverOAuthCallback, onError: (_) {});
   }
 
-  Future<void> _handleIncomingUri(Uri uri) async {
-    if (uri.scheme == 'digisafe' && uri.host == 'auth') {
-      final err = uri.queryParameters['error'];
-      final token = uri.queryParameters['token'];
+  void _deliverOAuthCallback(Uri uri) {
+    if (uri.scheme != 'digisafe') return;
 
-      if (err != null && err.isNotEmpty) {
-        oauthStatusMessage = err;
-        notifyListeners();
-        return;
-      }
+    if (_pendingOAuthCompleter != null && !_pendingOAuthCompleter!.isCompleted) {
+      _pendingOAuthCompleter!.complete(uri);
+    } else {
+      unawaited(_processOAuthCallbackUri(uri));
+    }
+  }
 
-      if (token != null && token.isNotEmpty) {
-        await completeTokenLogin(token);
+  void _startUnreadPolling() {
+    _unreadTimer?.cancel();
+    _unreadTimer = Timer.periodic(const Duration(seconds: 12), (_) {
+      if (isAuthenticated) {
+        unawaited(refreshUnreadCount());
       }
+    });
+  }
+
+  Future<void> refreshUnreadCount() async {
+    if (!isAuthenticated) {
+      unreadChatBadge = 0;
+      latestChatAlert = null;
+      return;
+    }
+    try {
+      final res = await api.getOptional('/chat/unread-count');
+      if (res == null) return;
+      final total = (res['total_badge'] as num?)?.toInt() ?? 0;
+      final alert = res['latest_alert'] is Map<String, dynamic>
+          ? Map<String, dynamic>.from(res['latest_alert'] as Map)
+          : null;
+
+      bool changed = total != unreadChatBadge;
+      if (alert != null) {
+        final msgId = (alert['message_id'] as num?)?.toInt() ?? 0;
+        if (msgId > 0 && msgId != _lastSeenAlertMsgId) {
+          _lastSeenAlertMsgId = msgId;
+          latestChatAlert = alert;
+          changed = true;
+        }
+      }
+      unreadChatBadge = total;
+      if (changed) notifyListeners();
+    } catch (_) {}
+  }
+
+  void consumeLatestAlert() {
+    latestChatAlert = null;
+  }
+
+  Future<({bool ok, bool needsOnboarding})> _processOAuthCallbackUri(Uri uri) async {
+    final err = uri.queryParameters['error'];
+    final token = uri.queryParameters['token'];
+    final isNewParam = uri.queryParameters['is_new'] == '1';
+
+    if (err != null && err.isNotEmpty) {
+      oauthStatusMessage = err;
+      notifyListeners();
+      return (ok: false, needsOnboarding: false);
+    }
+
+    if (token != null && token.isNotEmpty) {
+      await completeTokenLogin(token);
+      final doneLocally = await hasCompletedOnboarding();
+      final missingProfile = user != null && (user!.specialtyRole == null || user!.specialtyRole!.isEmpty);
+      final needsOnboarding = isNewParam || (!doneLocally && missingProfile);
+      return (ok: true, needsOnboarding: needsOnboarding);
+    }
+    return (ok: false, needsOnboarding: false);
+  }
+
+  void cancelPendingGoogleSignInIfIdle() {
+    if (_pendingOAuthCompleter != null && !_pendingOAuthCompleter!.isCompleted) {
+      Future.delayed(const Duration(milliseconds: 900), () {
+        if (_pendingOAuthCompleter != null && !_pendingOAuthCompleter!.isCompleted) {
+          _pendingOAuthCompleter!.complete(null);
+        }
+      });
     }
   }
 
@@ -108,9 +220,25 @@ class AppState extends ChangeNotifier {
     oauthStatusMessage = null;
   }
 
-  Future<void> launchGoogleSignIn() async {
-    final uri = Uri.parse('${ApiClient.baseHost}/auth/google/redirect?mode=mobile');
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  /// Login Google OAuth 2.0 menggunakan Android Partial Bottom-Sheet Pop-Up Custom Tab
+  /// (menggunakan database & akun Google yang sama persis dengan website, tanpa melempar user keluar ke browser).
+  Future<({bool ok, bool needsOnboarding})> launchGoogleSignIn() async {
+    final completer = Completer<Uri?>();
+    _pendingOAuthCompleter = completer;
+
+    final authUrl = '${ApiClient.baseHost}/auth/google/redirect?mode=mobile';
+    await _oauthChannel.invokeMethod('openPopupAuth', {'url': authUrl});
+
+    final uri = await completer.future.timeout(
+      const Duration(minutes: 4),
+      onTimeout: () => null,
+    );
+    _pendingOAuthCompleter = null;
+
+    if (uri == null) {
+      return (ok: false, needsOnboarding: false);
+    }
+    return await _processOAuthCallbackUri(uri);
   }
 
   Future<void> completeTokenLogin(String token) async {
@@ -118,8 +246,23 @@ class AppState extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_tokenKey, token);
     await refreshMe();
-    oauthStatusMessage = isEn ? 'Signed in with Google!' : 'Berhasil masuk dengan akun Google!';
+    unawaited(refreshUnreadCount());
+    oauthStatusMessage = isEn
+        ? 'Signed in with Google as ${user?.namaLengkap ?? 'Citizen'}!'
+        : 'Berhasil masuk dengan Google sebagai ${user?.namaLengkap ?? 'Warga Siber'}!';
     notifyListeners();
+  }
+
+  Future<bool> hasCompletedOnboarding() async {
+    if (user == null) return true;
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('$_onboardingDonePrefix${user!.id}') ?? false;
+  }
+
+  Future<void> markOnboardingCompleted() async {
+    if (user == null) return;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('$_onboardingDonePrefix${user!.id}', true);
   }
 
   Future<void> refreshMe() async {
@@ -133,12 +276,10 @@ class AppState extends ChangeNotifier {
       if (e.statusCode == 401) {
         await clearSession();
       }
-    } catch (_) {
-      // Tetap pertahankan cache lokal jika offline sesaat
-    }
+    } catch (_) {}
   }
 
-  Future<void> login(String email, String password) async {
+  Future<({bool needsOnboarding})> login(String email, String password) async {
     final res = await api.post('/auth/login', {
       'email': email.trim(),
       'password': password,
@@ -147,29 +288,46 @@ class AppState extends ChangeNotifier {
     final token = (res['token'] ?? '').toString();
     final u = UserProfile.fromJson(res['user'] as Map<String, dynamic>);
     await _persistUser(u, token);
+    unawaited(refreshUnreadCount());
+
+    final doneLocally = await hasCompletedOnboarding();
+    final missingRole = u.specialtyRole == null || u.specialtyRole!.isEmpty;
+    return (needsOnboarding: !doneLocally && missingRole);
   }
 
-  Future<void> register({
-    required String namaLengkap,
-    required String username,
+  /// Register dari halaman Login/Daftar APK hanya memerlukan Gmail/Email + Password.
+  /// Username sementara dibuat aman lalu langsung disempurnakan di Onboarding Wizard berikutnya.
+  Future<void> registerEmailOnly({
     required String email,
     required String password,
   }) async {
+    final cleanEmail = email.trim();
+    final localPart = cleanEmail.contains('@') ? cleanEmail.split('@').first : cleanEmail;
+    final safeBase = localPart.replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '_').toLowerCase();
+    final trimmed = safeBase.isEmpty ? 'warga' : (safeBase.length > 26 ? safeBase.substring(0, 26) : safeBase);
+    final randSuffix = (DateTime.now().millisecondsSinceEpoch % 10000).toString();
+    final tempUsername = '${trimmed}_$randSuffix';
+    final tempNick = trimmed.replaceAll('_', ' ');
+    final niceNick = tempNick.isEmpty ? 'Warga Siber' : '${tempNick[0].toUpperCase()}${tempNick.substring(1)}';
+
     final res = await api.post('/auth/register', {
-      'nama_lengkap': namaLengkap.trim(),
-      'username': username.trim(),
-      'email': email.trim(),
+      'nama_lengkap': niceNick,
+      'username': tempUsername,
+      'email': cleanEmail,
       'password': password,
       'device_name': 'flutter_android',
     });
     final token = (res['token'] ?? '').toString();
     final u = UserProfile.fromJson(res['user'] as Map<String, dynamic>);
     await _persistUser(u, token);
+    unawaited(refreshUnreadCount());
   }
 
   Future<void> updateProfile({
     required String namaLengkap,
+    String? username,
     required String bio,
+    String? specialtyRole,
     String? password,
     File? avatarFile,
     File? bannerFile,
@@ -178,6 +336,12 @@ class AppState extends ChangeNotifier {
       'nama_lengkap': namaLengkap.trim(),
       'bio': bio.trim(),
     };
+    if (username != null && username.trim().isNotEmpty) {
+      fields['username'] = username.trim();
+    }
+    if (specialtyRole != null && specialtyRole.trim().isNotEmpty) {
+      fields['specialty_role'] = specialtyRole.trim();
+    }
     if (password != null && password.trim().isNotEmpty) {
       fields['password'] = password;
     }
@@ -191,6 +355,25 @@ class AppState extends ChangeNotifier {
     if (res['user'] is Map<String, dynamic>) {
       await _persistUser(UserProfile.fromJson(res['user'] as Map<String, dynamic>), api.token!);
     }
+  }
+
+  Future<void> updateSpecialtyRole(String? role) async {
+    if (!isAuthenticated || user == null) return;
+    try {
+      final res = await api.put('/profile/role', {'specialty_role': role});
+      if (res['user'] is Map<String, dynamic>) {
+        await _persistUser(UserProfile.fromJson(res['user'] as Map<String, dynamic>), api.token!);
+        return;
+      }
+    } on ApiException catch (e) {
+      if (e.statusCode != 404 && e.statusCode != 405) rethrow;
+    }
+
+    await updateProfile(
+      namaLengkap: user!.namaLengkap,
+      bio: user!.bio ?? '',
+      specialtyRole: role,
+    );
   }
 
   Future<void> updateSettings({
@@ -241,6 +424,8 @@ class AppState extends ChangeNotifier {
   Future<void> clearSession() async {
     api.token = null;
     user = null;
+    unreadChatBadge = 0;
+    latestChatAlert = null;
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_tokenKey);
     await prefs.remove(_userKey);
@@ -270,8 +455,8 @@ class AppState extends ChangeNotifier {
 
   @override
   void dispose() {
+    _unreadTimer?.cancel();
     _linkSub?.cancel();
     super.dispose();
   }
 }
-

@@ -3,9 +3,13 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../core/api_client.dart';
 import '../core/app_state.dart';
 import '../core/theme.dart';
 import '../models/digisafe_models.dart';
+import 'admin_screen.dart';
+import 'auth_screens.dart';
+import 'chat_screen.dart';
 
 class EdukasiScreen extends StatefulWidget {
   final AppState appState;
@@ -18,6 +22,8 @@ class EdukasiScreen extends StatefulWidget {
 
 class _EdukasiScreenState extends State<EdukasiScreen> {
   List<EdukasiModule> _modules = [];
+  List<EdukasiRequestItem> _myRequests = [];
+  int _unreadDecisions = 0;
   bool _loading = true;
   String? _error;
   int _lastVersion = -1;
@@ -50,11 +56,181 @@ class _EdukasiScreenState extends State<EdukasiScreen> {
           _modules = raw.map((e) => EdukasiModule.fromJson(e as Map<String, dynamic>)).toList();
         });
       }
+      if (widget.appState.isAuthenticated) {
+        final reqRes = await widget.appState.api.getOptional('/edukasi/requests');
+        if (reqRes != null && mounted) {
+          final reqList = (reqRes['requests'] as List? ?? [])
+              .map((e) => EdukasiRequestItem.fromJson(e as Map<String, dynamic>))
+              .toList();
+          setState(() {
+            _myRequests = reqList;
+            _unreadDecisions = (reqRes['unread_decisions'] as num?)?.toInt() ?? 0;
+          });
+        }
+      }
     } catch (e) {
       if (mounted) setState(() => _error = e.toString());
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  Future<void> _markRequestsSeen() async {
+    setState(() => _unreadDecisions = 0);
+    try {
+      await widget.appState.api.post('/edukasi/requests/mark-seen');
+    } catch (_) {}
+  }
+
+  void _openRequestTopicSheet() {
+    if (!widget.appState.isAuthenticated) {
+      Navigator.of(context).push(MaterialPageRoute(builder: (_) => LoginScreen(appState: widget.appState)));
+      return;
+    }
+
+    final temaCtrl = TextEditingController();
+    final descCtrl = TextEditingController();
+    const categories = [
+      'Phishing & Penipuan',
+      'Privasi & Data Pribadi',
+      'Keamanan Akun & OTP',
+      'Literasi & Hoaks',
+      'Keamanan Perangkat / APK',
+    ];
+    String selectedCat = categories.first;
+    String preferredType = 'teks';
+    bool sending = false;
+    final isDark = widget.appState.isDark;
+    final isEn = widget.appState.isEn;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => Container(
+          padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(ctx).viewInsets.bottom + 24),
+          decoration: BoxDecoration(
+            color: AppColors.cardBg(isDark),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const CircleAvatar(radius: 18, backgroundImage: AssetImage('assets/images/bot-digika.jpg')),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(widget.appState.tr('edu_request_btn'), style: AppTheme.heading(isDark, size: 17)),
+                          Text(
+                            isEn ? 'Bot Digika will notify you once Admin reviews it' : 'Bot Digika akan mengirim pesan saat Admin menyetujui/menolak',
+                            style: AppTheme.body(isDark, size: 11, color: AppColors.textSecondary(isDark)),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(onPressed: () => Navigator.pop(ctx), icon: const Icon(Icons.close_rounded)),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                TextField(
+                  controller: temaCtrl,
+                  decoration: InputDecoration(
+                    labelText: isEn ? 'Topic Title' : 'Judul / Tema Edukasi',
+                    hintText: isEn ? 'e.g. Recognizing Fake QRIS Scams' : 'Contoh: Cara Mengenali QRIS Palsu',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(isEn ? 'Category' : 'Kategori Topik', style: AppTheme.heading(isDark, size: 12)),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: categories.map((c) {
+                    final active = selectedCat == c;
+                    return ChoiceChip(
+                      label: Text(c, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: active ? Colors.white : AppColors.textPrimary(isDark))),
+                      selected: active,
+                      selectedColor: AppColors.sky,
+                      backgroundColor: AppColors.softBg(isDark),
+                      onSelected: (_) => setModalState(() => selectedCat = c),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 12),
+                SegmentedButton<String>(
+                  segments: [
+                    ButtonSegment(value: 'teks', label: Text(isEn ? 'Article Module' : 'Modul Bacaan')),
+                    ButtonSegment(value: 'link', label: Text(isEn ? 'External Link' : 'Link Referensi')),
+                  ],
+                  selected: {preferredType},
+                  onSelectionChanged: (s) => setModalState(() => preferredType = s.first),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: descCtrl,
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    labelText: isEn ? 'Why is this topic needed?' : 'Jelaskan detail atau alasan kebutuhan materi',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: sending
+                        ? null
+                        : () async {
+                            if (temaCtrl.text.trim().length < 4 || descCtrl.text.trim().length < 10) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(isEn ? 'Topic min. 4 chars & reason min. 10 chars.' : 'Tema min. 4 karakter & penjelasan min. 10 karakter.')),
+                              );
+                              return;
+                            }
+                            setModalState(() => sending = true);
+                            try {
+                              final res = await widget.appState.api.post('/edukasi/requests', {
+                                'tema': temaCtrl.text.trim(),
+                                'kategori': selectedCat,
+                                'preferred_type': preferredType,
+                                'deskripsi': descCtrl.text.trim(),
+                              });
+                              if (ctx.mounted) Navigator.pop(ctx);
+                              await _loadModules();
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('${res['message'] ?? 'Request berhasil dikirim!'}')),
+                                );
+                              }
+                            } on ApiException catch (e) {
+                              if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+                            } finally {
+                              if (ctx.mounted) setModalState(() => sending = false);
+                            }
+                          },
+                    icon: const Icon(Icons.send_rounded, size: 17, color: AppColors.lime),
+                    label: Text(sending ? '...' : (isEn ? 'Submit Topic Request' : 'Kirim Usulan ke Admin'), style: AppTheme.heading(false, size: 13, color: Colors.white)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.ink,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(99)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   void _openModule(EdukasiModule modul) {
@@ -272,7 +448,7 @@ class _EdukasiScreenState extends State<EdukasiScreen> {
         child: RefreshIndicator(
           onRefresh: _loadModules,
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 20, 16, 36),
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 112),
             children: [
               // Top Status Capsule (identik dengan edukasi.blade.php)
               Container(
@@ -322,22 +498,79 @@ class _EdukasiScreenState extends State<EdukasiScreen> {
                 ),
               ),
 
-              if (isAdmin) ...[
+              if (_unreadDecisions > 0) ...[
                 const SizedBox(height: 12),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: ElevatedButton.icon(
-                    onPressed: _openAdminUploadSheet,
-                    icon: const Icon(Icons.add_circle_outline_rounded, size: 16, color: AppColors.lime),
-                    label: Text(state.tr('edu_add_module'), style: AppTheme.heading(false, size: 11.5, color: Colors.white)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.ink,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(99)),
-                    ),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.96),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppColors.cobalt, width: 1.5),
+                  ),
+                  child: Row(
+                    children: [
+                      const CircleAvatar(radius: 18, backgroundImage: AssetImage('assets/images/bot-digika.jpg')),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          state.isEn
+                              ? 'Bot Digika sent $_unreadDecisions evaluation message(s) for your topic request!'
+                              : 'Bot Digika mengirim $_unreadDecisions pesan evaluasi untuk request tema edukasimu!',
+                          style: AppTheme.body(false, size: 11.5, weight: FontWeight.w600, color: AppColors.ink),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          _markRequestsSeen();
+                          Navigator.of(context).push(MaterialPageRoute(builder: (_) => ChatInboxScreen(appState: state)));
+                        },
+                        child: Text(state.isEn ? 'Read' : 'Baca', style: const TextStyle(fontWeight: FontWeight.w800)),
+                      ),
+                    ],
                   ),
                 ),
               ],
+
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                alignment: WrapAlignment.end,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: _openRequestTopicSheet,
+                    icon: const Icon(Icons.lightbulb_outline_rounded, size: 16, color: AppColors.ink),
+                    label: Text(state.tr('edu_request_btn'), style: AppTheme.heading(false, size: 11.5, color: AppColors.ink)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.lime,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(99)),
+                    ),
+                  ),
+                  if (isAdmin) ...[
+                    ElevatedButton.icon(
+                      onPressed: _openAdminUploadSheet,
+                      icon: const Icon(Icons.add_circle_outline_rounded, size: 16, color: AppColors.lime),
+                      label: Text(state.tr('edu_add_module'), style: AppTheme.heading(false, size: 11.5, color: Colors.white)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.ink,
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(99)),
+                      ),
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => AdminScreen(appState: state))).then((_) => _loadModules()),
+                      icon: const Icon(Icons.admin_panel_settings_rounded, size: 16, color: Colors.white),
+                      label: const Text('Panel Admin', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Colors.white)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.cobalt,
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(99)),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
 
               const SizedBox(height: 18),
 
@@ -370,7 +603,66 @@ class _EdukasiScreenState extends State<EdukasiScreen> {
                       onTap: () => _openModule(m),
                     )),
 
-              const SizedBox(height: 10),
+              if (_myRequests.isNotEmpty) ...[
+                const SizedBox(height: 18),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.cardBg(isDark).withValues(alpha: 0.94),
+                    borderRadius: BorderRadius.circular(22),
+                    border: Border.all(color: AppColors.border(isDark)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(state.tr('edu_request_history'), style: AppTheme.heading(isDark, size: 15)),
+                      const SizedBox(height: 10),
+                      ..._myRequests.take(5).map((r) {
+                        final badgeColor = r.status == 'approved'
+                            ? AppColors.emerald
+                            : r.status == 'rejected'
+                                ? AppColors.danger
+                                : AppColors.amber;
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.softBg(isDark),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: AppColors.border(isDark)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(child: Text(r.tema, style: AppTheme.heading(isDark, size: 13))),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: badgeColor.withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(99),
+                                    ),
+                                    child: Text(r.status.toUpperCase(), style: AppTheme.heading(false, size: 9, color: badgeColor)),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 3),
+                              Text('${r.kategori} • ${r.createdAt}', style: AppTheme.body(isDark, size: 10.5, color: AppColors.textSecondary(isDark))),
+                              if (r.adminNote != null && r.adminNote!.isNotEmpty) ...[
+                                const SizedBox(height: 4),
+                                Text('Catatan Admin: ${r.adminNote}', style: AppTheme.body(isDark, size: 11, color: AppColors.sky)),
+                              ],
+                            ],
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+              ],
+
+              const SizedBox(height: 14),
               Center(
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(99),

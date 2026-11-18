@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 
 import 'core/app_state.dart';
 import 'core/theme.dart';
-import 'screens/main_shell.dart';
+import 'screens/splash_onboarding_screen.dart';
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
   final appState = AppState();
-  await appState.init();
   runApp(DigiSafeApp(appState: appState));
 }
 
@@ -27,7 +26,7 @@ class DigiSafeApp extends StatelessWidget {
           theme: AppTheme.build(false),
           darkTheme: AppTheme.build(true),
           themeMode: appState.isDark ? ThemeMode.dark : ThemeMode.light,
-          home: MainShell(appState: appState),
+          home: OrbitalSplashScreen(appState: appState),
         );
       },
     );

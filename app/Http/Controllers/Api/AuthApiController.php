@@ -41,6 +41,7 @@ class AuthApiController extends Controller
             'success' => true,
             'message' => $isEn ? 'Signed in successfully.' : 'Berhasil masuk ke akun Digi-Safe.',
             'token' => $token,
+            'is_new_user' => false,
             'user' => ApiResourceFormatter::formatUser($user, $user, true),
         ]);
     }
@@ -50,17 +51,35 @@ class AuthApiController extends Controller
         $isEn = app()->getLocale() === 'en';
 
         $validated = $request->validate([
-            'nama_lengkap' => ['required', 'string', 'max:100'],
-            'username' => ['required', 'string', 'max:50', 'alpha_dash', 'unique:users,username'],
+            'nama_lengkap' => ['nullable', 'string', 'max:100'],
+            'username' => ['nullable', 'string', 'max:50', 'alpha_dash', 'unique:users,username'],
             'email' => ['required', 'string', 'email', 'max:100', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8'],
             'device_name' => ['nullable', 'string', 'max:80'],
         ]);
 
+        $emailLower = Str::lower(trim($validated['email']));
+        $base = preg_replace('/[^a-zA-Z0-9_]/', '_', Str::before($emailLower, '@')) ?: 'warga';
+        $base = trim(Str::lower(Str::limit($base, 36, '')), '_') ?: 'warga';
+        $username = filled($validated['username'] ?? null) ? trim((string) $validated['username']) : $base;
+        if (blank($validated['username'] ?? null)) {
+            $candidate = $username;
+            $suffix = 1;
+            while (User::query()->where('username', $candidate)->exists()) {
+                $candidate = Str::limit($base, 36, '') . '_' . $suffix;
+                $suffix++;
+            }
+            $username = $candidate;
+        }
+
+        $displayName = filled($validated['nama_lengkap'] ?? null)
+            ? trim((string) $validated['nama_lengkap'])
+            : Str::title(str_replace('_', ' ', $base));
+
         $user = User::create([
-            'nama_lengkap' => $validated['nama_lengkap'],
-            'username' => $validated['username'],
-            'email' => Str::lower($validated['email']),
+            'nama_lengkap' => $displayName,
+            'username' => $username,
+            'email' => $emailLower,
             'password' => Hash::make($validated['password']),
             'role' => 'user',
         ]);
@@ -71,6 +90,7 @@ class AuthApiController extends Controller
             'success' => true,
             'message' => $isEn ? 'Account created successfully!' : 'Akun baru berhasil dibuat!',
             'token' => $token,
+            'is_new_user' => true,
             'user' => ApiResourceFormatter::formatUser($user, $user, true),
         ], 201);
     }
@@ -88,14 +108,17 @@ class AuthApiController extends Controller
         $googleData = null;
 
         if (! empty($validated['id_token'])) {
-            $resp = Http::timeout(12)->get('https://oauth2.googleapis.com/tokeninfo', [
-                'id_token' => $validated['id_token'],
-            ]);
+            $resp = Http::when(app()->environment('local'), fn ($http) => $http->withoutVerifying())
+                ->timeout(12)
+                ->get('https://oauth2.googleapis.com/tokeninfo', [
+                    'id_token' => $validated['id_token'],
+                ]);
             if ($resp->successful()) {
                 $googleData = $resp->json();
             }
         } elseif (! empty($validated['access_token'])) {
             $resp = Http::withToken($validated['access_token'])
+                ->when(app()->environment('local'), fn ($http) => $http->withoutVerifying())
                 ->timeout(12)
                 ->get('https://www.googleapis.com/oauth2/v3/userinfo');
             if ($resp->successful()) {

@@ -77,7 +77,7 @@ class BerandaController extends Controller
             ],
         ];
 
-        $registeredUsers = User::withCount(['forums', 'jawabanForums', 'testimonis'])
+        $registeredUsers = User::humans()->withCount(['forums', 'jawabanForums', 'testimonis'])
             ->withSum('skorGames as total_skor_game', 'skor')
             ->orderBy('id')
             ->get();
@@ -87,7 +87,7 @@ class BerandaController extends Controller
 
     public function usersDirectory(Request $request): View
     {
-        $users = User::withCount(['forums', 'jawabanForums', 'testimonis'])
+        $users = User::humans()->withCount(['forums', 'jawabanForums', 'testimonis'])
             ->withSum('skorGames as total_skor_game', 'skor')
             ->orderBy('id')
             ->get();

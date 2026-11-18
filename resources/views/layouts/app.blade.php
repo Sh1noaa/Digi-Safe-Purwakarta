@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ app()->getLocale() }}" class="scroll-smooth {{ ($currentTheme ?? 'light') === 'dark' ? 'dark' : '' }}">
+<html lang="{{ app()->getLocale() }}" class="scroll-smooth overflow-x-hidden {{ ($currentTheme ?? 'light') === 'dark' ? 'dark' : '' }}">
 
 <head>
     <meta charset="UTF-8">
@@ -34,13 +34,14 @@
     <header x-data="{ scrolled: {{ $forceSolidNav ? 'true' : 'false' }}, mobileOpen: false, profileOpen: false }"
         @scroll.window="scrolled = {{ $forceSolidNav ? 'true' : 'window.scrollY > 50' }}" :class="scrolled
             ? '{{ $isDark ? 'bg-[#0F172A]/95 border-slate-800 text-slate-100' : 'bg-white/95 border-gray-100 text-ink' }} backdrop-blur-md shadow-neutral py-3 border-b'
-            : '{{ $isEdukasi ? 'bg-ink/20 backdrop-blur-xs py-4 text-white' : 'bg-transparent py-5 text-white' }}'"
-        class="fixed top-0 inset-x-0 z-50 transition-all duration-300">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <nav class="flex items-center justify-between" aria-label="Navigasi Utama">
+            : '{{ $isEdukasi ? 'bg-ink/20 backdrop-blur-xs py-4 text-white' : 'bg-transparent py-4 sm:py-5 text-white' }}'"
+        class="fixed top-0 left-0 right-0 w-full max-w-[100vw] z-50 transition-all duration-300">
+        <div :class="scrolled ? 'px-5 sm:px-6 lg:px-8' : '{{ $isBeranda ? 'px-6 sm:px-8 lg:px-10' : 'px-5 sm:px-6 lg:px-8' }}'"
+            class="max-w-7xl mx-auto transition-all duration-300">
+            <nav class="flex items-center justify-between gap-2" aria-label="Navigasi Utama">
 
                 <!-- logo kiri -->
-                <a href="{{ route('beranda') }}" class="flex items-center gap-3 group focus:outline-none">
+                <a href="{{ route('beranda') }}" class="flex items-center gap-2.5 sm:gap-3 group focus:outline-none min-w-0">
                     <span :class="scrolled
                             ? 'bg-white border border-gray-100 shadow-xs'
                             : 'bg-white/95 shadow-sm'"
@@ -294,7 +295,7 @@
                 <!-- tombol hamburger mobile -->
                 <button type="button" @click="mobileOpen = !mobileOpen"
                     :class="scrolled ? '{{ $isDark ? 'text-white hover:bg-slate-800' : 'text-ink hover:bg-gray-100' }}' : 'text-white hover:bg-white/10'"
-                    class="lg:hidden inline-flex items-center justify-center p-2 rounded-lg transition-colors focus:outline-none"
+                    class="lg:hidden shrink-0 inline-flex items-center justify-center p-2 mr-0.5 sm:mr-0 rounded-lg transition-colors focus:outline-none"
                     aria-label="Buka Menu">
                     <svg x-show="!mobileOpen" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="1.8" stroke-linecap="round">

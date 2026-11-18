@@ -1,8 +1,13 @@
 @extends('admin.dashboard')
 
 @section('admin_content')
+    @php
+        $pendingReqCount = $edukasiRequests->where('status', 'pending')->count();
+        $initialAdminTab = request('tab') === 'requests' ? 'requests' : 'moduls';
+    @endphp
     <div
         x-data="{
+            activeSubTab: @js($initialAdminTab),
             formOpen: false,
             isEdit: false,
             editAction: '',
@@ -23,6 +28,20 @@
                     konten: '',
                     url: ''
                 };
+                this.activeSubTab = 'moduls';
+                this.formOpen = true;
+            },
+            openCreateFromRequest(req) {
+                this.isEdit = false;
+                this.editAction = '{{ route('admin.edukasi.store') }}';
+                this.form = {
+                    judul: req.tema || '',
+                    kategori: req.kategori || 'Panduan Publik',
+                    type: req.preferred_type === 'link' ? 'link' : 'teks',
+                    konten: req.deskripsi || '',
+                    url: ''
+                };
+                this.activeSubTab = 'moduls';
                 this.formOpen = true;
             },
             openEdit(modul, updateUrl) {
@@ -35,6 +54,7 @@
                     konten: modul.konten || '',
                     url: modul.url || ''
                 };
+                this.activeSubTab = 'moduls';
                 this.formOpen = true;
             }
         }"
@@ -46,7 +66,7 @@
                     Manajemen Modul Edukasi
                 </h1>
                 <p class="mt-1 text-xs text-muted">
-                    Kelola materi literasi tipe Teks Manual (pop-up bacaan) maupun Link Eksternal (jurnal & rujukan resmi).
+                    Kelola materi literasi tipe Teks Manual / Link Eksternal serta evaluasi request tema dari pengguna (notifikasi otomatis via Bot Digika).
                 </p>
             </div>
 
@@ -63,261 +83,449 @@
             </button>
         </div>
 
-        <!-- form tambah / edit modul (collapsible / modal di atas list) -->
-        <div
-            x-show="formOpen"
-            x-transition:enter="transition ease-out duration-200"
-            x-transition:enter-start="opacity-0 -translate-y-2"
-            x-transition:enter-end="opacity-100 translate-y-0"
-            style="display: none;"
-            class="mt-6 rounded-2xl bg-[#F8FAFC] border border-sky/25 p-5 sm:p-6"
-        >
-            <div class="flex items-center justify-between pb-4 border-b border-gray-200/80 mb-4">
-                <h2 class="font-heading font-bold text-base text-ink" x-text="isEdit ? 'Edit Modul Edukasi' : 'Tambah Modul Edukasi Baru'"></h2>
+        <!-- Sub-Tab: Daftar Modul vs Request Tema Pengguna -->
+        <div class="mt-5 flex flex-wrap items-center justify-between gap-3">
+            <div class="inline-flex rounded-2xl bg-[#F8FAFC] border border-gray-200/80 p-1 gap-1">
                 <button
                     type="button"
-                    @click="formOpen = false"
-                    class="w-8 h-8 rounded-full bg-white border border-gray-200 hover:bg-gray-100 text-ink flex items-center justify-center cursor-pointer"
+                    @click="activeSubTab = 'moduls'"
+                    :class="activeSubTab === 'moduls' ? 'bg-white text-ink font-bold shadow-2xs border-gray-200' : 'text-muted hover:text-ink font-semibold border-transparent'"
+                    class="rounded-xl border px-4 py-2 text-xs font-heading transition-all cursor-pointer"
                 >
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                        <path d="M18 6L6 18M6 6l12 12" />
-                    </svg>
+                    Daftar Modul ({{ $moduls->count() }})
+                </button>
+                <button
+                    type="button"
+                    @click="activeSubTab = 'requests'"
+                    :class="activeSubTab === 'requests' ? 'bg-white text-ink font-bold shadow-2xs border-gray-200' : 'text-muted hover:text-ink font-semibold border-transparent'"
+                    class="inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-xs font-heading transition-all cursor-pointer"
+                >
+                    <span>Request Tema Pengguna</span>
+                    @if ($pendingReqCount > 0)
+                        <span class="rounded-full bg-amber-500 text-white px-2 py-0.5 text-[10px] font-extrabold">
+                            {{ $pendingReqCount }} Baru
+                        </span>
+                    @else
+                        <span class="rounded-full bg-gray-100 text-muted px-2 py-0.5 text-[10px] font-bold">
+                            {{ $edukasiRequests->count() }}
+                        </span>
+                    @endif
                 </button>
             </div>
+        </div>
 
-            <!-- form simpan -->
-            <form :action="editAction" method="POST" class="space-y-4">
-                @csrf
-                <template x-if="isEdit">
-                    <input type="hidden" name="_method" value="PUT">
-                </template>
-
-                <!-- toggle tipe konten -->
-                <div>
-                    <label class="block text-xs font-bold text-ink mb-2">Pilih Tipe Konten</label>
-                    <div class="inline-flex rounded-xl bg-white border border-gray-200 p-1 gap-1">
-                        <button
-                            type="button"
-                            @click="form.type = 'teks'"
-                            :class="form.type === 'teks' ? 'bg-ink text-lime font-bold shadow-2xs' : 'text-muted hover:text-ink font-semibold'"
-                            class="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-xs transition-all cursor-pointer"
-                        >
-                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                                <polyline points="14 2 14 8 20 8" />
-                                <line x1="16" y1="13" x2="8" y2="13" />
-                                <line x1="16" y1="17" x2="8" y2="17" />
-                            </svg>
-                            <span>Teks Manual</span>
-                        </button>
-
-                        <button
-                            type="button"
-                            @click="form.type = 'link'"
-                            :class="form.type === 'link' ? 'bg-sky text-white font-bold shadow-2xs' : 'text-muted hover:text-ink font-semibold'"
-                            class="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-xs transition-all cursor-pointer"
-                        >
-                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-                                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-                            </svg>
-                            <span>Link Eksternal</span>
-                        </button>
-                    </div>
-                    <input type="hidden" name="type" :value="form.type">
+        @if ($pendingReqCount > 0)
+            <div
+                x-show="activeSubTab === 'moduls'"
+                class="mt-4 rounded-2xl bg-amber-50 border border-amber-200 px-4 py-3 flex flex-wrap items-center justify-between gap-3 text-xs"
+            >
+                <div class="flex items-center gap-2.5 text-amber-900 font-semibold">
+                    <img src="{{ asset('images/bot-digika.jpg') }}" alt="Bot Digika" class="w-7 h-7 rounded-full object-cover ring-2 ring-amber-400/50 bg-white shrink-0">
+                    <span>Ada <strong>{{ $pendingReqCount }}</strong> usulan tema edukasi dari pengguna yang menunggu evaluasi Anda.</span>
                 </div>
+                <button
+                    type="button"
+                    @click="activeSubTab = 'requests'"
+                    class="rounded-full bg-amber-500 hover:bg-amber-600 text-white font-heading font-bold text-[11px] px-4 py-1.5 transition-colors cursor-pointer"
+                >
+                    Evaluasi Sekarang &rarr;
+                </button>
+            </div>
+        @endif
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-bold text-ink mb-1.5">Judul Modul</label>
-                        <input
-                            type="text"
-                            name="judul"
-                            x-model="form.judul"
-                            required
-                            placeholder="Contoh: Panduan Proteksi Akun WhatsApp"
-                            class="w-full rounded-xl bg-white border border-gray-200 px-4 py-2.5 text-xs text-ink focus:outline-none focus:border-sky"
-                        >
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold text-ink mb-1.5">Kategori</label>
-                        <input
-                            type="text"
-                            name="kategori"
-                            x-model="form.kategori"
-                            required
-                            placeholder="Contoh: Panduan Publik / Jurnal Akademik / Etika Siber"
-                            class="w-full rounded-xl bg-white border border-gray-200 px-4 py-2.5 text-xs text-ink focus:outline-none focus:border-sky"
-                        >
-                    </div>
-                </div>
-
-                <!-- input khusus tipe teks manual -->
-                <div x-show="form.type === 'teks'">
-                    <label class="block text-xs font-bold text-ink mb-1.5">Isi Konten Modul (Ditampilkan pada Pop-up Halaman Edukasi)</label>
-                    <textarea
-                        name="konten"
-                        x-model="form.konten"
-                        rows="5"
-                        :required="form.type === 'teks'"
-                        placeholder="Tuliskan penjelasan lengkap materi edukasi keamanan digital di sini..."
-                        class="w-full rounded-xl bg-white border border-gray-200 px-4 py-2.5 text-xs text-ink focus:outline-none focus:border-sky resize-y"
-                    ></textarea>
-                </div>
-
-                <!-- input khusus tipe link eksternal -->
-                <div x-show="form.type === 'link'" style="display: none;" class="space-y-4">
-                    <div>
-                        <label class="block text-xs font-bold text-ink mb-1.5">URL Tautan Eksternal</label>
-                        <input
-                            type="url"
-                            name="url"
-                            x-model="form.url"
-                            :required="form.type === 'link'"
-                            placeholder="https://literasidigital.id/..."
-                            class="w-full rounded-xl bg-white border border-gray-200 px-4 py-2.5 text-xs text-ink focus:outline-none focus:border-sky"
-                        >
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold text-ink mb-1.5">Ringkasan Singkat (Opsional)</label>
-                        <input
-                            type="text"
-                            name="konten"
-                            x-model="form.konten"
-                            placeholder="Deskripsi singkat 1 kalimat untuk kartu modul..."
-                            class="w-full rounded-xl bg-white border border-gray-200 px-4 py-2.5 text-xs text-ink focus:outline-none focus:border-sky"
-                        >
-                    </div>
-                </div>
-
-                <div class="pt-2 flex items-center justify-end gap-2.5">
+        <!-- TAB 1: MANAJEMEN MODUL EDUKASI -->
+        <div x-show="activeSubTab === 'moduls'">
+            <!-- form tambah / edit modul (collapsible / modal di atas list) -->
+            <div
+                x-show="formOpen"
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0 -translate-y-2"
+                x-transition:enter-end="opacity-100 translate-y-0"
+                style="display: none;"
+                class="mt-6 rounded-2xl bg-[#F8FAFC] border border-sky/25 p-5 sm:p-6"
+            >
+                <div class="flex items-center justify-between pb-4 border-b border-gray-200/80 mb-4">
+                    <h2 class="font-heading font-bold text-base text-ink" x-text="isEdit ? 'Edit Modul Edukasi' : 'Tambah Modul Edukasi Baru'"></h2>
                     <button
                         type="button"
                         @click="formOpen = false"
-                        class="rounded-full border border-gray-200 bg-white px-5 py-2 text-xs font-semibold text-muted hover:text-ink cursor-pointer"
+                        class="w-8 h-8 rounded-full bg-white border border-gray-200 hover:bg-gray-100 text-ink flex items-center justify-center cursor-pointer"
                     >
-                        Batal
-                    </button>
-                    <button
-                        type="submit"
-                        class="rounded-full bg-ink hover:bg-sky text-white font-heading font-bold text-xs px-6 py-2.5 transition-colors cursor-pointer"
-                    >
-                        <span x-text="isEdit ? 'Simpan Perubahan' : 'Simpan Modul'"></span>
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                            <path d="M18 6L6 18M6 6l12 12" />
+                        </svg>
                     </button>
                 </div>
-            </form>
-        </div>
 
-        <!-- daftar modul card grid -->
-        <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-            @forelse ($moduls as $modul)
-                @php
-                    $isTeks = $modul->effective_type === 'teks';
-                    $modulPayload = [
-                        'id' => $modul->id,
-                        'judul' => $modul->judul,
-                        'kategori' => $modul->kategori,
-                        'type' => $modul->effective_type,
-                        'konten' => $modul->konten,
-                        'url' => $modul->effective_url,
-                    ];
-                @endphp
+                <!-- form simpan -->
+                <form :action="editAction" method="POST" class="space-y-4">
+                    @csrf
+                    <template x-if="isEdit">
+                        <input type="hidden" name="_method" value="PUT">
+                    </template>
 
-                <div class="rounded-2xl bg-[#F8FAFC] border border-gray-200/80 p-5 flex flex-col justify-between hover:border-sky/40 transition-all">
+                    <!-- toggle tipe konten -->
                     <div>
-                        <div class="flex items-center justify-between gap-2 mb-3">
-                            <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider {{ $isTeks ? 'bg-lime text-ink' : 'bg-sky/15 text-sky' }}">
-                                @if ($isTeks)
-                                    <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                                        <polyline points="14 2 14 8 20 8" />
-                                    </svg>
-                                    <span>Teks Manual</span>
-                                @else
-                                    <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                                        <polyline points="15 3 21 3 21 9" />
-                                        <line x1="10" y1="14" x2="21" y2="3" />
-                                    </svg>
-                                    <span>Link Eksternal</span>
-                                @endif
-                            </span>
-
-                            <span class="rounded-full bg-white border border-gray-200 px-2.5 py-0.5 text-[10px] font-bold text-muted">
-                                {{ $modul->kategori ?: 'Umum' }}
-                            </span>
-                        </div>
-
-                        <h3 class="font-heading font-bold text-sm sm:text-base text-ink leading-snug">
-                            {{ $modul->judul }}
-                        </h3>
-
-                        <p class="mt-2 text-xs text-muted leading-relaxed line-clamp-2">
-                            {{ $modul->konten }}
-                        </p>
-
-                        @if (! $isTeks && $modul->effective_url)
-                            <a
-                                href="{{ $modul->effective_url }}"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                class="mt-2.5 inline-flex items-center gap-1 text-[11px] font-semibold text-sky hover:underline truncate max-w-full"
-                            >
-                                <span class="truncate">{{ $modul->effective_url }}</span>
-                                <svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <line x1="7" y1="17" x2="17" y2="7" />
-                                    <polyline points="7 7 17 7 17 17" />
-                                </svg>
-                            </a>
-                        @endif
-                    </div>
-
-                    <!-- tombol aksi edit & hapus -->
-                    <div class="mt-5 pt-3.5 border-t border-gray-200/70 flex items-center justify-between gap-2">
-                        <span class="text-[10px] text-muted">
-                            ID #{{ $modul->id }}
-                        </span>
-
-                        <div class="flex items-center gap-2">
+                        <label class="block text-xs font-bold text-ink mb-2">Pilih Tipe Konten</label>
+                        <div class="inline-flex rounded-xl bg-white border border-gray-200 p-1 gap-1">
                             <button
                                 type="button"
-                                @click="openEdit(@js($modulPayload), '{{ route('admin.edukasi.update', $modul->id) }}')"
-                                class="inline-flex items-center gap-1.5 rounded-lg bg-white border border-gray-200 hover:border-sky hover:text-sky px-3 py-1.5 text-xs font-semibold text-ink transition-colors cursor-pointer"
+                                @click="form.type = 'teks'"
+                                :class="form.type === 'teks' ? 'bg-ink text-lime font-bold shadow-2xs' : 'text-muted hover:text-ink font-semibold'"
+                                class="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-xs transition-all cursor-pointer"
                             >
-                                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                    <polyline points="14 2 14 8 20 8" />
+                                    <line x1="16" y1="13" x2="8" y2="13" />
+                                    <line x1="16" y1="17" x2="8" y2="17" />
                                 </svg>
-                                <span>Edit</span>
+                                <span>Teks Manual</span>
                             </button>
 
-                            <form
-                                action="{{ route('admin.edukasi.destroy', $modul->id) }}"
-                                method="POST"
-                                @submit.prevent="$dispatch('admin-confirm', { form: $el, title: 'Hapus Modul Edukasi', message: 'Yakin ingin menghapus modul edukasi ini secara permanen?' })"
+                            <button
+                                type="button"
+                                @click="form.type = 'link'"
+                                :class="form.type === 'link' ? 'bg-sky text-white font-bold shadow-2xs' : 'text-muted hover:text-ink font-semibold'"
+                                class="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-xs transition-all cursor-pointer"
                             >
-                                @csrf
-                                @method('DELETE')
-                                <button
-                                    type="submit"
-                                    class="inline-flex items-center gap-1.5 rounded-lg bg-white border border-gray-200 hover:border-red-300 hover:bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 transition-colors cursor-pointer"
-                                >
-                                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <polyline points="3 6 5 6 21 6" />
-                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                                    </svg>
-                                    <span>Hapus</span>
-                                </button>
-                            </form>
+                                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                                </svg>
+                                <span>Link Eksternal</span>
+                            </button>
+                        </div>
+                        <input type="hidden" name="type" :value="form.type">
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-ink mb-1.5">Judul Modul</label>
+                            <input
+                                type="text"
+                                name="judul"
+                                x-model="form.judul"
+                                required
+                                placeholder="Contoh: Panduan Proteksi Akun WhatsApp"
+                                class="w-full rounded-xl bg-white border border-gray-200 px-4 py-2.5 text-xs text-ink focus:outline-none focus:border-sky"
+                            >
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-ink mb-1.5">Kategori</label>
+                            <input
+                                type="text"
+                                name="kategori"
+                                x-model="form.kategori"
+                                required
+                                placeholder="Contoh: Panduan Publik / Jurnal Akademik / Etika Siber"
+                                class="w-full rounded-xl bg-white border border-gray-200 px-4 py-2.5 text-xs text-ink focus:outline-none focus:border-sky"
+                            >
                         </div>
                     </div>
+
+                    <!-- input khusus tipe teks manual -->
+                    <div x-show="form.type === 'teks'">
+                        <label class="block text-xs font-bold text-ink mb-1.5">Isi Konten Modul (Ditampilkan pada Pop-up Halaman Edukasi)</label>
+                        <textarea
+                            name="konten"
+                            x-model="form.konten"
+                            rows="5"
+                            :required="form.type === 'teks'"
+                            placeholder="Tuliskan penjelasan lengkap materi edukasi keamanan digital di sini..."
+                            class="w-full rounded-xl bg-white border border-gray-200 px-4 py-2.5 text-xs text-ink focus:outline-none focus:border-sky resize-y"
+                        ></textarea>
+                    </div>
+
+                    <!-- input khusus tipe link eksternal -->
+                    <div x-show="form.type === 'link'" style="display: none;" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-ink mb-1.5">URL Tautan Eksternal</label>
+                            <input
+                                type="url"
+                                name="url"
+                                x-model="form.url"
+                                :required="form.type === 'link'"
+                                placeholder="https://literasidigital.id/..."
+                                class="w-full rounded-xl bg-white border border-gray-200 px-4 py-2.5 text-xs text-ink focus:outline-none focus:border-sky"
+                            >
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-ink mb-1.5">Ringkasan Singkat (Opsional)</label>
+                            <input
+                                type="text"
+                                name="konten"
+                                x-model="form.konten"
+                                placeholder="Deskripsi singkat 1 kalimat untuk kartu modul..."
+                                class="w-full rounded-xl bg-white border border-gray-200 px-4 py-2.5 text-xs text-ink focus:outline-none focus:border-sky"
+                            >
+                        </div>
+                    </div>
+
+                    <div class="pt-2 flex items-center justify-end gap-2.5">
+                        <button
+                            type="button"
+                            @click="formOpen = false"
+                            class="rounded-full border border-gray-200 bg-white px-5 py-2 text-xs font-semibold text-muted hover:text-ink cursor-pointer"
+                        >
+                            Batal
+                        </button>
+                        <button
+                            type="submit"
+                            class="rounded-full bg-ink hover:bg-sky text-white font-heading font-bold text-xs px-6 py-2.5 transition-colors cursor-pointer"
+                        >
+                            <span x-text="isEdit ? 'Simpan Perubahan' : 'Simpan Modul'"></span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- daftar modul card grid -->
+            <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                @forelse ($moduls as $modul)
+                    @php
+                        $isTeks = $modul->effective_type === 'teks';
+                        $modulPayload = [
+                            'id' => $modul->id,
+                            'judul' => $modul->judul,
+                            'kategori' => $modul->kategori,
+                            'type' => $modul->effective_type,
+                            'konten' => $modul->konten,
+                            'url' => $modul->effective_url,
+                        ];
+                    @endphp
+
+                    <div class="rounded-2xl bg-[#F8FAFC] border border-gray-200/80 p-5 flex flex-col justify-between hover:border-sky/40 transition-all">
+                        <div>
+                            <div class="flex items-center justify-between gap-2 mb-3">
+                                <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider {{ $isTeks ? 'bg-lime text-ink' : 'bg-sky/15 text-sky' }}">
+                                    @if ($isTeks)
+                                        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                            <polyline points="14 2 14 8 20 8" />
+                                        </svg>
+                                        <span>Teks Manual</span>
+                                    @else
+                                        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                                            <polyline points="15 3 21 3 21 9" />
+                                            <line x1="10" y1="14" x2="21" y2="3" />
+                                        </svg>
+                                        <span>Link Eksternal</span>
+                                    @endif
+                                </span>
+
+                                <span class="rounded-full bg-white border border-gray-200 px-2.5 py-0.5 text-[10px] font-bold text-muted">
+                                    {{ $modul->kategori ?: 'Umum' }}
+                                </span>
+                            </div>
+
+                            <h3 class="font-heading font-bold text-sm sm:text-base text-ink leading-snug">
+                                {{ $modul->judul }}
+                            </h3>
+
+                            <p class="mt-2 text-xs text-muted leading-relaxed line-clamp-2">
+                                {{ $modul->konten }}
+                            </p>
+
+                            @if (! $isTeks && $modul->effective_url)
+                                <a
+                                    href="{{ $modul->effective_url }}"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="mt-2.5 inline-flex items-center gap-1 text-[11px] font-semibold text-sky hover:underline truncate max-w-full"
+                                >
+                                    <span class="truncate">{{ $modul->effective_url }}</span>
+                                    <svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="7" y1="17" x2="17" y2="7" />
+                                        <polyline points="7 7 17 7 17 17" />
+                                    </svg>
+                                </a>
+                            @endif
+                        </div>
+
+                        <!-- tombol aksi edit & hapus -->
+                        <div class="mt-5 pt-3.5 border-t border-gray-200/70 flex items-center justify-between gap-2">
+                            <span class="text-[10px] text-muted">
+                                ID #{{ $modul->id }}
+                            </span>
+
+                            <div class="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    @click="openEdit(@js($modulPayload), '{{ route('admin.edukasi.update', $modul->id) }}')"
+                                    class="inline-flex items-center gap-1.5 rounded-lg bg-white border border-gray-200 hover:border-sky hover:text-sky px-3 py-1.5 text-xs font-semibold text-ink transition-colors cursor-pointer"
+                                >
+                                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                    </svg>
+                                    <span>Edit</span>
+                                </button>
+
+                                <form
+                                    action="{{ route('admin.edukasi.destroy', $modul->id) }}"
+                                    method="POST"
+                                    @submit.prevent="$dispatch('admin-confirm', { form: $el, title: 'Hapus Modul Edukasi', message: 'Yakin ingin menghapus modul edukasi ini secara permanen?' })"
+                                >
+                                    @csrf
+                                    @method('DELETE')
+                                    <button
+                                        type="submit"
+                                        class="inline-flex items-center gap-1.5 rounded-lg bg-white border border-gray-200 hover:border-red-300 hover:bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 transition-colors cursor-pointer"
+                                    >
+                                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="3 6 5 6 21 6" />
+                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                        </svg>
+                                        <span>Hapus</span>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                @empty
+                    <div class="col-span-full rounded-2xl border border-dashed border-gray-200 p-10 text-center">
+                        <p class="font-heading font-bold text-sm text-ink">Belum ada modul edukasi.</p>
+                        <p class="text-xs text-muted mt-1">Klik tombol "Tambah Modul" di kanan atas untuk membuat materi pertama.</p>
+                    </div>
+                @endforelse
+            </div>
+        </div>
+
+        <!-- TAB 2: EVALUASI REQUEST TEMA EDUKASI DARI PENGGUNA -->
+        <div x-show="activeSubTab === 'requests'" style="display: none;" class="mt-6 space-y-4">
+            <div class="rounded-2xl bg-[#F0F8FF] border border-sky/25 p-4 flex items-center gap-3 text-xs text-ink">
+                <img src="{{ asset('images/bot-digika.jpg') }}" alt="Bot Digika" class="w-10 h-10 rounded-full object-cover ring-2 ring-sky/35 bg-white shrink-0">
+                <div>
+                    <p class="font-heading font-bold">Sistem Notifikasi Otomatis Bot Digika</p>
+                    <p class="text-[11px] text-muted mt-0.5">
+                        Setiap kali Anda mengklik <strong>Setujui</strong> atau <strong>Tolak</strong>, sistem <strong>Bot Digika</strong> secara otomatis mengirimkan pesan resmi hasil evaluasi ke inbox pengguna pengusul.
+                    </p>
+                </div>
+            </div>
+
+            @forelse ($edukasiRequests as $req)
+                <div class="rounded-2xl bg-[#F8FAFC] border {{ $req->status === 'pending' ? 'border-amber-300' : 'border-gray-200/80' }} p-5 space-y-4">
+                    <div class="flex flex-wrap items-start justify-between gap-3">
+                        <div class="flex items-center gap-3 min-w-0">
+                            @if ($req->user)
+                                <x-user-avatar :user="$req->user" size="md" />
+                                <div class="min-w-0">
+                                    <a href="{{ route('profile.show', $req->user->id) }}" class="font-heading font-bold text-xs text-ink hover:text-sky truncate block">
+                                        {{ $req->user->nama_lengkap ?: $req->user->username }}
+                                    </a>
+                                    <span class="text-[10px] text-muted block truncate">
+                                        &#64;{{ $req->user->username }} • {{ $req->created_at?->timezone('Asia/Jakarta')->format('d M Y, H:i') }} WIB
+                                    </span>
+                                </div>
+                            @else
+                                <span class="font-heading font-bold text-xs text-ink">Pengguna #{{ $req->user_id }}</span>
+                            @endif
+                        </div>
+
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="rounded-full bg-white border border-gray-200 px-2.5 py-0.5 text-[10px] font-bold text-sky">
+                                {{ $req->kategori }}
+                            </span>
+                            <span class="rounded-full bg-white border border-gray-200 px-2.5 py-0.5 text-[10px] font-bold text-muted uppercase">
+                                {{ $req->preferred_type === 'link' ? 'Link Eksternal' : 'Teks Manual' }}
+                            </span>
+                            @if ($req->status === 'approved')
+                                <span class="rounded-full bg-emerald-100 text-emerald-700 px-3 py-0.5 text-[10px] font-extrabold uppercase">
+                                    Disetujui ✓
+                                </span>
+                            @elseif ($req->status === 'rejected')
+                                <span class="rounded-full bg-rose-100 text-rose-700 px-3 py-0.5 text-[10px] font-extrabold uppercase">
+                                    Ditolak
+                                </span>
+                            @else
+                                <span class="rounded-full bg-amber-100 text-amber-800 px-3 py-0.5 text-[10px] font-extrabold uppercase">
+                                    Menunggu Evaluasi
+                                </span>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="font-heading font-extrabold text-sm sm:text-base text-ink">
+                            {{ $req->tema }}
+                        </h3>
+                        <p class="mt-1.5 text-xs text-muted leading-relaxed">
+                            {{ $req->deskripsi }}
+                        </p>
+                    </div>
+
+                    @if ($req->status === 'pending')
+                        <form
+                            x-data="{ note: '' }"
+                            method="POST"
+                            class="pt-3 border-t border-gray-200/80 space-y-3"
+                        >
+                            @csrf
+                            @method('PATCH')
+
+                            <input
+                                type="text"
+                                name="admin_note"
+                                x-model="note"
+                                maxlength="500"
+                                placeholder="Catatan tambahan untuk pengguna (opsional, akan ikut dikirim oleh Bot Digika)..."
+                                class="w-full rounded-xl bg-white border border-gray-200 px-3.5 py-2 text-xs text-ink focus:outline-none focus:border-sky"
+                            >
+
+                            <div class="flex flex-wrap items-center justify-end gap-2">
+                                <button
+                                    type="submit"
+                                    formaction="{{ route('admin.edukasi.request.reject', $req->id) }}"
+                                    class="inline-flex items-center gap-1.5 rounded-full bg-white border border-rose-200 hover:bg-rose-50 text-rose-600 font-heading font-bold text-xs px-4 py-2 transition-colors cursor-pointer"
+                                >
+                                    <span>&times; Tolak Request</span>
+                                </button>
+                                <button
+                                    type="submit"
+                                    formaction="{{ route('admin.edukasi.request.approve', $req->id) }}"
+                                    class="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-heading font-bold text-xs px-5 py-2 shadow-2xs transition-colors cursor-pointer"
+                                >
+                                    <span>✓ Setujui &amp; Kirim Pesan Bot Digika</span>
+                                </button>
+                            </div>
+                        </form>
+                    @else
+                        <div class="pt-3 border-t border-gray-200/70 flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                            <div class="text-muted">
+                                Dievaluasi {{ $req->reviewed_at?->timezone('Asia/Jakarta')->format('d M Y, H:i') }} WIB
+                                @if ($req->reviewer)
+                                    oleh <strong class="text-ink">{{ $req->reviewer->nama_lengkap ?: $req->reviewer->username }}</strong>
+                                @endif
+                                @if (filled($req->admin_note))
+                                    • Catatan: <em class="text-ink">"{{ $req->admin_note }}"</em>
+                                @endif
+                            </div>
+
+                            @if ($req->status === 'approved')
+                                <button
+                                    type="button"
+                                    @click="openCreateFromRequest(@js([
+                                        'tema' => $req->tema,
+                                        'kategori' => $req->kategori,
+                                        'preferred_type' => $req->preferred_type,
+                                        'deskripsi' => $req->deskripsi,
+                                    ]))"
+                                    class="inline-flex items-center gap-1.5 rounded-full bg-sky hover:bg-sky-light text-white font-heading font-bold text-[11px] px-4 py-1.5 transition-colors cursor-pointer"
+                                >
+                                    <span>+ Buat Modul dari Tema Ini</span>
+                                </button>
+                            @endif
+                        </div>
+                    @endif
                 </div>
             @empty
-                <div class="col-span-full rounded-2xl border border-dashed border-gray-200 p-10 text-center">
-                    <p class="font-heading font-bold text-sm text-ink">Belum ada modul edukasi.</p>
-                    <p class="text-xs text-muted mt-1">Klik tombol "Tambah Modul" di kanan atas untuk membuat materi pertama.</p>
+                <div class="rounded-2xl border border-dashed border-gray-200 p-10 text-center">
+                    <p class="font-heading font-bold text-sm text-ink">Belum ada request tema edukasi dari pengguna.</p>
+                    <p class="text-xs text-muted mt-1">Usulan tema yang diajukan pengguna melalui halaman Edukasi akan muncul di sini.</p>
                 </div>
             @endforelse
         </div>

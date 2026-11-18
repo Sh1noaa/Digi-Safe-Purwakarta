@@ -16,7 +16,7 @@ class LeaderboardService
         SocialSchemaHelper::ensureReady();
         $isEn = app()->getLocale() === 'en';
 
-        $users = User::all();
+        $users = User::humans()->get();
         $scoresByUser = SkorGame::all()->groupBy('user_id');
         $answersByUser = JawabanForum::all()->groupBy('user_id');
         $threadsByUser = Forum::all()->groupBy('user_id');

@@ -6,23 +6,28 @@
 <div
     x-data="digiSafeChatWidget(@js((bool) $authUser), @js($authUser?->id ?? null), @js($isEnChat))"
     x-init="init()"
-    class="fixed bottom-4 right-4 sm:bottom-5 sm:right-5 z-50 flex flex-col items-end gap-3 pointer-events-none"
+    class="fixed bottom-5 right-6 sm:bottom-6 sm:right-7 z-50 flex flex-col items-end gap-3 pointer-events-none"
 >
     <!-- toast notifikasi pesan baru di atas ikon chat -->
     <template x-if="!open && toastAlert">
         <button
             type="button"
             @click="openConversationById(toastAlert.sender_id)"
-            class="pointer-events-auto max-w-[265px] rounded-2xl bg-white border border-gray-200/90 shadow-[0_14px_34px_rgba(15,23,42,0.16)] px-3.5 py-2.5 text-left hover:border-sky transition-colors cursor-pointer"
+            class="pointer-events-auto max-w-[280px] rounded-2xl bg-white border border-gray-200/90 shadow-[0_14px_34px_rgba(15,23,42,0.16)] px-3.5 py-2.5 text-left hover:border-sky transition-colors cursor-pointer flex items-center gap-2.5"
         >
-            <div class="flex items-center justify-between gap-2 mb-0.5">
-                <span class="text-[10px] font-heading font-extrabold uppercase tracking-wider text-[#1E63E9]">
-                    {{ $isEnChat ? 'New Message' : 'Pesan Baru' }}
-                </span>
-                <span @click.stop="toastAlert = null" class="text-xs text-muted hover:text-ink">&times;</span>
+            <template x-if="toastAlert.is_bot">
+                <img src="{{ asset('images/bot-digika.jpg') }}" alt="Bot Digika" class="w-9 h-9 rounded-full object-cover ring-2 ring-sky/30 bg-white shrink-0">
+            </template>
+            <div class="min-w-0 flex-1">
+                <div class="flex items-center justify-between gap-2 mb-0.5">
+                    <span class="text-[10px] font-heading font-extrabold uppercase tracking-wider text-[#1E63E9]">
+                        <span x-text="toastAlert.is_bot ? @js($isEnChat ? 'Bot Digika Notice' : 'Notifikasi Sistem') : @js($isEnChat ? 'New Message' : 'Pesan Baru')"></span>
+                    </span>
+                    <span @click.stop="toastAlert = null" class="text-xs text-muted hover:text-ink">&times;</span>
+                </div>
+                <p class="font-heading font-bold text-xs text-ink truncate" x-text="toastAlert.sender_name"></p>
+                <p class="text-[11px] text-muted truncate" x-text="toastAlert.preview"></p>
             </div>
-            <p class="font-heading font-bold text-xs text-ink truncate" x-text="toastAlert.sender_name"></p>
-            <p class="text-[11px] text-muted truncate" x-text="toastAlert.preview"></p>
         </button>
     </template>
 
@@ -36,7 +41,7 @@
         x-transition:leave-start="opacity-100 translate-y-0 scale-100"
         x-transition:leave-end="opacity-0 translate-y-3 scale-95"
         style="display: none;"
-        class="pointer-events-auto w-[calc(100vw-2rem)] sm:w-[368px] h-[470px] max-h-[74vh] rounded-[24px] bg-white border border-gray-200/90 shadow-[0_24px_60px_rgba(15,23,42,0.20)] flex flex-col overflow-hidden"
+        class="pointer-events-auto w-[calc(100vw-3rem)] sm:w-[368px] h-[470px] max-h-[74vh] rounded-[24px] bg-white border border-gray-200/90 shadow-[0_24px_60px_rgba(15,23,42,0.20)] flex flex-col overflow-hidden"
     >
         @guest
             <!-- tampilan ringkas untuk pengunjung yang belum login -->
@@ -112,21 +117,34 @@
                     </template>
 
                     <template x-if="activeUser">
-                        <a :href="activeUser.profile_url" class="flex items-center gap-2.5 min-w-0 group">
-                            <template x-if="activeUser.avatar_url">
-                                <img :src="activeUser.avatar_url" class="w-8 h-8 rounded-full object-cover shrink-0">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <template x-if="activeUser.is_bot">
+                                <img :src="activeUser.avatar_url || '{{ asset('images/bot-digika.jpg') }}'" alt="Bot Digika" class="w-8 h-8 rounded-full object-cover ring-2 ring-sky/35 bg-white shrink-0">
                             </template>
-                            <template x-if="!activeUser.avatar_url">
-                                <span :class="activeUser.pastel_class" class="w-8 h-8 rounded-full font-heading font-bold text-xs flex items-center justify-center shrink-0" x-text="activeUser.inisial"></span>
+                            <template x-if="!activeUser.is_bot && activeUser.avatar_url">
+                                <a :href="activeUser.profile_url" class="shrink-0">
+                                    <img :src="activeUser.avatar_url" class="w-8 h-8 rounded-full object-cover">
+                                </a>
+                            </template>
+                            <template x-if="!activeUser.is_bot && !activeUser.avatar_url">
+                                <a :href="activeUser.profile_url" class="shrink-0">
+                                    <span :class="activeUser.pastel_class" class="w-8 h-8 rounded-full font-heading font-bold text-xs flex items-center justify-center" x-text="activeUser.inisial"></span>
+                                </a>
                             </template>
                             <div class="min-w-0">
                                 <div class="flex items-center gap-1.5">
-                                    <span class="font-heading font-bold text-xs text-ink group-hover:text-[#1E63E9] truncate" x-text="activeUser.nama"></span>
-                                    <span x-show="activeRelation === 'accepted'" class="shrink-0 rounded-full bg-emerald-100 text-emerald-700 px-1.5 py-0.5 text-[9px] font-bold">Teman</span>
+                                    <template x-if="activeUser.is_bot">
+                                        <span class="font-heading font-extrabold text-xs text-ink truncate" x-text="activeUser.nama"></span>
+                                    </template>
+                                    <template x-if="!activeUser.is_bot">
+                                        <a :href="activeUser.profile_url" class="font-heading font-bold text-xs text-ink hover:text-[#1E63E9] truncate" x-text="activeUser.nama"></a>
+                                    </template>
+                                    <span x-show="activeUser.is_bot" class="shrink-0 rounded-full bg-sky/15 text-sky px-1.5 py-0.5 text-[9px] font-extrabold uppercase">Sistem Otomatis</span>
+                                    <span x-show="!activeUser.is_bot && activeRelation === 'accepted'" class="shrink-0 rounded-full bg-emerald-100 text-emerald-700 px-1.5 py-0.5 text-[9px] font-bold">Teman</span>
                                 </div>
-                                <span class="text-[10px] text-muted block truncate" x-text="activeUser.specialty_role || ('@' + activeUser.username)"></span>
+                                <span class="text-[10px] text-muted block truncate" x-text="activeUser.is_bot ? 'Notifikasi Resmi Digi-Safe Purwakarta' : (activeUser.specialty_role || ('@' + activeUser.username))"></span>
                             </div>
-                        </a>
+                        </div>
                     </template>
                 </div>
 
@@ -183,16 +201,22 @@
                                 @click="openConversation(item.user)"
                                 class="w-full px-4 py-3 flex items-center gap-3 text-left hover:bg-[#F8FAFC] transition-colors cursor-pointer"
                             >
-                                <template x-if="item.user.avatar_url">
+                                <template x-if="item.user.is_bot">
+                                    <img :src="item.user.avatar_url || '{{ asset('images/bot-digika.jpg') }}'" alt="Bot Digika" class="w-10 h-10 rounded-full object-cover ring-2 ring-sky/30 bg-white shrink-0">
+                                </template>
+                                <template x-if="!item.user.is_bot && item.user.avatar_url">
                                     <img :src="item.user.avatar_url" class="w-10 h-10 rounded-full object-cover shrink-0">
                                 </template>
-                                <template x-if="!item.user.avatar_url">
+                                <template x-if="!item.user.is_bot && !item.user.avatar_url">
                                     <span :class="item.user.pastel_class" class="w-10 h-10 rounded-full font-heading font-bold text-xs flex items-center justify-center shrink-0" x-text="item.user.inisial"></span>
                                 </template>
 
                                 <div class="flex-1 min-w-0">
                                     <div class="flex items-center justify-between gap-2">
-                                        <span class="font-heading font-bold text-xs text-ink truncate" x-text="item.user.nama"></span>
+                                        <div class="flex items-center gap-1.5 min-w-0">
+                                            <span class="font-heading font-bold text-xs text-ink truncate" x-text="item.user.nama"></span>
+                                            <span x-show="item.user.is_bot" class="shrink-0 rounded-full bg-sky/15 text-sky px-1.5 py-0.5 text-[8px] font-extrabold uppercase">BOT</span>
+                                        </div>
                                         <span class="text-[10px] text-muted shrink-0" x-text="item.last_time || ''"></span>
                                     </div>
                                     <div class="flex items-center justify-between gap-2 mt-0.5">
@@ -326,11 +350,11 @@
                         <template x-for="m in messages" :key="m.id">
                             <div :class="m.is_mine ? 'justify-end' : 'justify-start'" class="flex">
                                 <div
-                                    :class="m.is_mine ? 'bg-[#1E63E9] text-white rounded-2xl rounded-br-sm' : 'bg-white border border-gray-200/80 text-ink rounded-2xl rounded-bl-sm'"
-                                    class="max-w-[78%] px-3.5 py-2 shadow-2xs"
+                                    :class="m.is_mine ? 'bg-[#1E63E9] text-white rounded-2xl rounded-br-sm' : (activeUser.is_bot ? 'bg-white border border-sky/30 text-ink rounded-2xl rounded-bl-sm' : 'bg-white border border-gray-200/80 text-ink rounded-2xl rounded-bl-sm')"
+                                    class="max-w-[84%] px-3.5 py-2.5 shadow-2xs"
                                 >
-                                    <p class="text-xs leading-relaxed break-words" x-text="m.message"></p>
-                                    <span :class="m.is_mine ? 'text-white/70' : 'text-muted'" class="text-[9px] block text-right mt-0.5" x-text="m.time"></span>
+                                    <p class="text-xs leading-relaxed break-words whitespace-pre-line" x-text="m.message"></p>
+                                    <span :class="m.is_mine ? 'text-white/70' : 'text-muted'" class="text-[9px] block text-right mt-1" x-text="m.time"></span>
                                 </div>
                             </div>
                         </template>
@@ -342,19 +366,33 @@
                             <p class="text-[10px] font-semibold text-red-600 mb-1.5" x-text="chatError"></p>
                         </template>
 
-                        <template x-if="activeRelation === 'pending_incoming'">
+                        <template x-if="activeUser.is_bot">
+                            <div class="flex items-center justify-between gap-2 py-0.5">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <img src="{{ asset('images/bot-digika.jpg') }}" alt="Bot Digika" class="w-5 h-5 rounded-full object-cover shrink-0 bg-white">
+                                    <span class="text-[10.5px] text-muted font-medium truncate">
+                                        {{ $isEnChat ? 'Automated by Bot Digika • No reply needed' : 'Pesan otomatis Bot Digika • Tidak perlu dibalas' }}
+                                    </span>
+                                </div>
+                                <a href="{{ route('edukasi') }}" class="shrink-0 rounded-full bg-sky/10 hover:bg-sky text-sky hover:text-white text-[10px] font-bold px-3 py-1.5 transition-colors">
+                                    {{ $isEnChat ? 'Education' : 'Buka Edukasi' }} &rarr;
+                                </a>
+                            </div>
+                        </template>
+
+                        <template x-if="!activeUser.is_bot && activeRelation === 'pending_incoming'">
                             <p class="text-[11px] text-center text-muted py-1">
                                 {{ $isEnChat ? 'Click Accept above to reply.' : 'Klik Terima di atas untuk membalas pesan ini.' }}
                             </p>
                         </template>
 
-                        <template x-if="activeRelation === 'declined'">
+                        <template x-if="!activeUser.is_bot && activeRelation === 'declined'">
                             <p class="text-[11px] text-center text-red-600 py-1">
                                 {{ $isEnChat ? 'Chat request was declined.' : 'Permintaan obrolan ditolak.' }}
                             </p>
                         </template>
 
-                        <form x-show="activeRelation !== 'pending_incoming' && activeRelation !== 'declined'" @submit.prevent="sendMessage()" class="flex items-center gap-2">
+                        <form x-show="!activeUser.is_bot && activeRelation !== 'pending_incoming' && activeRelation !== 'declined'" @submit.prevent="sendMessage()" class="flex items-center gap-2">
                             <input
                                 type="text"
                                 x-model="draft"
@@ -385,10 +423,10 @@
         type="button"
         @click="toggleOpen()"
         aria-label="Buka Chat & Pertemanan"
-        class="pointer-events-auto relative w-14 h-14 rounded-full bg-[#1E63E9] hover:bg-[#1750C4] text-white ring-[3px] ring-white shadow-[0_12px_28px_rgba(30,99,233,0.36)] flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer"
+        class="chat-fab-btn pointer-events-auto relative w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-[#1E63E9] hover:bg-[#1750C4] text-white ring-[3px] ring-white shadow-[0_12px_28px_rgba(30,99,233,0.36)] flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer"
     >
         <template x-if="!open">
-            <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg class="w-6 h-6 sm:w-7 sm:h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="4" width="18" height="13" rx="4.5" />
                 <path d="M8.5 17L6 20.5V17" fill="#1E63E9" />
                 <circle cx="8.5" cy="10.5" r="1.15" fill="currentColor" stroke="none" />
@@ -397,7 +435,7 @@
             </svg>
         </template>
         <template x-if="open">
-            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+            <svg class="w-5 h-5 sm:w-6 sm:h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
@@ -407,7 +445,7 @@
             x-show="totalBadge > 0"
             x-text="totalBadge > 99 ? '99+' : totalBadge"
             style="display: none;"
-            class="absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 rounded-full bg-lime text-ink border-2 border-white font-heading font-extrabold text-[10px] flex items-center justify-center shadow-xs"
+            class="chat-fab-badge absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 rounded-full bg-lime text-ink border-2 border-white font-heading font-extrabold text-[10px] flex items-center justify-center shadow-xs"
         ></span>
     </button>
 </div>
@@ -486,7 +524,7 @@
                     this.pendingRequests = data.pending_requests || 0;
                     this.totalBadge = data.total_badge || 0;
                     if (data.latest_alert) {
-                        const sig = `${data.latest_alert.sender_id}:${data.latest_alert.preview}`;
+                        const sig = `${data.latest_alert.message_id || ''}:${data.latest_alert.sender_id}:${data.latest_alert.preview}`;
                         if (sig !== this.lastAlertSig) {
                             this.lastAlertSig = sig;
                             this.toastAlert = data.latest_alert;

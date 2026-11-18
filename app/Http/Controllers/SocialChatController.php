@@ -25,7 +25,7 @@ class SocialChatController extends Controller
             ->where('status', 'pending')
             ->count();
 
-        $latestUnread = ChatMessage::with('sender:id,nama_lengkap,username')
+        $latestUnread = ChatMessage::with('sender:id,nama_lengkap,username,email,avatar')
             ->where('receiver_id', $me)
             ->where('is_read', false)
             ->latest('id')
@@ -36,9 +36,12 @@ class SocialChatController extends Controller
             'pending_requests' => $pendingReqs,
             'total_badge' => $unreadMsgs + $pendingReqs,
             'latest_alert' => $latestUnread && $latestUnread->sender ? [
+                'message_id' => (int) $latestUnread->id,
                 'sender_id' => $latestUnread->sender->id,
                 'sender_name' => $latestUnread->sender->nama_lengkap ?: $latestUnread->sender->username,
-                'preview' => mb_strimwidth($latestUnread->message, 0, 48, '...'),
+                'sender_avatar' => $latestUnread->sender->avatar_url,
+                'is_bot' => $latestUnread->sender->isBot(),
+                'preview' => mb_strimwidth($latestUnread->message, 0, 56, '...'),
             ] : null,
         ]);
     }
@@ -154,7 +157,7 @@ class SocialChatController extends Controller
         $me = Auth::id();
         $q = trim((string) $request->query('q', ''));
 
-        $usersQuery = User::where('id', '!=', $me);
+        $usersQuery = User::humans()->where('id', '!=', $me);
         if ($q !== '') {
             $usersQuery->where(function ($sub) use ($q) {
                 $sub->where('nama_lengkap', 'like', "%{$q}%")
@@ -219,6 +222,10 @@ class SocialChatController extends Controller
             return response()->json(['message' => 'Tidak dapat mengirim pesan ke akun sendiri.'], 422);
         }
 
+        if ($user->isBot()) {
+            return response()->json(['message' => 'Bot Digika adalah sistem notifikasi otomatis dan tidak menerima balasan langsung.'], 422);
+        }
+
         $validated = $request->validate([
             'message' => ['required', 'string', 'max:1000'],
         ]);
@@ -274,6 +281,10 @@ class SocialChatController extends Controller
 
         if ((int) $user->id === (int) $me) {
             return response()->json(['message' => 'Tidak bisa menambahkan diri sendiri.'], 422);
+        }
+
+        if ($user->isBot()) {
+            return response()->json(['message' => 'Bot Digika adalah asisten otomatis sistem.'], 422);
         }
 
         $existing = Friendship::between($me, (int) $user->id);
@@ -375,6 +386,7 @@ class SocialChatController extends Controller
             'pastel_class' => $u->pastel_class,
             'specialty_role' => trim((string) ($u->specialty_role ?? '')) ?: null,
             'role_label' => $u->display_role,
+            'is_bot' => $u->isBot(),
             'profile_url' => route('profile.show', $u->id),
         ];
     }

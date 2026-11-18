@@ -6,7 +6,9 @@ import '../models/digisafe_models.dart';
 import '../widgets/minigame_art.dart';
 import '../widgets/shared_widgets.dart';
 import 'auth_screens.dart';
+import 'leaderboard_screen.dart';
 import 'minigame_play_screens.dart';
+import 'password_checker_screen.dart';
 import 'profile_screens.dart';
 
 class MinigameHubScreen extends StatefulWidget {
@@ -111,7 +113,7 @@ class _MinigameHubScreenState extends State<MinigameHubScreen> {
       body: RefreshIndicator(
         onRefresh: _loadData,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 112),
           children: [
             // Search bar
             TextField(
@@ -179,6 +181,37 @@ class _MinigameHubScreenState extends State<MinigameHubScreen> {
                     iconFg: AppColors.ink,
                     sub: state.tr('game_cap_3_sub'),
                     title: state.tr('game_cap_3_title'),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => LeaderboardScreen(appState: state))),
+                    icon: const Icon(Icons.leaderboard_rounded, size: 16, color: AppColors.ink),
+                    label: Text(isEn ? '4-Cat Leaderboard' : 'Leaderboard 4 Kategori', overflow: TextOverflow.ellipsis, style: AppTheme.heading(false, size: 11, color: AppColors.ink)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.lime,
+                      padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => PasswordCheckerScreen(appState: state))),
+                    icon: const Icon(Icons.password_rounded, size: 16, color: Colors.white),
+                    label: Text(isEn ? 'Password Lab' : 'Lab Cek Password', overflow: TextOverflow.ellipsis, style: AppTheme.heading(false, size: 11, color: Colors.white)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.cobalt,
+                      padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
                   ),
                 ),
               ],

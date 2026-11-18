@@ -3,11 +3,14 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\EdukasiRequest;
 use App\Models\ModulEdukasi;
 use App\Models\Testimoni;
 use App\Models\User;
 use App\Services\ApiResourceFormatter;
 use App\Services\BilingualHelper;
+use App\Services\LeaderboardService;
+use App\Services\SocialSchemaHelper;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -85,7 +88,7 @@ class PublicContentApiController extends Controller
 
         $faqGroups = $this->buildFaqGroups($isEn);
 
-        $registeredUsers = User::withCount(['forums', 'jawabanForums', 'testimonis'])
+        $registeredUsers = User::humans()->withCount(['forums', 'jawabanForums', 'testimonis'])
             ->withSum('skorGames as total_skor_game', 'skor')
             ->orderBy('id')
             ->get()
@@ -112,7 +115,7 @@ class PublicContentApiController extends Controller
         $viewer = Auth::user();
         $search = trim((string) $request->query('q', ''));
 
-        $query = User::withCount(['forums', 'jawabanForums', 'testimonis'])
+        $query = User::humans()->withCount(['forums', 'jawabanForums', 'testimonis'])
             ->withSum('skorGames as total_skor_game', 'skor')
             ->orderBy('id');
 
@@ -291,6 +294,98 @@ class PublicContentApiController extends Controller
                 : 'Terima kasih! Ulasanmu telah diterbitkan dan langsung tampil.',
             'item' => ApiResourceFormatter::formatTestimoni($testimoni),
         ], 201);
+    }
+
+    public function leaderboard(): JsonResponse
+    {
+        $data = LeaderboardService::allCategories(10);
+
+        return response()->json([
+            'success' => true,
+            'locale' => app()->getLocale(),
+            'categories' => $data['categories'] ?? [],
+        ]);
+    }
+
+    public function myEdukasiRequests(): JsonResponse
+    {
+        SocialSchemaHelper::ensureReady();
+
+        $requests = EdukasiRequest::where('user_id', Auth::id())
+            ->latest('id')
+            ->limit(25)
+            ->get()
+            ->map(fn (EdukasiRequest $r) => [
+                'id' => (int) $r->id,
+                'tema' => $r->tema,
+                'kategori' => $r->kategori,
+                'preferred_type' => $r->preferred_type ?: 'teks',
+                'deskripsi' => $r->deskripsi,
+                'status' => $r->status,
+                'admin_note' => $r->admin_note,
+                'user_notified_read' => (bool) $r->user_notified_read,
+                'created_at' => $r->created_at?->timezone('Asia/Jakarta')->format('d M Y, H:i') . ($r->created_at ? ' WIB' : ''),
+            ])
+            ->values();
+
+        return response()->json([
+            'success' => true,
+            'requests' => $requests,
+            'unread_decisions' => $requests->whereIn('status', ['approved', 'rejected'])->where('user_notified_read', false)->count(),
+        ]);
+    }
+
+    public function storeEdukasiRequest(Request $request): JsonResponse
+    {
+        SocialSchemaHelper::ensureReady();
+        $isEn = app()->getLocale() === 'en';
+
+        $validated = $request->validate([
+            'tema' => ['required', 'string', 'min:4', 'max:180'],
+            'kategori' => ['required', 'string', 'max:80'],
+            'preferred_type' => ['nullable', 'string', 'in:teks,link'],
+            'deskripsi' => ['required', 'string', 'min:10', 'max:1000'],
+        ]);
+
+        $reqItem = EdukasiRequest::create([
+            'user_id' => Auth::id(),
+            'tema' => trim($validated['tema']),
+            'kategori' => trim($validated['kategori']),
+            'preferred_type' => $validated['preferred_type'] ?? 'teks',
+            'deskripsi' => trim($validated['deskripsi']),
+            'status' => 'pending',
+            'user_notified_read' => false,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => $isEn
+                ? 'Your education topic request has been sent! Bot Digika will message you once the Admin team reviews it.'
+                : 'Request tema edukasi berhasil dikirim! Tim Admin akan mengevaluasinya dan Bot Digika akan mengirim pesan otomatis kepada Anda.',
+            'request' => [
+                'id' => (int) $reqItem->id,
+                'tema' => $reqItem->tema,
+                'kategori' => $reqItem->kategori,
+                'preferred_type' => $reqItem->preferred_type,
+                'deskripsi' => $reqItem->deskripsi,
+                'status' => $reqItem->status,
+                'admin_note' => null,
+                'user_notified_read' => false,
+                'created_at' => $reqItem->created_at?->timezone('Asia/Jakarta')->format('d M Y, H:i') . ' WIB',
+            ],
+        ], 201);
+    }
+
+    public function markEdukasiRequestsSeen(): JsonResponse
+    {
+        SocialSchemaHelper::ensureReady();
+
+        EdukasiRequest::where('user_id', Auth::id())
+            ->whereIn('status', ['approved', 'rejected'])
+            ->where('user_notified_read', false)
+            ->update(['user_notified_read' => true]);
+
+        return response()->json(['success' => true]);
     }
 
     private function buildFaqGroups(bool $isEn): array

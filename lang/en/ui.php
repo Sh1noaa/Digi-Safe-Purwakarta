@@ -100,6 +100,9 @@ return [
         'public_space' => 'Public Space',
         'curriculum_footer' => 'Digi-Safe Purwakarta Cyber Literacy Curriculum',
         'finish_reading' => 'Done Reading',
+        'request_btn' => 'Request Topic',
+        'request_title' => 'Request New Education Topic',
+        'request_sub' => 'Suggest a digital safety topic you want added. Our Admin team will review it and Bot Digika will automatically message you the result.',
     ],
 
     // Minigame
@@ -355,7 +358,8 @@ return [
         'bio_placeholder' => 'Share a bit about yourself or your area in Purwakarta...',
         'avatar_label' => 'Profile Picture (Avatar)',
         'banner_label' => 'Top Banner Image (optional)',
-        'upload_hint' => 'JPG/PNG/WebP format up to 2MB.',
+        'upload_hint' => 'JPG, PNG, WebP, or animated GIF (supports interactive crop before saving).',
+        'select_role_label' => 'Select Your Role (Max 4 Choices)',
         'save_changes' => 'Save Changes',
         'role_owner' => 'Owner',
         'role_admin' => 'Admin',

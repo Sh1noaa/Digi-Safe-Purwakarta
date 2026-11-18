@@ -237,5 +237,75 @@ class ApiEndpointsTest extends TestCase
             ->assertJsonPath('user.theme', 'dark')
             ->assertJsonPath('user.is_private_profile', true);
     }
+
+    public function test_mobile_api_role_selector_leaderboard_edukasi_request_and_bot_digika_sync(): void
+    {
+        $user = User::create([
+            'username' => 'citizen_apk',
+            'email' => 'citizen@apk.id',
+            'password' => Hash::make('secret123'),
+            'role' => 'user',
+            'nama_lengkap' => 'Warga APK',
+        ]);
+
+        $admin = User::create([
+            'username' => 'admin_apk',
+            'email' => 'admin@apk.id',
+            'password' => Hash::make('secret123'),
+            'role' => 'admin',
+            'nama_lengkap' => 'Admin APK',
+        ]);
+
+        $userToken = $this->postJson('/api/auth/login', [
+            'email' => 'citizen@apk.id',
+            'password' => 'secret123',
+        ])->json('token');
+
+        $adminToken = $this->postJson('/api/auth/login', [
+            'email' => 'admin@apk.id',
+            'password' => 'secret123',
+        ])->json('token');
+
+        // 1. Select Your Role via API
+        $this->withHeader('Authorization', "Bearer $userToken")
+            ->putJson('/api/profile/role', ['specialty_role' => 'Phishing Hunter'])
+            ->assertOk()
+            ->assertJsonPath('user.specialty_role', 'Phishing Hunter');
+
+        // 2. Submit Edukasi Topic Request
+        $reqResp = $this->withHeader('Authorization', "Bearer $userToken")
+            ->postJson('/api/edukasi/requests', [
+                'tema' => 'Modus Penipuan QRIS',
+                'kategori' => 'Phishing & Penipuan',
+                'preferred_type' => 'teks',
+                'deskripsi' => 'Membantu warga memeriksa nama merchant QRIS.',
+            ])
+            ->assertCreated()
+            ->assertJsonPath('request.status', 'pending');
+
+        $requestId = $reqResp->json('request.id');
+
+        // 3. Admin approves -> Bot Digika sends automated message via API Chat
+        $this->withHeader('Authorization', "Bearer $adminToken")
+            ->patchJson("/api/admin/edukasi/requests/{$requestId}/approve", [
+                'admin_note' => 'Segera diterbitkan minggu ini!',
+            ])
+            ->assertOk();
+
+        $this->withHeader('Authorization', "Bearer $userToken")
+            ->getJson('/api/chat/unread-count')
+            ->assertOk()
+            ->assertJsonPath('unread_messages', 1)
+            ->assertJsonPath('latest_alert.is_bot', true);
+
+        // 4. 4-Category Leaderboard API
+        $this->getJson('/api/leaderboard')
+            ->assertOk()
+            ->assertJsonCount(4, 'categories');
+
+        // Suppress unused variable
+        $this->assertNotNull($admin->id);
+        $this->assertNotNull($user->id);
+    }
 }
 

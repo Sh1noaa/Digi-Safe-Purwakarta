@@ -42,6 +42,16 @@ class ApiClient {
     return _decode(resp);
   }
 
+  /// Mengambil endpoint opsional tanpa melempar exception jika server hosting belum diperbarui (404).
+  Future<Map<String, dynamic>?> getOptional(String path) async {
+    try {
+      return await get(path);
+    } on ApiException catch (e) {
+      if (e.statusCode == 404 || e.statusCode == 405) return null;
+      rethrow;
+    }
+  }
+
   Future<Map<String, dynamic>> post(String path, [Map<String, dynamic>? body]) async {
     final uri = Uri.parse('$apiBase$path');
     final resp = await http
@@ -102,7 +112,7 @@ class ApiClient {
       parsed = jsonDecode(bodyText);
     } catch (_) {
       throw ApiException(
-        'Server mengembalikan respons non-JSON (${resp.statusCode}). Pastikan API backend terbaru sudah di-upload ke hosting.',
+        'Server mengembalikan respons non-JSON (${resp.statusCode}). Pastikan koneksi internet stabil atau API backend terbaru aktif.',
         resp.statusCode,
       );
     }
@@ -125,4 +135,3 @@ class ApiClient {
     return parsed;
   }
 }
-

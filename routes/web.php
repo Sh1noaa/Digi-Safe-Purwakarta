@@ -34,8 +34,11 @@ Route::get('/tentang', [TentangController::class, 'index'])->name('tentang.index
 
 // rute halaman profil pengguna (lihat, edit profil, & pengaturan bahasa/tema/privasi)
 Route::middleware('auth')->group(function () {
+    Route::post('/edukasi/request', [EdukasiController::class, 'storeRequest'])->name('edukasi.request.store');
+    Route::post('/edukasi/request/mark-seen', [EdukasiController::class, 'markRequestsSeen'])->name('edukasi.request.seen');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::put('/profile/role', [ProfileController::class, 'updateRole'])->name('profile.role');
     Route::put('/profile/settings', [ProfileController::class, 'updateSettings'])->name('profile.settings');
 });
 Route::get('/profile/{user}', [ProfileController::class, 'show'])->name('profile.show');
@@ -95,11 +98,13 @@ Route::middleware(['auth', 'admin'])
     ->group(function () {
         Route::get('/', [AdminEdukasiController::class, 'index'])->name('dashboard');
 
-        // tab 1: manajemen edukasi
+        // tab 1: manajemen edukasi & evaluasi request tema dari user
         Route::get('/edukasi', [AdminEdukasiController::class, 'index'])->name('edukasi.index');
         Route::post('/edukasi', [AdminEdukasiController::class, 'store'])->name('edukasi.store');
         Route::put('/edukasi/{edukasi}', [AdminEdukasiController::class, 'update'])->name('edukasi.update');
         Route::delete('/edukasi/{edukasi}', [AdminEdukasiController::class, 'destroy'])->name('edukasi.destroy');
+        Route::patch('/edukasi/requests/{edukasiRequest}/approve', [AdminEdukasiController::class, 'approveRequest'])->name('edukasi.request.approve');
+        Route::patch('/edukasi/requests/{edukasiRequest}/reject', [AdminEdukasiController::class, 'rejectRequest'])->name('edukasi.request.reject');
 
         // tab 2: soal & level minigame
         Route::get('/minigame', [AdminMinigameController::class, 'index'])->name('minigame.index');

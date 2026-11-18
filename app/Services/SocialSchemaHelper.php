@@ -14,7 +14,7 @@ class SocialSchemaHelper
      */
     public static function ensureReady(): void
     {
-        if (self::$ensured) {
+        if (self::$ensured && Schema::hasTable('edukasi_requests') && Schema::hasColumn('users', 'specialty_role')) {
             return;
         }
         self::$ensured = true;
@@ -65,6 +65,23 @@ class SocialSchemaHelper
                     if (! Schema::hasColumn('skor_game', 'salah')) {
                         $table->unsignedInteger('salah')->default(0);
                     }
+                });
+            }
+
+            if (! Schema::hasTable('edukasi_requests')) {
+                Schema::create('edukasi_requests', function (Blueprint $table) {
+                    $table->id();
+                    $table->unsignedBigInteger('user_id')->index();
+                    $table->string('tema', 180);
+                    $table->string('kategori', 80)->default('Keamanan Akun');
+                    $table->string('preferred_type', 20)->default('teks');
+                    $table->text('deskripsi');
+                    $table->string('status', 20)->default('pending')->index();
+                    $table->text('admin_note')->nullable();
+                    $table->unsignedBigInteger('reviewed_by')->nullable();
+                    $table->timestamp('reviewed_at')->nullable();
+                    $table->boolean('user_notified_read')->default(false);
+                    $table->timestamps();
                 });
             }
         } catch (\Throwable $e) {
