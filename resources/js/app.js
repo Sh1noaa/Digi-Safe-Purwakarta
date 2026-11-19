@@ -24,20 +24,47 @@ document.addEventListener('alpine:init', () => {
         suppressClickUntil: 0,
         lastFrameTime: 0,
         rafId: null,
+        isInView: true,
+        reducedMotion: false,
+        _io: null,
 
         init() {
+            this.reducedMotion = Boolean(
+                window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+            );
+
             this.$nextTick(() => {
                 this.measure();
-                this.lastFrameTime = performance.now();
-                const loop = (now) => {
-                    this.tick(now);
-                    this.rafId = requestAnimationFrame(loop);
-                };
-                this.rafId = requestAnimationFrame(loop);
+                if ('IntersectionObserver' in window) {
+                    this._io = new IntersectionObserver(
+                        (entries) => {
+                            const visible = Boolean(entries[0]?.isIntersecting);
+                            this.isInView = visible;
+                            if (visible) {
+                                this.startLoop();
+                            } else {
+                                this.stopLoop();
+                            }
+                        },
+                        { rootMargin: '120px 0px' }
+                    );
+                    this._io.observe(this.$el);
+                } else {
+                    this.startLoop();
+                }
             });
 
+            this._onVisibility = () => {
+                if (document.visibilityState === 'visible' && this.isInView) {
+                    this.startLoop();
+                } else {
+                    this.stopLoop();
+                }
+            };
+            document.addEventListener('visibilitychange', this._onVisibility);
+
             this._onResize = () => this.measure();
-            window.addEventListener('resize', this._onResize);
+            window.addEventListener('resize', this._onResize, { passive: true });
 
             this._onPointerMove = (e) => this.handlePointerMove(e);
             this._onPointerUp = () => this.handlePointerUp();
@@ -46,8 +73,31 @@ document.addEventListener('alpine:init', () => {
             window.addEventListener('pointercancel', this._onPointerUp);
         },
 
+        startLoop() {
+            if (this.rafId || this.reducedMotion || document.visibilityState !== 'visible') return;
+            this.lastFrameTime = performance.now();
+            const loop = (now) => {
+                if (!this.isInView || document.visibilityState !== 'visible') {
+                    this.rafId = null;
+                    return;
+                }
+                this.tick(now);
+                this.rafId = requestAnimationFrame(loop);
+            };
+            this.rafId = requestAnimationFrame(loop);
+        },
+
+        stopLoop() {
+            if (this.rafId) {
+                cancelAnimationFrame(this.rafId);
+                this.rafId = null;
+            }
+        },
+
         destroy() {
-            if (this.rafId) cancelAnimationFrame(this.rafId);
+            this.stopLoop();
+            if (this._io) this._io.disconnect();
+            document.removeEventListener('visibilitychange', this._onVisibility);
             window.removeEventListener('resize', this._onResize);
             window.removeEventListener('pointermove', this._onPointerMove);
             window.removeEventListener('pointerup', this._onPointerUp);
@@ -409,6 +459,19 @@ document.addEventListener('DOMContentLoaded', () => {
         );
 
         revealElements.forEach((el) => observer.observe(el));
+
+        // Jeda otomatis animasi burung hero saat di luar viewport agar GPU hemat baterai
+        const heroEl = document.getElementById('beranda');
+        if (heroEl) {
+            const heroObs = new IntersectionObserver(
+                (entries) => {
+                    const inView = Boolean(entries[0]?.isIntersecting);
+                    heroEl.classList.toggle('hero-birds-paused', !inView);
+                },
+                { threshold: 0.01 }
+            );
+            heroObs.observe(heroEl);
+        }
     } else {
         revealElements.forEach((el) => el.classList.add('reveal-active'));
     }

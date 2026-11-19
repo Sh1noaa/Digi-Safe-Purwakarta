@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Minigame Keamanan Digital — Digi-Safe Purwakarta')
+@section('title', 'Minigame Keamanan Digital - Digi-Safe Purwakarta')
 
 @section('content')
 
@@ -69,7 +69,7 @@
                     >
                         <img
                             src="{{ asset('images/minigame-banner.jpg') }}"
-                            alt="Minigame Digi-Safe — Scroll to play!"
+                            alt="Minigame Digi-Safe - Scroll to play!"
                             class="w-full h-auto block"
                         >
                     </a>

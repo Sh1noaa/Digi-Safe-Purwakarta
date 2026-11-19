@@ -52,10 +52,10 @@
             <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative">
 
                 <!-- kanvas ikon melayang & teks utama -->
-                <div class="relative min-h-[480px] sm:min-h-[540px] flex flex-col items-center justify-center text-center">
+                <div class="relative min-h-[380px] sm:min-h-[480px] lg:min-h-[540px] flex flex-col items-center justify-center text-center">
 
-                    <!-- lapisan ikon melayang dengan animasi masuk halus -->
-                    <div class="reveal reveal-delay-1 absolute inset-0 pointer-events-none">
+                    <!-- lapisan ikon melayang dengan animasi masuk halus (khusus md+ agar GPU HP tetap ringan) -->
+                    <div class="reveal reveal-delay-1 hidden md:block absolute inset-0 pointer-events-none">
                     <!-- ikon pinggir luar (blur 4px untuk efek depth of field) -->
                     <div
                         style="filter: blur(4px);"
@@ -139,7 +139,6 @@
                     <!-- konten inti di tengah hero -->
                     <div class="relative z-10 max-w-2xl mx-auto px-4">
                         <div
-                            style="filter: blur(2.5px);"
                             class="reveal w-16 h-16 rounded-[20px] bg-sky text-white shadow-lg ring-4 ring-sky/15 flex items-center justify-center mx-auto mb-6 pointer-events-none"
                         >
                             <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
@@ -220,7 +219,7 @@
                             <span class="text-ink font-bold" x-text="'Lihat ' + items.length + ' Ulasan Pengguna Lainnya di Bawah'"></span>
                         </div>
 
-                        <span class="w-9 h-9 rounded-full bg-sky/10 text-sky flex items-center justify-center animate-bounce mt-1">
+                        <span class="w-9 h-9 rounded-full bg-sky/10 text-sky flex items-center justify-center group-hover:translate-y-0.5 transition-transform mt-1">
                             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                 <polyline points="6 9 12 15 18 9" />
                             </svg>
@@ -245,8 +244,8 @@
                         </h2>
                     </div>
 
-                    <!-- kontrol navigasi ulasan sebelumnya / berikutnya -->
-                    <div x-show="items.length > 0" class="flex items-center gap-2.5">
+                    <!-- kontrol navigasi ulasan sebelumnya / berikutnya + pause -->
+                    <div x-show="items.length > 0" class="flex flex-wrap items-center gap-2">
                         <button
                             type="button"
                             @click="step(-1)"
@@ -269,6 +268,17 @@
                             <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                 <polyline points="6 9 12 15 18 9" />
                             </svg>
+                        </button>
+
+                        <button
+                            type="button"
+                            @click="userPaused = !userPaused"
+                            :aria-pressed="userPaused"
+                            :title="userPaused ? 'Putar otomatis' : 'Jeda otomatis'"
+                            class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white border border-gray-200 hover:border-sky text-ink text-xs font-bold shadow-2xs transition-colors cursor-pointer"
+                        >
+                            <svg x-show="!userPaused" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+                            <svg x-show="userPaused" style="display:none;" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg>
                         </button>
                     </div>
                 </div>
@@ -295,12 +305,13 @@
                     </div>
                 </template>
 
-                <!-- panggung fokus 3D vertikal (mendukung scroll mouse wheel langsung) -->
+                <!-- panggung fokus 3D vertikal (mendukung swipe sentuh di HP tanpa membajak scroll halaman) -->
                 <div
                     x-show="items.length > 0"
                     @mouseenter="paused = true"
                     @mouseleave="paused = false"
-                    @wheel.prevent="handleWheel($event)"
+                    @touchstart.passive="onTouchStart($event)"
+                    @touchend.passive="onTouchEnd($event)"
                     class="reveal reveal-delay-1 relative max-w-4xl mx-auto py-6 flex flex-col items-center justify-center select-none"
                 >
                     <!-- item -2 -->
@@ -648,6 +659,9 @@
                 items: initialItems || [],
                 activeIndex: 0,
                 paused: false,
+                userPaused: false,
+                touchStartX: 0,
+                touchStartY: 0,
                 open: false,
                 hoverRating: 0,
                 submitting: false,
@@ -660,19 +674,31 @@
                 },
 
                 init() {
+                    const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                    if (reduced) {
+                        this.userPaused = true;
+                    }
                     setInterval(() => {
-                        if (!this.paused && !this.open && this.items.length > 1) {
+                        if (document.visibilityState === 'visible' && !this.paused && !this.userPaused && !this.open && this.items.length > 1) {
                             this.step(1);
                         }
-                    }, 2400);
+                    }, 4200);
                 },
 
-                handleWheel(e) {
-                    if (this.items.length <= 1) return;
-                    if (e.deltaY > 0) {
-                        this.step(1);
-                    } else if (e.deltaY < 0) {
-                        this.step(-1);
+                onTouchStart(e) {
+                    const t = e.touches && e.touches[0];
+                    if (!t) return;
+                    this.touchStartX = t.clientX;
+                    this.touchStartY = t.clientY;
+                },
+
+                onTouchEnd(e) {
+                    const t = e.changedTouches && e.changedTouches[0];
+                    if (!t || this.items.length <= 1) return;
+                    const dx = t.clientX - this.touchStartX;
+                    const dy = t.clientY - this.touchStartY;
+                    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+                        this.step(dx < 0 ? 1 : -1);
                     }
                 },
 

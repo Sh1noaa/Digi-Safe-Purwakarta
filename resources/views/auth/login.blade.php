@@ -4,8 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login — Digi-Safe Purwakarta</title>
+    <title>Login - Digi-Safe Purwakarta</title>
     <link rel="icon" type="image/png" href="{{ asset('images/favicon.png') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
@@ -73,8 +76,8 @@
                 <!-- Layout 2 Kolom: Kiri Robot Besar + Judul Variasi Login, Kanan Flowchart Form Login -->
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
 
-                    <!-- Kolom Kiri: Judul Login Variatif di Atas + Gambar Robot Ukuran Besar -->
-                    <div class="lg:col-span-5 flex flex-col items-center justify-center relative">
+                    <!-- Kolom Kiri: Judul Login Variatif di Atas + Gambar Robot Ukuran Besar (tampil di bawah form pada mobile) -->
+                    <div class="lg:col-span-5 order-2 lg:order-1 flex flex-col items-center justify-center relative">
                         <div
                             class="relative w-full max-w-[460px] rounded-[30px] bg-white/95 backdrop-blur-md border border-sky/25 p-6 sm:p-8 shadow-neutral flex flex-col items-center text-center">
                             <!-- Badge & Logo di atas judul robot -->
@@ -120,8 +123,8 @@
                         </div>
                     </div>
 
-                    <!-- Kolom Kanan: Form Login Node Flowchart -->
-                    <div class="lg:col-span-7">
+                    <!-- Kolom Kanan: Form Login Node Flowchart (muncul duluan di mobile) -->
+                    <div class="lg:col-span-7 order-1 lg:order-2">
 
                         <!-- Node 1 (Top Header): Selamat Datang Kembali + Logo Digi-Safe -->
                         <div class="relative flex justify-center">

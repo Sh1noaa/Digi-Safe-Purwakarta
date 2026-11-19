@@ -8,9 +8,9 @@
     <section
         class="about-hero-surface relative pt-28 sm:pt-36 pb-24 px-4 sm:px-6 lg:px-8 overflow-hidden"
     >
-        <!-- aksen organik lembut di sudut seperti referensi -->
-        <div class="about-hero-orb-1 absolute -top-24 -left-24 w-96 h-96 rounded-full bg-[#A5D6A7]/35 blur-3xl pointer-events-none"></div>
-        <div class="about-hero-orb-2 absolute -bottom-28 -right-20 w-[420px] h-[420px] rounded-full bg-[#81C784]/40 blur-3xl pointer-events-none"></div>
+        <!-- aksen organik lembut di sudut seperti referensi (khusus md+ agar GPU mobile tetap ringan) -->
+        <div class="hidden md:block about-hero-orb-1 absolute -top-24 -left-24 w-96 h-96 rounded-full bg-[#A5D6A7]/35 blur-3xl pointer-events-none"></div>
+        <div class="hidden md:block about-hero-orb-2 absolute -bottom-28 -right-20 w-[420px] h-[420px] rounded-full bg-[#81C784]/40 blur-3xl pointer-events-none"></div>
 
         <div class="relative z-10 max-w-2xl mx-auto">
 
@@ -154,6 +154,8 @@
                             <img
                                 src="{{ asset('images/developer-razief.jpg') }}"
                                 alt="{{ $developer['nama'] }}"
+                                loading="lazy"
+                                decoding="async"
                                 class="w-full h-full object-cover object-top"
                             >
                         </div>
@@ -171,7 +173,7 @@
                         </p>
 
                         <div class="mt-6 pt-5 border-t border-ink/10 w-full flex flex-wrap items-center justify-center gap-2 text-[10px] font-bold text-ink/75">
-                            <span class="rounded-full bg-white px-3 py-1">Laravel 11</span>
+                            <span class="rounded-full bg-white px-3 py-1">Laravel 12</span>
                             <span class="rounded-full bg-white px-3 py-1">Tailwind CSS</span>
                             <span class="rounded-full bg-white px-3 py-1">Alpine.js</span>
                             <span class="rounded-full bg-white px-3 py-1">Cyber Security</span>

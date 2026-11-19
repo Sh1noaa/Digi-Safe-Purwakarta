@@ -4,8 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daftar Akun — Digi-Safe Purwakarta</title>
+    <title>Daftar Akun - Digi-Safe Purwakarta</title>
     <link rel="icon" type="image/png" href="{{ asset('images/favicon.png') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
@@ -90,8 +93,8 @@
                 <!-- Layout 2 Kolom: Kiri Form Register Flowchart, Kanan Robot Besar + Judul Variasi Register -->
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
 
-                    <!-- Kolom Kiri: Form Register Node Flowchart -->
-                    <div class="lg:col-span-7 order-2 lg:order-1">
+                    <!-- Kolom Kiri: Form Register Node Flowchart (muncul duluan di mobile) -->
+                    <div class="lg:col-span-7 order-1 lg:order-1">
 
                         <!-- Node 1 (Top): Buat Akun Baru + Logo Digi-Safe -->
                         <div class="relative flex justify-center">
@@ -359,8 +362,8 @@
 
                     </div>
 
-                    <!-- Kolom Kanan: Judul Register Variatif di Atas + Gambar Robot Ukuran Besar -->
-                    <div class="lg:col-span-5 order-1 lg:order-2 flex flex-col items-center justify-center relative">
+                    <!-- Kolom Kanan: Judul Register Variatif di Atas + Gambar Robot Ukuran Besar (tampil di bawah form pada mobile) -->
+                    <div class="lg:col-span-5 order-2 lg:order-2 flex flex-col items-center justify-center relative">
                         <div
                             class="relative w-full max-w-[440px] rounded-[28px] bg-white/95 backdrop-blur-md border border-sky/25 p-5 sm:p-6 shadow-neutral flex flex-col items-center text-center">
                             <!-- Konektor horizontal dari form kiri ke maskot kanan -->

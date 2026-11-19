@@ -25,7 +25,7 @@
         x-data="{
             guideModalOpen: false,
             analyticsPeriod: 'monthly',
-            analyticsExpanded: true,
+            analyticsExpanded: window.innerWidth >= 768,
             confirmModal: { open: false, title: 'Konfirmasi Tindakan', message: '', confirmLabel: 'Ya, Hapus', form: null }
         }"
         @admin-confirm.window="confirmModal = {
@@ -72,7 +72,7 @@
                 </div>
 
                 <!-- navigasi tab tengah atas -->
-                <div class="w-full max-w-3xl rounded-2xl bg-white border border-gray-200/90 p-1.5 shadow-neutral flex flex-wrap sm:flex-nowrap items-center justify-center gap-1.5">
+                <div class="w-full max-w-3xl rounded-2xl bg-white border border-gray-200/90 p-1.5 shadow-neutral grid grid-cols-2 sm:flex sm:flex-nowrap items-center justify-center gap-1.5">
                     <a
                         href="{{ route('admin.edukasi.index') }}"
                         class="flex-1 inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-heading transition-all {{ $activeTab === 'edukasi' ? 'bg-sky/10 text-sky font-bold border-b-2 border-sky shadow-2xs' : 'text-muted hover:text-ink hover:bg-gray-50 font-semibold' }}"

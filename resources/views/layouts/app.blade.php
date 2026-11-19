@@ -8,6 +8,9 @@
     <meta name="description" content="Digi-Safe Purwakarta - Platform edukasi keamanan digital masyarakat Purwakarta.">
     <title>@yield('title', 'Digi-Safe Purwakarta - Platform Edukasi Keamanan Digital')</title>
     <link rel="icon" type="image/png" href="{{ asset('images/favicon.png') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
@@ -163,7 +166,9 @@
 
     <!-- navbar sticky (Urutan seragam di seluruh panel: Beranda, Edukasi, Minigame, Forum, Testimoni, Tentang) -->
     <header x-data="{ scrolled: {{ $forceSolidNav ? 'true' : 'false' }}, mobileOpen: false, profileOpen: false }"
-        @scroll.window="scrolled = {{ $forceSolidNav ? 'true' : 'window.scrollY > 50' }}" :class="scrolled
+        @scroll.window.passive="scrolled = {{ $forceSolidNav ? 'true' : 'window.scrollY > 50' }}"
+        @click.outside="mobileOpen = false"
+        @keydown.escape.window="mobileOpen = false; profileOpen = false" :class="scrolled
             ? '{{ $isDark ? 'bg-[#0F172A]/95 border-slate-800 text-slate-100' : 'bg-white/95 border-gray-100 text-ink' }} backdrop-blur-md shadow-neutral py-3 border-b'
             : '{{ $isEdukasi ? 'bg-ink/20 backdrop-blur-xs py-4 text-white' : 'bg-transparent py-4 sm:py-5 text-white' }}'"
         class="fixed top-0 left-0 right-0 w-full max-w-[100vw] z-50 transition-all duration-300">
@@ -480,29 +485,62 @@
                     @endauth
                 </div>
 
-                <!-- tombol hamburger mobile -->
-                <button type="button" @click="mobileOpen = !mobileOpen"
-                    :class="scrolled ? '{{ $isDark ? 'text-white hover:bg-slate-800' : 'text-ink hover:bg-gray-100' }}' : 'text-white hover:bg-white/10'"
-                    class="lg:hidden shrink-0 inline-flex items-center justify-center p-2 mr-0.5 sm:mr-0 rounded-lg transition-colors focus:outline-none"
-                    aria-label="Buka Menu">
-                    <svg x-show="!mobileOpen" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="1.8" stroke-linecap="round">
-                        <path d="M4 7h16M4 12h16M4 17h12" />
-                    </svg>
-                    <svg x-show="mobileOpen" style="display: none;" class="w-6 h-6" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
-                        <path d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
+                <!-- kontrol cepat bahasa/tema + tombol hamburger mobile -->
+                <div class="lg:hidden flex items-center gap-1.5 shrink-0">
+                    <form method="POST" action="{{ route('preferences.quick') }}" data-quick-pref-form data-pref-kind="locale" data-pref-value="{{ $nextLocale }}" class="inline-flex">
+                        @csrf
+                        <input type="hidden" name="locale" value="{{ $nextLocale }}">
+                        <button type="submit"
+                            :class="scrolled
+                                ? '{{ $isDark ? 'bg-slate-800 text-slate-200 border-slate-700' : 'bg-gray-100 text-ink border-gray-200' }}'
+                                : 'bg-white/15 text-white border-white/30'"
+                            class="inline-flex items-center justify-center min-w-[38px] h-9 rounded-full border px-2.5 text-[11px] font-heading font-bold uppercase transition-transform active:scale-95 cursor-pointer"
+                            aria-label="{{ $nextLocale === 'en' ? 'Switch to English' : 'Ganti ke Bahasa Indonesia' }}">
+                            {{ strtoupper($currentLocale ?? app()->getLocale()) }}
+                        </button>
+                    </form>
+
+                    <form method="POST" action="{{ route('preferences.quick') }}" data-quick-pref-form data-pref-kind="theme" data-pref-value="{{ $nextTheme }}" class="inline-flex">
+                        @csrf
+                        <input type="hidden" name="theme" value="{{ $nextTheme }}">
+                        <button type="submit"
+                            :class="scrolled
+                                ? '{{ $isDark ? 'bg-slate-800 text-lime border-slate-700' : 'bg-gray-100 text-ink border-gray-200' }}'
+                                : 'bg-white/15 text-white border-white/30'"
+                            class="inline-flex items-center justify-center w-9 h-9 rounded-full border transition-transform active:scale-90 cursor-pointer"
+                            aria-label="{{ $isDark ? 'Aktifkan Mode Terang' : 'Aktifkan Mode Gelap' }}">
+                            @if ($isDark)
+                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" /></svg>
+                            @else
+                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
+                            @endif
+                        </button>
+                    </form>
+
+                    <button type="button" @click="mobileOpen = !mobileOpen"
+                        :class="scrolled ? '{{ $isDark ? 'text-white hover:bg-slate-800' : 'text-ink hover:bg-gray-100' }}' : 'text-white hover:bg-white/10'"
+                        class="shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-xl transition-colors focus:outline-none cursor-pointer"
+                        aria-label="Buka Menu"
+                        :aria-expanded="mobileOpen">
+                        <svg x-show="!mobileOpen" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.8" stroke-linecap="round">
+                            <path d="M4 7h16M4 12h16M4 17h12" />
+                        </svg>
+                        <svg x-show="mobileOpen" style="display: none;" class="w-6 h-6" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                            <path d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
             </nav>
 
-            <!-- menu mobile (mendukung Light & Dark Mode + toggle cepat tema/bahasa) -->
+            <!-- menu mobile (mendukung Light & Dark Mode + scrollable di layar pendek) -->
             <div x-show="mobileOpen" x-transition:enter="transition ease-out duration-200"
                 x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0"
                 x-transition:leave="transition ease-in duration-150"
                 x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 -translate-y-2"
                 style="display: none;"
-                class="lg:hidden mt-3 rounded-2xl {{ $isDark ? 'bg-[#0F172A] text-slate-100 border-slate-800' : 'bg-white text-ink border-gray-100' }} shadow-neutral border p-5 space-y-2.5">
+                class="lg:hidden mt-3 max-h-[calc(100dvh-5.5rem)] overflow-y-auto overscroll-contain rounded-2xl {{ $isDark ? 'bg-[#0F172A] text-slate-100 border-slate-800' : 'bg-white text-ink border-gray-100' }} shadow-neutral border p-5 space-y-2.5">
 
                 <!-- Quick Toggle Bahasa & Tema di Mobile -->
                 <div class="flex items-center justify-between gap-2 pb-3 border-b {{ $isDark ? 'border-slate-800' : 'border-gray-100' }}">
@@ -705,7 +743,9 @@
     </footer>
     @endunless
 
-    <x-chat-widget />
+    @unless (request()->routeIs('minigame.play'))
+        <x-chat-widget />
+    @endunless
 
     <script>
         (function () {

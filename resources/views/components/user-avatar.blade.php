@@ -73,6 +73,8 @@
             <img
                 src="{{ $resolvedSrc }}"
                 alt="{{ $resolvedName }}"
+                loading="lazy"
+                decoding="async"
                 {{ $attributes->merge(['class' => "w-full h-full rounded-full object-cover {$class}"]) }}
             >
         @else
@@ -86,6 +88,8 @@
             src="{{ $resolvedBorderUrl }}"
             alt=""
             aria-hidden="true"
+            loading="lazy"
+            decoding="async"
             class="pointer-events-none select-none absolute -inset-[22%] w-[144%] h-[144%] max-w-none object-contain z-10"
         >
     </span>
@@ -94,6 +98,8 @@
         <img
             src="{{ $resolvedSrc }}"
             alt="{{ $resolvedName }}"
+            loading="lazy"
+            decoding="async"
             {{ $attributes->merge(['class' => "{$sizeClasses} rounded-full object-cover shrink-0 {$class}"]) }}
         >
     @else

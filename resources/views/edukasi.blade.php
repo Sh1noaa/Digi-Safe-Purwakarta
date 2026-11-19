@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Edukasi Keamanan Digital — Digi-Safe Purwakarta')
+@section('title', 'Edukasi Keamanan Digital - Digi-Safe Purwakarta')
 
 @section('content')
 
@@ -37,7 +37,7 @@
                 }
             }
         }"
-        class="edu-section-surface relative min-h-screen pt-28 pb-20 px-4 sm:px-6 lg:px-8 flex flex-col justify-between bg-no-repeat bg-center bg-contain lg:bg-cover bg-fixed"
+        class="edu-section-surface relative min-h-screen pt-28 pb-20 px-4 sm:px-6 lg:px-8 flex flex-col justify-between bg-no-repeat bg-center bg-cover bg-scroll lg:bg-fixed"
         style="background-color: #FFFFFF; background-image: url('{{ asset('images/edu-bg-gallery.jpg') }}');"
     >
 
@@ -177,7 +177,7 @@
                         }"
                         @mouseleave="hoveredCol = null"
                         :class="{ 'row-hovered': hoveredCol !== null }"
-                        class="reveal edu-bento-row flex flex-col lg:flex-row gap-4 sm:gap-5 items-stretch"
+                        class="reveal edu-bento-row grid grid-cols-1 md:grid-cols-2 lg:flex lg:flex-row gap-4 sm:gap-5 items-stretch"
                     >
                 @foreach ($rowCards as $colIdx => $card)
                     @php

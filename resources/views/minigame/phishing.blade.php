@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Phishing Hunter — Minigame Digi-Safe Purwakarta')
+@section('title', 'Phishing Hunter - Minigame Digi-Safe Purwakarta')
 
 @section('content')
 
@@ -87,37 +87,39 @@
             <!-- layar permainan aktif -->
             <div x-show="state === 'playing'" style="display: none;" class="space-y-5">
 
-                <!-- bar status skor & timer -->
-                <div
-                    class="rounded-2xl bg-white border border-gray-100 p-4 flex flex-wrap items-center justify-between gap-4 shadow-2xs">
-                    <div class="flex items-center gap-3">
-                        <span class="rounded-full bg-[#DBEAFE] text-sky px-3 py-1 text-xs font-extrabold uppercase" x-text="activeLevelConfig.badge_label || level.toUpperCase()"></span>
-                        <span class="text-xs font-semibold text-muted" x-text="'{{ __('ui.game.question_label') }} ' + (currentIndex + 1) + ' / ' + questions.length"></span>
-                    </div>
-
-                    <div class="flex items-center gap-5">
-                        <div class="flex items-center gap-1.5">
-                            <svg class="w-4 h-4 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2" stroke-linecap="round">
-                                <circle cx="12" cy="12" r="9" />
-                                <polyline points="12 7 12 12 15 15" />
-                            </svg>
-                            <span
-                                class="font-heading font-extrabold text-sm"
-                                :class="timeLeft <= 4 ? 'text-red-600' : 'text-ink'"
-                                x-text="timeLeft + '{{ __('ui.game.sec_short') }}'"
-                            ></span>
+                <!-- bar status skor & timer sticky agar tetap terlihat saat bermain di HP -->
+                <div class="sticky top-[68px] sm:top-[76px] z-30 space-y-2 bg-[#F7F8FC]/95 py-1.5 -mx-1 px-1 rounded-2xl">
+                    <div
+                        class="rounded-2xl bg-white border border-gray-100 p-3.5 sm:p-4 flex flex-wrap items-center justify-between gap-3 sm:gap-4 shadow-sm">
+                        <div class="flex items-center gap-3">
+                            <span class="rounded-full bg-[#DBEAFE] text-sky px-3 py-1 text-xs font-extrabold uppercase" x-text="activeLevelConfig.badge_label || level.toUpperCase()"></span>
+                            <span class="text-xs font-semibold text-muted" x-text="'{{ __('ui.game.question_label') }} ' + (currentIndex + 1) + ' / ' + questions.length"></span>
                         </div>
 
-                        <div class="rounded-full bg-lime px-3.5 py-1 text-xs font-extrabold text-ink" x-text="'{{ __('ui.game.score_label') }}: ' + score"></div>
-                    </div>
-                </div>
+                        <div class="flex items-center gap-4 sm:gap-5">
+                            <div class="flex items-center gap-1.5">
+                                <svg class="w-4 h-4 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round">
+                                    <circle cx="12" cy="12" r="9" />
+                                    <polyline points="12 7 12 12 15 15" />
+                                </svg>
+                                <span
+                                    class="font-heading font-extrabold text-sm tabular-nums"
+                                    :class="timeLeft <= 4 ? 'text-red-600' : 'text-ink'"
+                                    x-text="timeLeft + '{{ __('ui.game.sec_short') }}'"
+                                ></span>
+                            </div>
 
-                <!-- bar progres timer -->
-                <div class="w-full h-2 rounded-full bg-gray-200 overflow-hidden">
-                    <div class="h-full transition-all duration-300 rounded-full"
-                        :class="timeLeft <= 4 ? 'bg-red-500' : 'bg-sky'"
-                        :style="'width: ' + ((timeLeft / maxTime) * 100) + '%'"></div>
+                            <div class="rounded-full bg-lime px-3.5 py-1 text-xs font-extrabold text-ink tabular-nums" x-text="'{{ __('ui.game.score_label') }}: ' + score"></div>
+                        </div>
+                    </div>
+
+                    <!-- bar progres timer -->
+                    <div class="w-full h-2 rounded-full bg-gray-200 overflow-hidden">
+                        <div class="h-full transition-all duration-300 rounded-full"
+                            :class="timeLeft <= 4 ? 'bg-red-500' : 'bg-sky'"
+                            :style="'width: ' + ((timeLeft / maxTime) * 100) + '%'"></div>
+                    </div>
                 </div>
 
                 <!-- card pesan email / chat / soal pilihan ganda -->

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Link or Trap? — Minigame Digi-Safe Purwakarta')
+@section('title', 'Link or Trap? - Minigame Digi-Safe Purwakarta')
 
 @section('content')
 
@@ -91,35 +91,37 @@
             <!-- layar permainan aktif -->
             <div x-show="state === 'playing'" style="display: none;" class="space-y-5">
 
-                <!-- bar status combo, timer, & skor -->
-                <div class="rounded-2xl bg-white border border-gray-100 p-4 flex flex-wrap items-center justify-between gap-4 shadow-2xs">
-                    <div class="flex items-center gap-3">
-                        <span class="rounded-full bg-[#DBEAFE] text-sky px-3 py-1 text-xs font-extrabold uppercase" x-text="activeLevelConfig.badge_label"></span>
-                        <span class="text-xs font-semibold text-muted" x-text="'URL ' + (currentIndex + 1) + ' / ' + items.length"></span>
-                        <span
-                            class="rounded-full px-3 py-0.5 text-xs font-extrabold transition-all"
-                            :class="multiplier > 1 ? 'bg-sky text-white' : 'bg-gray-100 text-muted'"
-                            x-text="'Combo x' + multiplier"
-                        ></span>
+                <!-- bar status combo, timer, & skor sticky di HP -->
+                <div class="sticky top-[68px] sm:top-[76px] z-30 space-y-2 bg-[#F7F8FC]/95 py-1.5 -mx-1 px-1 rounded-2xl">
+                    <div class="rounded-2xl bg-white border border-gray-100 p-3.5 sm:p-4 flex flex-wrap items-center justify-between gap-3 sm:gap-4 shadow-sm">
+                        <div class="flex items-center gap-2.5 sm:gap-3">
+                            <span class="rounded-full bg-[#DBEAFE] text-sky px-3 py-1 text-xs font-extrabold uppercase" x-text="activeLevelConfig.badge_label"></span>
+                            <span class="text-xs font-semibold text-muted" x-text="'URL ' + (currentIndex + 1) + ' / ' + items.length"></span>
+                            <span
+                                class="rounded-full px-3 py-0.5 text-xs font-extrabold transition-all"
+                                :class="multiplier > 1 ? 'bg-sky text-white' : 'bg-gray-100 text-muted'"
+                                x-text="'Combo x' + multiplier"
+                            ></span>
+                        </div>
+
+                        <div class="flex items-center gap-3.5 sm:gap-4">
+                            <span
+                                class="font-heading font-extrabold text-sm tabular-nums"
+                                :class="timeLeft <= 3 ? 'text-red-600' : 'text-ink'"
+                                x-text="timeLeft + ' {{ __('ui.game.sec_word') }}'"
+                            ></span>
+                            <span class="rounded-full bg-lime px-3.5 py-1 text-xs font-extrabold text-ink tabular-nums" x-text="'{{ __('ui.game.score_label') }}: ' + score"></span>
+                        </div>
                     </div>
 
-                    <div class="flex items-center gap-4">
-                        <span
-                            class="font-heading font-extrabold text-sm"
-                            :class="timeLeft <= 3 ? 'text-red-600' : 'text-ink'"
-                            x-text="timeLeft + ' {{ __('ui.game.sec_word') }}'"
-                        ></span>
-                        <span class="rounded-full bg-lime px-3.5 py-1 text-xs font-extrabold text-ink" x-text="'{{ __('ui.game.score_label') }}: ' + score"></span>
+                    <!-- bar timer -->
+                    <div class="w-full h-2 rounded-full bg-gray-200 overflow-hidden">
+                        <div
+                            class="h-full transition-all duration-300 rounded-full"
+                            :class="timeLeft <= 3 ? 'bg-red-500' : 'bg-sky'"
+                            :style="'width: ' + ((timeLeft / maxTime) * 100) + '%'"
+                        ></div>
                     </div>
-                </div>
-
-                <!-- bar timer -->
-                <div class="w-full h-2 rounded-full bg-gray-200 overflow-hidden">
-                    <div
-                        class="h-full transition-all duration-300 rounded-full"
-                        :class="timeLeft <= 3 ? 'bg-red-500' : 'bg-sky'"
-                        :style="'width: ' + ((timeLeft / maxTime) * 100) + '%'"
-                    ></div>
                 </div>
 
                 <!-- card inspeksi url -->

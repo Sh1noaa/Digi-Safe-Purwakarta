@@ -6,7 +6,7 @@
 <div
     x-data="digiSafeChatWidget(@js((bool) $authUser), @js($authUser?->id ?? null), @js($isEnChat))"
     x-init="init()"
-    class="fixed bottom-5 right-6 sm:bottom-6 sm:right-7 z-50 flex flex-col items-end gap-3 pointer-events-none"
+    class="fixed bottom-4 right-3 sm:bottom-6 sm:right-7 z-50 flex flex-col items-end gap-3 pointer-events-none"
 >
     <!-- toast notifikasi pesan baru di atas ikon chat -->
     <template x-if="!open && toastAlert">
@@ -41,7 +41,7 @@
         x-transition:leave-start="opacity-100 translate-y-0 scale-100"
         x-transition:leave-end="opacity-0 translate-y-3 scale-95"
         style="display: none;"
-        class="pointer-events-auto w-[calc(100vw-3rem)] sm:w-[368px] h-[470px] max-h-[74vh] rounded-[24px] bg-white border border-gray-200/90 shadow-[0_24px_60px_rgba(15,23,42,0.20)] flex flex-col overflow-hidden"
+        class="pointer-events-auto w-[calc(100vw-1.5rem)] sm:w-[368px] h-[470px] max-h-[74dvh] rounded-[24px] bg-white border border-gray-200/90 shadow-[0_24px_60px_rgba(15,23,42,0.20)] flex flex-col overflow-hidden"
     >
         @guest
             <!-- tampilan ringkas untuk pengunjung yang belum login -->
@@ -58,7 +58,7 @@
                     </span>
                     <span class="font-heading font-extrabold text-sm text-ink">{{ $isEnChat ? 'Digi-Safe Chat' : 'Obrolan Warga' }}</span>
                 </div>
-                <button type="button" @click="open = false" class="w-7 h-7 rounded-full hover:bg-gray-100 text-muted hover:text-ink flex items-center justify-center cursor-pointer">&times;</button>
+                <button type="button" @click="open = false" class="w-9 h-9 rounded-full hover:bg-gray-100 text-muted hover:text-ink flex items-center justify-center text-lg cursor-pointer" aria-label="Tutup chat">&times;</button>
             </div>
             <div class="flex-1 p-6 flex flex-col items-center justify-center text-center bg-[#F8FAFC]">
                 <div class="w-12 h-12 rounded-2xl bg-[#DBEAFE] text-[#1E63E9] flex items-center justify-center mb-3">
@@ -89,7 +89,7 @@
                         <button
                             type="button"
                             @click="activeUser = null; loadSummary()"
-                            class="w-7 h-7 rounded-full hover:bg-gray-100 text-ink flex items-center justify-center shrink-0 cursor-pointer"
+                            class="w-9 h-9 rounded-full hover:bg-gray-100 text-ink flex items-center justify-center shrink-0 cursor-pointer"
                             aria-label="Kembali"
                         >
                             &larr;
@@ -154,7 +154,7 @@
                 <button
                     type="button"
                     @click="open = false"
-                    class="w-7 h-7 rounded-full hover:bg-gray-100 text-muted hover:text-ink flex items-center justify-center text-base leading-none shrink-0 cursor-pointer"
+                    class="w-9 h-9 rounded-full hover:bg-gray-100 text-muted hover:text-ink flex items-center justify-center text-lg leading-none shrink-0 cursor-pointer"
                     aria-label="Tutup chat"
                 >
                     &times;
@@ -230,7 +230,7 @@
                                         <span class="text-[10px] text-muted shrink-0" :title="item.last_full_date || ''" x-text="item.last_time || ''"></span>
                                     </div>
                                     <div class="flex items-center justify-between gap-2 mt-0.5">
-                                        <p class="text-[11px] text-muted truncate" x-text="item.last_message ? ((item.last_sender_me ? 'Kamu: ' : '') + item.last_message) : (item.user.specialty_role || 'Berteman — mulai chat!')"></p>
+                                        <p class="text-[11px] text-muted truncate" x-text="item.last_message ? ((item.last_sender_me ? 'Kamu: ' : '') + item.last_message) : (item.user.specialty_role || 'Berteman, mulai chat!')"></p>
                                         <span x-show="item.unread_count > 0" class="shrink-0 rounded-full bg-[#1E63E9] text-white font-bold text-[9px] min-w-[18px] h-[18px] px-1 flex items-center justify-center" x-text="item.unread_count"></span>
                                         <span x-show="item.unread_count === 0 && item.relation === 'pending_incoming'" class="shrink-0 rounded-full bg-amber-100 text-amber-800 font-bold text-[9px] px-1.5 py-0.5">Konfirmasi</span>
                                         <span x-show="item.unread_count === 0 && item.relation === 'pending_outgoing'" class="shrink-0 rounded-full bg-gray-100 text-muted font-bold text-[9px] px-1.5 py-0.5">Menunggu</span>

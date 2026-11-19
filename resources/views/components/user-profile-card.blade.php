@@ -119,7 +119,7 @@
                     @click.stop="toggleFollow()"
                     :disabled="busy"
                     :class="followed ? 'bg-ink text-lime' : 'bg-white/95 text-[#0A0A0A] hover:bg-white'"
-                    class="absolute top-3.5 right-3.5 rounded-full px-4 py-1.5 text-xs font-heading font-bold shadow-sm backdrop-blur-md inline-flex items-center gap-1.5 transition-all cursor-pointer z-20 disabled:opacity-60"
+                    class="absolute top-3.5 right-3.5 rounded-full px-4 py-1.5 text-xs font-heading font-bold shadow-sm inline-flex items-center gap-1.5 transition-all cursor-pointer z-20 disabled:opacity-60"
                 >
                     <span x-text="followed ? @js($isEnCard ? 'Following' : 'Mengikuti') : @js($isEnCard ? 'Follow' : 'Ikuti')"></span>
                     <svg x-show="followed" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
@@ -131,7 +131,7 @@
                     </svg>
                 </button>
             @else
-                <span class="absolute top-3.5 right-3.5 rounded-full px-3.5 py-1.5 text-[11px] font-heading font-bold bg-ink/85 text-lime backdrop-blur-md z-20">
+                <span class="absolute top-3.5 right-3.5 rounded-full px-3.5 py-1.5 text-[11px] font-heading font-bold bg-ink/90 text-lime z-20">
                     {{ $isEnCard ? 'My Profile' : 'Profil Saya' }}
                 </span>
             @endif

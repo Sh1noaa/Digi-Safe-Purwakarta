@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Digi-Safe Purwakarta — Membangun Masa Depan Digital yang Aman dan Sadar')
+@section('title', 'Digi-Safe Purwakarta - Membangun Masa Depan Digital yang Aman dan Sadar')
 
 @section('content')
 
@@ -44,7 +44,7 @@
                 </svg>
             </div>
 
-            <div class="bird-flock-3" aria-hidden="true">
+            <div class="bird-flock-3 hidden sm:block" aria-hidden="true">
                 <svg width="120" height="44" viewBox="0 0 120 44" fill="none">
                     <g class="bird-wing-1">
                         <path d="M74 16 C78 11, 83 11, 86 15 C89 11, 94 11, 98 16" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
@@ -55,7 +55,7 @@
                 </svg>
             </div>
 
-            <div class="bird-flock-4" aria-hidden="true">
+            <div class="bird-flock-4 hidden md:block" aria-hidden="true">
                 <svg width="140" height="50" viewBox="0 0 140 50" fill="none">
                     <g class="bird-wing-3">
                         <path d="M90 16 C94 11, 100 11, 103 15 C106 11, 112 11, 116 16" stroke="rgba(255,255,255,0.65)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
@@ -66,7 +66,7 @@
                 </svg>
             </div>
 
-            <div class="bird-flock-5" aria-hidden="true">
+            <div class="bird-flock-5 hidden md:block" aria-hidden="true">
                 <svg width="110" height="40" viewBox="0 0 110 40" fill="none">
                     <g class="bird-wing-2">
                         <path d="M60 18 C64 13, 69 13, 72 17 C75 13, 80 13, 84 18" stroke="rgba(255,255,255,0.62)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
@@ -403,20 +403,20 @@
                     <!-- deretan kebiasaan buruk terhapus -> kebiasaan aman terverifikasi -->
                     <div class="relative z-10 mt-4 sm:mt-5 space-y-2.5 sm:space-y-4">
                         @foreach ($habitRows as $row)
-                            <div class="grid grid-cols-2 items-center gap-2 sm:gap-7 {{ $row['offset'] }}">
+                            <div class="grid grid-cols-2 items-center gap-3 sm:gap-7 {{ $row['offset'] }}">
                                 <!-- sisi kiri: kebiasaan buruk sedang dihapus/terurai -->
-                                <div class="flex justify-end pr-1 sm:pr-4 min-w-0">
-                                    <span class="habit-dissolve-left habit-bad-pill inline-flex items-center gap-1 sm:gap-1.5 rounded-full bg-gray-100 border border-gray-200/60 px-2.5 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-sm font-medium text-muted line-through decoration-rose-400/70 select-none whitespace-nowrap max-w-full truncate">
+                                <div class="flex justify-end pr-2 sm:pr-4 min-w-0">
+                                    <span class="habit-dissolve-left habit-bad-pill inline-flex items-center gap-1 sm:gap-1.5 rounded-2xl sm:rounded-full bg-gray-100 border border-gray-200/60 px-2.5 sm:px-4 py-1.5 sm:py-2 text-[10.5px] sm:text-sm font-medium text-muted line-through decoration-rose-400/70 select-none text-right leading-tight max-w-full">
                                         {{ $row['bad'] }}
                                     </span>
                                 </div>
 
                                 <!-- sisi kanan: kebiasaan aman terverifikasi -->
-                                <div class="flex justify-start pl-1 sm:pl-4 min-w-0">
-                                    <span class="habit-good-pill inline-flex items-center gap-1.5 sm:gap-2.5 rounded-full bg-white border border-gray-100 px-2.5 sm:px-5 py-1.5 sm:py-2 text-[10px] sm:text-sm font-semibold text-ink shadow-xs max-w-full min-w-0">
-                                        <span class="truncate">{{ $row['good'] }}</span>
-                                        <span class="w-3.5 h-3.5 sm:w-5 sm:h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0">
-                                            <svg class="w-2 h-2 sm:w-3 sm:h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                <div class="flex justify-start pl-2 sm:pl-4 min-w-0">
+                                    <span class="habit-good-pill inline-flex items-center gap-1.5 sm:gap-2.5 rounded-2xl sm:rounded-full bg-white border border-gray-100 px-2.5 sm:px-5 py-1.5 sm:py-2 text-[10.5px] sm:text-sm font-semibold text-ink shadow-xs leading-tight max-w-full min-w-0">
+                                        <span>{{ $row['good'] }}</span>
+                                        <span class="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0">
+                                            <svg class="w-2.5 h-2.5 sm:w-3 sm:h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                                                 <polyline points="20 6 9 17 4 12" />
                                             </svg>
                                         </span>
@@ -517,7 +517,7 @@
 
                         @if (! empty($featuredReview))
                             <div class="mt-3 flex items-center justify-between gap-2 text-[11px]">
-                                <span class="font-heading font-bold text-ink truncate">— {{ $featuredReview->nama_tampil }}</span>
+                                <span class="font-heading font-bold text-ink truncate">- {{ $featuredReview->nama_tampil }}</span>
                                 <a href="{{ route('testimoni.index') }}" class="font-semibold text-sky hover:underline shrink-0">
                                     {{ app()->getLocale() === 'en' ? 'All reviews' : 'Lihat ulasan' }}
                                 </a>
@@ -860,7 +860,7 @@
                 ],
                 [
                     'q' => 'How is Digi-Safe different from general articles on the internet?',
-                    'a' => 'Instead of passive theory, Digi-Safe trains your reflexes using real Indonesian & Purwakarta case simulations—such as fake social aid domains, WhatsApp APK traps, and deceptive banking alerts—with instant feedback for every answer.',
+                    'a' => 'Instead of passive theory, Digi-Safe trains your reflexes using real Indonesian & Purwakarta case simulations (such as fake social aid domains, WhatsApp APK traps, and deceptive banking alerts) with instant feedback for every answer.',
                 ],
                 [
                     'q' => 'Can I switch the minigame challenges and website to English or Indonesian?',
@@ -919,7 +919,7 @@
                 ],
                 [
                     'q' => 'Apa bedanya latihan di Digi-Safe dengan membaca artikel biasa di internet?',
-                    'a' => 'Di Digi-Safe kamu tidak hanya membaca teori, tetapi langsung melatih insting melalui simulasi kasus nyata di sekitar warga—mulai dari modus undangan APK, link bansos palsu, hingga jebakan domain tiruan dengan pembahasan instan.',
+                    'a' => 'Di Digi-Safe kamu tidak hanya membaca teori, tetapi langsung melatih insting melalui simulasi kasus nyata di sekitar warga, mulai dari modus undangan APK, link bansos palsu, hingga jebakan domain tiruan dengan pembahasan instan.',
                 ],
                 [
                     'q' => 'Apakah soal minigame dan tampilan web bisa diganti ke Bahasa Inggris atau mode gelap?',

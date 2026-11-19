@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Cyber Defender — Minigame Digi-Safe Purwakarta')
+@section('title', 'Cyber Defender - Minigame Digi-Safe Purwakarta')
 
 @section('content')
 
@@ -108,8 +108,8 @@
             <!-- arena permainan aktif -->
             <div x-show="state === 'playing'" style="display: none;" class="space-y-4">
 
-                <!-- bar nyawa, level, waktu, dan skor -->
-                <div class="rounded-2xl bg-white border border-gray-100 p-4 flex flex-wrap items-center justify-between gap-4 shadow-2xs">
+                <!-- bar nyawa, level, waktu, dan skor sticky di HP -->
+                <div class="sticky top-[68px] sm:top-[76px] z-30 rounded-2xl bg-white border border-gray-100 p-3.5 sm:p-4 flex flex-wrap items-center justify-between gap-3 sm:gap-4 shadow-sm">
                     <div class="flex items-center gap-3">
                         <span class="rounded-full bg-[#DBEAFE] text-sky px-3 py-1 text-xs font-extrabold uppercase" x-text="activeLevelConfig.badge_label"></span>
                         <div class="flex items-center gap-1" aria-label="Nyawa Sistem">
