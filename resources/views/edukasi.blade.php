@@ -85,13 +85,6 @@
                 </div>
             </div>
 
-            @if (session('success'))
-                <div class="mb-6 rounded-2xl bg-lime/40 border border-lime px-5 py-3.5 flex items-center gap-3 text-xs font-semibold text-ink shadow-2xs">
-                    <span class="w-6 h-6 rounded-full bg-ink text-lime flex items-center justify-center shrink-0">✓</span>
-                    <span>{{ session('success') }}</span>
-                </div>
-            @endif
-
             @if ($latestDecision)
                 <div
                     x-show="unreadDecisionCount > 0"

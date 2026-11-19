@@ -58,6 +58,7 @@ class TestimoniController extends Controller
             'nama' => $testimoni->nama_tampil,
             'inisial' => $testimoni->inisial_tampil,
             'avatar' => $testimoni->avatar_tampil,
+            'border_url' => (! $testimoni->is_anonymous && $testimoni->user) ? $testimoni->user->avatar_border_url : null,
             'pastel_class' => $testimoni->user?->pastel_class ?: 'bg-[#DBEAFE] text-[#1E40AF]',
             'is_owner' => (! $testimoni->is_anonymous && (bool) $testimoni->user?->isOwner()),
             'is_anonymous' => (bool) $testimoni->is_anonymous,

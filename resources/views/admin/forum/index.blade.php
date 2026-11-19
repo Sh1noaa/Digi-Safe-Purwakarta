@@ -1,15 +1,20 @@
 @extends('admin.dashboard')
 
 @section('admin_content')
-    <div>
-        <!-- header area moderasi forum -->
+    @php
+        $pinnedCount = $forums->where('is_starred', true)->count();
+        $totalForums = $forums->count();
+    @endphp
+
+    <div x-data="{ pinFilter: 'all' }">
+        <!-- header area moderasi & pinned forum -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-gray-100">
             <div>
                 <h1 class="font-heading font-extrabold text-xl sm:text-2xl text-ink">
-                    Moderasi & Sematan Forum Komunitas
+                    Moderasi & Pinned Forum Komunitas
                 </h1>
                 <p class="mt-1 text-xs text-muted">
-                    Klik ikon Bintang untuk menyematkan diskusi penting agar selalu tampil paling atas di halaman Forum pengguna.
+                    Kelola diskusi penting yang disematkan (Pinned) agar selalu tampil di posisi paling atas pada halaman Forum warga.
                 </p>
             </div>
 
@@ -26,12 +31,50 @@
             </a>
         </div>
 
+        <!-- Bar Filter & Ringkasan Pinned -->
+        <div class="mt-5 flex flex-wrap items-center justify-between gap-3">
+            <div class="inline-flex items-center gap-1.5 rounded-2xl bg-[#F8FAFC] border border-gray-200/80 p-1">
+                <button
+                    type="button"
+                    @click="pinFilter = 'all'"
+                    :class="pinFilter === 'all' ? 'bg-ink text-white shadow-2xs' : 'text-muted hover:text-ink'"
+                    class="rounded-xl px-3.5 py-1.5 text-xs font-heading font-bold transition-all cursor-pointer"
+                >
+                    Semua ({{ $totalForums }})
+                </button>
+                <button
+                    type="button"
+                    @click="pinFilter = 'pinned'"
+                    :class="pinFilter === 'pinned' ? 'bg-ink text-lime shadow-2xs' : 'text-muted hover:text-ink'"
+                    class="inline-flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-xs font-heading font-bold transition-all cursor-pointer"
+                >
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 17v5" />
+                        <path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z" />
+                    </svg>
+                    <span>Dipin ({{ $pinnedCount }})</span>
+                </button>
+                <button
+                    type="button"
+                    @click="pinFilter = 'unpinned'"
+                    :class="pinFilter === 'unpinned' ? 'bg-ink text-white shadow-2xs' : 'text-muted hover:text-ink'"
+                    class="rounded-xl px-3.5 py-1.5 text-xs font-heading font-bold transition-all cursor-pointer"
+                >
+                    Biasa ({{ $totalForums - $pinnedCount }})
+                </button>
+            </div>
+
+            <span class="text-[11px] font-medium text-muted">
+                Diskusi dengan status <strong class="text-ink">Pinned</strong> otomatis muncul paling atas di Forum & Aplikasi Mobile.
+            </span>
+        </div>
+
         <!-- daftar thread forum -->
-        <div class="mt-6 overflow-x-auto rounded-2xl border border-gray-200/80">
+        <div class="mt-4 overflow-x-auto rounded-2xl border border-gray-200/80">
             <table class="w-full text-left border-collapse">
                 <thead>
                     <tr class="bg-[#F8FAFC] border-b border-gray-200/80 text-[11px] font-heading font-bold uppercase tracking-wider text-muted">
-                        <th class="py-3.5 px-4 w-16 text-center">Semat</th>
+                        <th class="py-3.5 px-4 w-36 text-center">Pinned Forum</th>
                         <th class="py-3.5 px-4">Judul & Cuplikan Diskusi</th>
                         <th class="py-3.5 px-4 w-44">Penulis</th>
                         <th class="py-3.5 px-4 w-32">Tanggal</th>
@@ -45,37 +88,45 @@
                             $isOwnerAuthor = (bool) $item->user?->isOwner();
                             $isAdminAuthor = (bool) $item->user?->isAdmin();
                         @endphp
-                        <tr class="{{ $item->is_starred ? 'bg-[#F0F8FF]/70' : 'hover:bg-[#F8FAFC]/80' }} transition-colors align-middle">
-                            <!-- tombol ikon bintang (starred) -->
+                        <tr
+                            x-show="pinFilter === 'all' || (pinFilter === 'pinned' && {{ $item->is_starred ? 'true' : 'false' }}) || (pinFilter === 'unpinned' && {{ $item->is_starred ? 'false' : 'true' }})"
+                            class="{{ $item->is_starred ? 'bg-[#F0F8FF]/70' : 'hover:bg-[#F8FAFC]/80' }} transition-colors align-middle"
+                        >
+                            <!-- tombol pin / lepas pin -->
                             <td class="py-4 px-4 text-center">
                                 <form action="{{ route('admin.forum.star', $item->id) }}" method="POST">
                                     @csrf
                                     @method('PATCH')
                                     <button
                                         type="submit"
-                                        title="{{ $item->is_starred ? 'Lepas Sematan' : 'Sematkan ke Atas' }}"
-                                        class="w-9 h-9 rounded-xl inline-flex items-center justify-center transition-all cursor-pointer {{ $item->is_starred ? 'bg-ink text-lime shadow-2xs scale-105' : 'bg-gray-100 text-gray-400 hover:bg-sky/15 hover:text-sky' }}"
+                                        title="{{ $item->is_starred ? 'Lepas Pin Forum' : 'Pin Diskusi ke Atas' }}"
+                                        class="inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-[11px] font-heading font-bold transition-all cursor-pointer {{ $item->is_starred ? 'bg-ink text-lime shadow-2xs hover:bg-ink/90' : 'bg-white border border-gray-200 text-muted hover:border-sky hover:text-sky' }}"
                                     >
-                                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="{{ $item->is_starred ? 'currentColor' : 'none' }}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                                        <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="{{ $item->is_starred ? 'currentColor' : 'none' }}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M12 17v5" />
+                                            <path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z" />
                                         </svg>
+                                        <span>{{ $item->is_starred ? 'Lepas Pin' : 'Pin' }}</span>
                                     </button>
                                 </form>
                             </td>
 
-                            <!-- judul & status sematan -->
+                            <!-- judul & status pinned -->
                             <td class="py-4 px-4">
                                 <div class="flex flex-wrap items-center gap-2 mb-1">
                                     @if ($item->is_starred)
                                         <span class="inline-flex items-center gap-1 rounded-full bg-ink text-lime px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider">
-                                            <span>Disematkan</span>
+                                            <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M12 17v5M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z" />
+                                            </svg>
+                                            <span>Pinned</span>
                                         </span>
                                     @endif
                                     <span class="rounded-full bg-sky/10 text-sky px-2.5 py-0.5 text-[10px] font-bold uppercase">
                                         {{ $item->kategori ?: 'Umum' }}
                                     </span>
                                     <span class="text-[11px] text-muted">
-                                        • {{ $item->jawaban_count }} Balasan
+                                        &bull; {{ $item->jawaban_count }} Balasan
                                     </span>
                                 </div>
                                 <p class="font-heading font-bold text-ink leading-snug">

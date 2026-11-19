@@ -434,8 +434,9 @@
                                 {{ $req->preferred_type === 'link' ? 'Link Eksternal' : 'Teks Manual' }}
                             </span>
                             @if ($req->status === 'approved')
-                                <span class="rounded-full bg-emerald-100 text-emerald-700 px-3 py-0.5 text-[10px] font-extrabold uppercase">
-                                    Disetujui ✓
+                                <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-700 px-3 py-0.5 text-[10px] font-extrabold uppercase">
+                                    <span>Disetujui</span>
+                                    <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
                                 </span>
                             @elseif ($req->status === 'rejected')
                                 <span class="rounded-full bg-rose-100 text-rose-700 px-3 py-0.5 text-[10px] font-extrabold uppercase">
@@ -489,7 +490,8 @@
                                     formaction="{{ route('admin.edukasi.request.approve', $req->id) }}"
                                     class="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-heading font-bold text-xs px-5 py-2 shadow-2xs transition-colors cursor-pointer"
                                 >
-                                    <span>✓ Setujui &amp; Kirim Pesan Bot Digika</span>
+                                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                                    <span>Setujui &amp; Kirim Pesan Bot Digika</span>
                                 </button>
                             </div>
                         </form>

@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\ForumApiController;
 use App\Http\Controllers\Api\MinigameApiController;
 use App\Http\Controllers\Api\ProfileApiController;
 use App\Http\Controllers\Api\PublicContentApiController;
+use App\Http\Controllers\FollowController;
 use App\Http\Controllers\SocialChatController;
 use Illuminate\Support\Facades\Route;
 
@@ -13,19 +14,19 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('api.optional')->group(function () {
     Route::get('/health', fn () => response()->json(['ok' => true, 'app' => 'Digi-Safe Purwakarta API']));
 
-    Route::post('/auth/login', [AuthApiController::class, 'login']);
-    Route::post('/auth/register', [AuthApiController::class, 'register']);
-    Route::post('/auth/google', [AuthApiController::class, 'googleTokenLogin']);
+    Route::post('/auth/login', [AuthApiController::class, 'login'])->middleware('throttle:10,1');
+    Route::post('/auth/register', [AuthApiController::class, 'register'])->middleware('throttle:5,1');
+    Route::post('/auth/google', [AuthApiController::class, 'googleTokenLogin'])->middleware('throttle:10,1');
 
     Route::get('/beranda', [PublicContentApiController::class, 'beranda']);
     Route::get('/users', [PublicContentApiController::class, 'users']);
+    Route::get('/users/{user}/follows', [FollowController::class, 'list']);
     Route::get('/users/{identifier}', [PublicContentApiController::class, 'userProfile']);
     Route::get('/edukasi', [PublicContentApiController::class, 'edukasi']);
     Route::get('/tentang', [PublicContentApiController::class, 'tentang']);
     Route::get('/leaderboard', [PublicContentApiController::class, 'leaderboard']);
 
     Route::get('/testimoni', [PublicContentApiController::class, 'testimoni']);
-    Route::post('/testimoni', [PublicContentApiController::class, 'storeTestimoni']);
 
     Route::get('/minigame', [MinigameApiController::class, 'index']);
     Route::get('/forum', [ForumApiController::class, 'index']);
@@ -36,32 +37,39 @@ Route::middleware('api.auth')->group(function () {
     Route::get('/auth/me', [AuthApiController::class, 'me']);
     Route::post('/auth/logout', [AuthApiController::class, 'logout']);
 
+    Route::post('/testimoni', [PublicContentApiController::class, 'storeTestimoni'])->middleware('throttle:5,1');
+
     Route::get('/profile', [ProfileApiController::class, 'show']);
-    Route::post('/profile', [ProfileApiController::class, 'update']);
-    Route::put('/profile/role', [ProfileApiController::class, 'updateRole']);
-    Route::put('/profile/settings', [ProfileApiController::class, 'updateSettings']);
+    Route::post('/profile', [ProfileApiController::class, 'update'])->middleware('throttle:20,1');
+    Route::put('/profile/role', [ProfileApiController::class, 'updateRole'])->middleware('throttle:20,1');
+    Route::put('/profile/border', [ProfileApiController::class, 'updateBorder'])->middleware('throttle:20,1');
+    Route::put('/profile/settings', [ProfileApiController::class, 'updateSettings'])->middleware('throttle:20,1');
 
     Route::get('/edukasi/requests', [PublicContentApiController::class, 'myEdukasiRequests']);
-    Route::post('/edukasi/requests', [PublicContentApiController::class, 'storeEdukasiRequest']);
+    Route::post('/edukasi/requests', [PublicContentApiController::class, 'storeEdukasiRequest'])->middleware('throttle:10,1');
     Route::post('/edukasi/requests/mark-seen', [PublicContentApiController::class, 'markEdukasiRequestsSeen']);
 
     Route::get('/minigame/{type}', [MinigameApiController::class, 'questions']);
-    Route::post('/minigame/score', [MinigameApiController::class, 'saveScore']);
+    Route::post('/minigame/score', [MinigameApiController::class, 'saveScore'])->middleware('throttle:15,1');
 
-    Route::post('/forum', [ForumApiController::class, 'store']);
-    Route::post('/forum/{forum}/jawaban', [ForumApiController::class, 'storeJawaban']);
-    Route::post('/forum/jawaban/{jawaban}/vote', [ForumApiController::class, 'voteJawaban']);
+    Route::post('/forum', [ForumApiController::class, 'store'])->middleware('throttle:20,1');
+    Route::put('/forum/{forum}', [ForumApiController::class, 'update'])->middleware('throttle:20,1');
+    Route::delete('/forum/{forum}', [ForumApiController::class, 'destroy'])->middleware('throttle:20,1');
+    Route::post('/forum/{forum}/jawaban', [ForumApiController::class, 'storeJawaban'])->middleware('throttle:20,1');
+    Route::delete('/forum/jawaban/{jawaban}', [ForumApiController::class, 'destroyJawaban'])->middleware('throttle:20,1');
+    Route::post('/forum/jawaban/{jawaban}/vote', [ForumApiController::class, 'voteJawaban'])->middleware('throttle:30,1');
 
-    // Sosial Chat, Pertemanan & Bot Digika (langsung menggunakan SocialChatController via Bearer Token)
+    // Sosial Chat, Pertemanan, Follow & Bot Digika (langsung menggunakan Controller via Bearer Token)
     Route::get('/chat/unread-count', [SocialChatController::class, 'unreadCount']);
     Route::get('/chat/summary', [SocialChatController::class, 'summary']);
     Route::get('/chat/users', [SocialChatController::class, 'searchUsers']);
     Route::get('/chat/messages/{user}', [SocialChatController::class, 'messages']);
-    Route::post('/chat/messages/{user}', [SocialChatController::class, 'sendMessage']);
-    Route::post('/friends/request/{user}', [SocialChatController::class, 'sendFriendRequest']);
-    Route::post('/friends/accept/{user}', [SocialChatController::class, 'acceptFriendRequest']);
-    Route::post('/friends/decline/{user}', [SocialChatController::class, 'declineFriendRequest']);
-    Route::delete('/friends/{user}', [SocialChatController::class, 'removeFriendship']);
+    Route::post('/chat/messages/{user}', [SocialChatController::class, 'sendMessage'])->middleware('throttle:30,1');
+    Route::post('/friends/request/{user}', [SocialChatController::class, 'sendFriendRequest'])->middleware('throttle:20,1');
+    Route::post('/friends/accept/{user}', [SocialChatController::class, 'acceptFriendRequest'])->middleware('throttle:20,1');
+    Route::post('/friends/decline/{user}', [SocialChatController::class, 'declineFriendRequest'])->middleware('throttle:20,1');
+    Route::delete('/friends/{user}', [SocialChatController::class, 'removeFriendship'])->middleware('throttle:20,1');
+    Route::post('/users/{user}/follow', [FollowController::class, 'toggle'])->middleware('throttle:30,1');
 });
 
 // Endpoint API khusus Admin & Owner

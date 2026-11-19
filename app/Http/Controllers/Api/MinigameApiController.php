@@ -7,6 +7,7 @@ use App\Models\MinigameLevel;
 use App\Models\SkorGame;
 use App\Models\SoalMinigame;
 use App\Services\BilingualHelper;
+use App\Services\SocialSchemaHelper;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -237,19 +238,26 @@ class MinigameApiController extends Controller
 
     public function saveScore(Request $request): JsonResponse
     {
+        SocialSchemaHelper::ensureReady();
+
         $validated = $request->validate([
             'game_type' => ['required', 'string', 'in:phishing,cyber-defender,link-trap'],
-            'skor' => ['required', 'integer', 'min:0'],
-            'benar' => ['nullable', 'integer', 'min:0'],
-            'salah' => ['nullable', 'integer', 'min:0'],
-            'avg_time_sec' => ['nullable', 'numeric', 'min:0'],
+            'skor' => ['required', 'integer', 'min:0', 'max:5000'],
+            'benar' => ['nullable', 'integer', 'min:0', 'max:100'],
+            'salah' => ['nullable', 'integer', 'min:0', 'max:100'],
+            'avg_time_sec' => ['nullable', 'numeric', 'min:0', 'max:300'],
         ]);
 
         $user = Auth::user();
         $userId = $user->id;
-        $skorBaru = (int) $validated['skor'];
         $benar = (int) ($validated['benar'] ?? 0);
         $salah = (int) ($validated['salah'] ?? 0);
+        $skorBaru = (int) $validated['skor'];
+        if ($benar > 0) {
+            $skorBaru = min($skorBaru, max(100, $benar * 250));
+        } elseif ($salah > 0) {
+            $skorBaru = 0;
+        }
         $avgTime = (float) ($validated['avg_time_sec'] ?? 99);
 
         $prevHighest = (int) SkorGame::where('user_id', $userId)
@@ -263,6 +271,8 @@ class MinigameApiController extends Controller
             'game_type' => $validated['game_type'],
             'skor' => $skorBaru,
             'skor_tertinggi' => $skorTertinggi,
+            'benar' => $benar,
+            'salah' => $salah,
             'played_at' => now(),
         ]);
 

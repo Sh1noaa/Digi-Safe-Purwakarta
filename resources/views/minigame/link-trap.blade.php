@@ -66,7 +66,10 @@
                                     <span class="inline-block rounded-full border px-2.5 py-0.5 text-[10px] font-extrabold uppercase {{ $lvl->badge_classes }}">
                                         {{ $lvl->badge_label }}
                                     </span>
-                                    <span class="text-[11px] font-bold text-ink">⏱ {{ $lvl->waktu_detik }}{{ __('ui.game.sec_short') }}</span>
+                                    <span class="inline-flex items-center gap-1 text-[11px] font-bold text-ink">
+                                        <svg class="w-3.5 h-3.5 text-sky shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                                        <span>{{ $lvl->waktu_detik }}{{ __('ui.game.sec_short') }}</span>
+                                    </span>
                                 </div>
                                 <h3 class="mt-3 font-heading font-extrabold text-base text-ink group-hover:text-sky transition-colors">
                                     {{ $lvl->nama_level }}

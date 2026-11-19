@@ -2,23 +2,52 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Testimoni;
 use App\Models\User;
+use App\Models\UserFollow;
 use App\Services\BilingualHelper;
+use App\Services\SocialSchemaHelper;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 
 class BerandaController extends Controller
 {
     public function index(): View
     {
+        SocialSchemaHelper::ensureReady();
         $isEn = BilingualHelper::isEnglish();
+
+        $hasTestimoni = Schema::hasTable('testimoni');
+        $hasUsers = Schema::hasTable('users');
+
+        // Ambil ulasan nyata dari database testimoni (hindari teks default hardcoded yang tidak sesuai)
+        $realReviews = $hasTestimoni
+            ? Testimoni::with('user')
+                ->whereIn('status_approval', ['approved', 'pending'])
+                ->orderByDesc('created_at')
+                ->orderByDesc('id')
+                ->limit(24)
+                ->get()
+                ->filter(fn (Testimoni $t) => mb_strlen(trim((string) $t->cerita)) >= 12)
+                ->take(6)
+                ->values()
+            : collect();
+
+        $featuredReview = $realReviews->first();
+        $totalReviewsCount = $hasTestimoni
+            ? Testimoni::whereIn('status_approval', ['approved', 'pending'])->count()
+            : 0;
 
         $aboutStats = $isEn ? [
             'mitra_count' => '120+',
             'mitra_desc' => 'Partnering with schools, universities, and village communities across Purwakarta Regency.',
             'komitmen_persen' => '100%',
             'komitmen_label' => 'Commitment to measurable literacy',
-            'komitmen_quote' => '“Digi-Safe security simulations transformed how our citizens and students spot phishing links. The materials are practical, smart, and easy to understand.”',
+            'komitmen_quote' => $featuredReview
+                ? '“' . trim($featuredReview->cerita) . '”'
+                : '“Share your experience on the Testimonials page so fellow Purwakarta citizens can learn from real stories.”',
             'modul_interaksi' => '520k+',
             'modul_label' => 'Module & Quiz Interactions',
             'modul_desc' => 'Completed regularly to strengthen community digital resilience.',
@@ -29,7 +58,9 @@ class BerandaController extends Controller
             'mitra_desc' => 'Bekerja sama dengan sekolah, kampus, dan komunitas desa di seluruh Kabupaten Purwakarta.',
             'komitmen_persen' => '100%',
             'komitmen_label' => 'Komitmen pada literasi terukur',
-            'komitmen_quote' => '“Simulasi keamanan Digi-Safe mengubah cara warga dan pelajar kami mengenali tautan phishing. Materinya praktis, cerdas, dan mudah dipahami.”',
+            'komitmen_quote' => $featuredReview
+                ? '“' . trim($featuredReview->cerita) . '”'
+                : '“Bagikan pengalaman belajar Anda di halaman Testimoni agar warga Purwakarta lainnya dapat membaca ulasan nyata.”',
             'modul_interaksi' => '520k+',
             'modul_label' => 'Interaksi Modul & Kuis',
             'modul_desc' => 'Diselesaikan secara berkala untuk memperkuat ketahanan digital masyarakat.',
@@ -77,21 +108,35 @@ class BerandaController extends Controller
             ],
         ];
 
-        $registeredUsers = User::humans()->withCount(['forums', 'jawabanForums', 'testimonis'])
-            ->withSum('skorGames as total_skor_game', 'skor')
-            ->orderBy('id')
-            ->get();
+        $registeredUsers = ($hasUsers && Schema::hasTable('forum') && Schema::hasTable('jawaban_forum') && Schema::hasTable('skor_game') && $hasTestimoni)
+            ? User::humans()
+                ->withCount(['forums', 'jawabanForums', 'testimonis', 'followers', 'following'])
+                ->withSum('skorGames as total_skor_game', 'skor')
+                ->orderBy('id')
+                ->get()
+            : ($hasUsers ? User::humans()->orderBy('id')->get() : collect());
 
-        return view('beranda', compact('aboutStats', 'services', 'registeredUsers'));
+        $followingIds = Auth::check()
+            ? UserFollow::where('follower_id', Auth::id())->pluck('following_id')->map(fn ($id) => (int) $id)->all()
+            : [];
+
+        return view('beranda', compact('aboutStats', 'services', 'registeredUsers', 'followingIds', 'realReviews', 'featuredReview', 'totalReviewsCount'));
     }
 
     public function usersDirectory(Request $request): View
     {
-        $users = User::humans()->withCount(['forums', 'jawabanForums', 'testimonis'])
+        SocialSchemaHelper::ensureReady();
+
+        $users = User::humans()
+            ->withCount(['forums', 'jawabanForums', 'testimonis', 'followers', 'following'])
             ->withSum('skorGames as total_skor_game', 'skor')
             ->orderBy('id')
             ->get();
 
-        return view('users.index', compact('users'));
+        $followingIds = Auth::check()
+            ? UserFollow::where('follower_id', Auth::id())->pluck('following_id')->map(fn ($id) => (int) $id)->all()
+            : [];
+
+        return view('users.index', compact('users', 'followingIds'));
     }
 }

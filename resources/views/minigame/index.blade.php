@@ -548,7 +548,10 @@
                                         <p class="mt-1 text-[11px] text-muted leading-snug line-clamp-2">{{ $lvlItem->deskripsi }}</p>
                                     </div>
                                     <div class="mt-3 pt-2 border-t border-gray-200/60 flex items-center justify-between text-[10px] font-bold text-ink">
-                                        <span>⏱ {{ $lvlItem->waktu_detik }}{{ __('ui.game.sec_short') }}</span>
+                                        <span class="inline-flex items-center gap-1">
+                                            <svg class="w-3 h-3 text-sky shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                                            <span>{{ $lvlItem->waktu_detik }}{{ __('ui.game.sec_short') }}</span>
+                                        </span>
                                         <span class="text-emerald-600">+{{ $lvlItem->poin_benar }} pts</span>
                                     </div>
                                 </div>

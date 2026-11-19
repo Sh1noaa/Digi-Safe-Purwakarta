@@ -158,13 +158,17 @@
                         <div class="hero-slot-1 hidden lg:block shrink-0">
                             <div class="hero-glass-edge w-[112px] h-[200px] rounded-[16px] p-3 flex flex-col justify-center gap-7 shadow-lg">
                                 <div class="inline-flex items-center justify-between rounded-full bg-white px-2.5 py-1.5 shadow-xs">
-                                    <span class="w-3.5 h-3.5 rounded-full bg-sky flex items-center justify-center text-white text-[8px]">✓</span>
+                                    <span class="w-3.5 h-3.5 rounded-full bg-sky flex items-center justify-center text-white">
+                                        <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                                    </span>
                                     <span class="text-[9px] font-bold text-ink">{{ __('ui.home.card_privacy') }}</span>
                                     <span class="w-1.5 h-1.5 rounded-full bg-lime"></span>
                                 </div>
 
                                 <div class="inline-flex items-center justify-between rounded-full bg-white px-2.5 py-1.5 shadow-xs">
-                                    <span class="w-3.5 h-3.5 rounded-full bg-sky flex items-center justify-center text-white text-[8px]">✓</span>
+                                    <span class="w-3.5 h-3.5 rounded-full bg-sky flex items-center justify-center text-white">
+                                        <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                                    </span>
                                     <span class="text-[9px] font-bold text-ink">{{ __('ui.home.card_password') }}</span>
                                     <span class="w-1.5 h-1.5 rounded-full bg-lime"></span>
                                 </div>
@@ -473,33 +477,52 @@
                     </div>
 
                     <div class="mt-8">
-                        <div class="flex items-center -space-x-2 mb-4">
-                            <div class="w-9 h-9 rounded-full bg-sky text-white ring-2 ring-white flex items-center justify-center">
-                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                                    <circle cx="12" cy="8" r="4" />
-                                    <path d="M5 20c1.5-4 12.5-4 14 0" />
-                                </svg>
+                        <div class="flex items-center justify-between gap-2 mb-4">
+                            <div class="flex items-center -space-x-2">
+                                @forelse (($realReviews ?? collect())->take(3) as $revAvatar)
+                                    @if (! $revAvatar->is_anonymous && $revAvatar->avatar_tampil)
+                                        <img src="{{ $revAvatar->avatar_tampil }}" alt="{{ $revAvatar->nama_tampil }}" class="w-9 h-9 rounded-full object-cover ring-2 ring-white shadow-xs">
+                                    @else
+                                        <div class="w-9 h-9 rounded-full {{ $revAvatar->is_anonymous ? 'bg-gray-200 text-muted' : ($revAvatar->user?->pastel_class ?: 'bg-sky text-white') }} ring-2 ring-white flex items-center justify-center text-xs font-heading font-extrabold">
+                                            {{ $revAvatar->inisial_tampil }}
+                                        </div>
+                                    @endif
+                                @empty
+                                    <div class="w-9 h-9 rounded-full bg-sky text-white ring-2 ring-white flex items-center justify-center">
+                                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                            <circle cx="12" cy="8" r="4" />
+                                            <path d="M5 20c1.5-4 12.5-4 14 0" />
+                                        </svg>
+                                    </div>
+                                @endforelse
+                                <a href="{{ route('testimoni.index') }}" class="w-9 h-9 rounded-full bg-white text-ink ring-2 ring-gray-100 hover:bg-lime transition-colors flex items-center justify-center text-[10px] font-bold">
+                                    {{ ($totalReviewsCount ?? 0) > 0 ? $totalReviewsCount . '+' : '0' }}
+                                </a>
                             </div>
-                            <div class="w-9 h-9 rounded-full bg-ink text-lime ring-2 ring-white flex items-center justify-center">
-                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                                    <circle cx="12" cy="8" r="4" />
-                                    <path d="M5 20c1.5-4 12.5-4 14 0" />
-                                </svg>
-                            </div>
-                            <div class="w-9 h-9 rounded-full bg-lime text-ink ring-2 ring-white flex items-center justify-center">
-                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                                    <circle cx="12" cy="8" r="4" />
-                                    <path d="M5 20c1.5-4 12.5-4 14 0" />
-                                </svg>
-                            </div>
-                            <div class="w-9 h-9 rounded-full bg-white text-ink ring-2 ring-gray-100 flex items-center justify-center text-[10px] font-bold">
-                                5k+
-                            </div>
+
+                            @if (! empty($featuredReview))
+                                <div class="flex items-center gap-0.5" aria-label="Rating {{ $featuredReview->rating ?: 5 }} dari 5">
+                                    @for ($s = 1; $s <= 5; $s++)
+                                        <svg class="w-3.5 h-3.5 {{ $s <= ($featuredReview->rating ?: 5) ? 'text-amber-400 fill-amber-400' : 'text-gray-200 fill-gray-200' }}" viewBox="0 0 24 24">
+                                            <path d="M12 2l2.9 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l7.1-1.01L12 2z" />
+                                        </svg>
+                                    @endfor
+                                </div>
+                            @endif
                         </div>
 
-                        <p class="text-xs text-ink/80 leading-relaxed font-medium">
+                        <p class="text-xs text-ink/80 leading-relaxed font-medium line-clamp-3">
                             {{ $aboutStats['komitmen_quote'] }}
                         </p>
+
+                        @if (! empty($featuredReview))
+                            <div class="mt-3 flex items-center justify-between gap-2 text-[11px]">
+                                <span class="font-heading font-bold text-ink truncate">— {{ $featuredReview->nama_tampil }}</span>
+                                <a href="{{ route('testimoni.index') }}" class="font-semibold text-sky hover:underline shrink-0">
+                                    {{ app()->getLocale() === 'en' ? 'All reviews' : 'Lihat ulasan' }}
+                                </a>
+                            </div>
+                        @endif
                     </div>
                 </div>
 
@@ -808,14 +831,14 @@
                 <!-- Loop 1: seluruh user terdaftar -->
                 @foreach ($registeredUsers as $regUser)
                     <div class="w-[290px] sm:w-[310px] shrink-0">
-                        <x-user-profile-card :user="$regUser" :linkToDirectory="true" />
+                        <x-user-profile-card :user="$regUser" :followingIds="$followingIds ?? []" :linkToDirectory="true" />
                     </div>
                 @endforeach
 
                 <!-- Loop 2 (duplikasi seamless untuk animasi infinite kanan ke kiri) -->
                 @foreach ($registeredUsers as $regUserDup)
                     <div class="w-[290px] sm:w-[310px] shrink-0" aria-hidden="true">
-                        <x-user-profile-card :user="$regUserDup" :linkToDirectory="true" />
+                        <x-user-profile-card :user="$regUserDup" :followingIds="$followingIds ?? []" :linkToDirectory="true" />
                     </div>
                 @endforeach
             </div>
@@ -873,7 +896,7 @@
                 ],
                 [
                     'q' => 'How does the Most Helpful feature in the Community Forum work?',
-                    'a' => 'Signed-in members can react once per reply with 👍 (Helpful) or 👎. Replies with the highest net helpful votes automatically earn the real-time Most Helpful badge.',
+                    'a' => 'Signed-in members can react once per reply with Upvote (Helpful) or Downvote. Replies with the highest net helpful votes automatically earn the real-time Most Helpful badge.',
                 ],
                 [
                     'q' => 'Can teachers or administrators monitor learning progress reports?',
@@ -932,7 +955,7 @@
                 ],
                 [
                     'q' => 'Bagaimana sistem penilaian "Most Helpful" di Forum Komunitas bekerja?',
-                    'a' => 'Setiap pengguna terdaftar dapat memberikan maksimal satu reaksi 👍 atau 👎 per jawaban. Balasan dengan dukungan positif terbanyak akan otomatis mendapat label Most Helpful secara real-time.',
+                    'a' => 'Setiap pengguna terdaftar dapat memberikan maksimal satu reaksi Suka (Membantu) atau Tidak Suka per jawaban. Balasan dengan dukungan positif terbanyak akan otomatis mendapat label Most Helpful secara real-time.',
                 ],
                 [
                     'q' => 'Apakah pengelola atau admin dapat memantau perkembangan peserta?',

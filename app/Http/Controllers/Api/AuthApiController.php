@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Controller;
 use App\Models\ApiToken;
 use App\Models\User;
+use App\Rules\ValidRealEmail;
 use App\Services\ApiResourceFormatter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,12 +22,13 @@ class AuthApiController extends Controller
         $isEn = app()->getLocale() === 'en';
 
         $validated = $request->validate([
-            'email' => ['required', 'email'],
+            'email' => ['required', 'string', 'max:100', new ValidRealEmail(checkDns: false)],
             'password' => ['required', 'string'],
             'device_name' => ['nullable', 'string', 'max:80'],
         ]);
 
-        $user = User::query()->where('email', $validated['email'])->first();
+        $emailLower = Str::lower(trim($validated['email']));
+        $user = User::query()->where('email', $emailLower)->first();
 
         if (! $user || ! Hash::check($validated['password'], (string) $user->password)) {
             return response()->json([
@@ -52,8 +54,8 @@ class AuthApiController extends Controller
 
         $validated = $request->validate([
             'nama_lengkap' => ['nullable', 'string', 'max:100'],
-            'username' => ['nullable', 'string', 'max:50', 'alpha_dash', 'unique:users,username'],
-            'email' => ['required', 'string', 'email', 'max:100', 'unique:users,email'],
+            'username' => ['nullable', 'string', 'min:3', 'max:50', 'alpha_dash', 'unique:users,username'],
+            'email' => ['required', 'string', 'max:100', new ValidRealEmail(checkDns: true), 'unique:users,email'],
             'password' => ['required', 'string', 'min:8'],
             'device_name' => ['nullable', 'string', 'max:80'],
         ]);
@@ -106,6 +108,7 @@ class AuthApiController extends Controller
         ]);
 
         $googleData = null;
+        $expectedClientId = trim((string) config('services.google.client_id'));
 
         if (! empty($validated['id_token'])) {
             $resp = Http::when(app()->environment('local'), fn ($http) => $http->withoutVerifying())
@@ -114,22 +117,42 @@ class AuthApiController extends Controller
                     'id_token' => $validated['id_token'],
                 ]);
             if ($resp->successful()) {
-                $googleData = $resp->json();
+                $candidate = $resp->json();
+                $tokenAud = (string) ($candidate['aud'] ?? '');
+                if ($expectedClientId === '' || hash_equals($expectedClientId, $tokenAud)) {
+                    $googleData = $candidate;
+                }
             }
         } elseif (! empty($validated['access_token'])) {
-            $resp = Http::withToken($validated['access_token'])
-                ->when(app()->environment('local'), fn ($http) => $http->withoutVerifying())
+            $tokenInfoResp = Http::when(app()->environment('local'), fn ($http) => $http->withoutVerifying())
                 ->timeout(12)
-                ->get('https://www.googleapis.com/oauth2/v3/userinfo');
-            if ($resp->successful()) {
-                $googleData = $resp->json();
+                ->get('https://oauth2.googleapis.com/tokeninfo', [
+                    'access_token' => $validated['access_token'],
+                ]);
+
+            $audValid = $tokenInfoResp->successful() && (
+                $expectedClientId === ''
+                || hash_equals($expectedClientId, (string) ($tokenInfoResp->json('aud') ?? ''))
+            );
+
+            if ($audValid) {
+                $resp = Http::withToken($validated['access_token'])
+                    ->when(app()->environment('local'), fn ($http) => $http->withoutVerifying())
+                    ->timeout(12)
+                    ->get('https://www.googleapis.com/oauth2/v3/userinfo');
+                if ($resp->successful()) {
+                    $googleData = $resp->json();
+                }
             }
         }
 
-        if (! is_array($googleData) || empty($googleData['sub']) || empty($googleData['email'])) {
+        $emailVerified = is_array($googleData)
+            && filter_var($googleData['email_verified'] ?? false, FILTER_VALIDATE_BOOLEAN);
+
+        if (! is_array($googleData) || empty($googleData['sub']) || empty($googleData['email']) || ! $emailVerified) {
             return response()->json([
                 'success' => false,
-                'message' => $isEn ? 'Invalid Google token.' : 'Token Google tidak valid.',
+                'message' => $isEn ? 'Invalid or unverified Google token.' : 'Token Google tidak valid atau email belum terverifikasi.',
             ], 422);
         }
 

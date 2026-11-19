@@ -15,7 +15,7 @@ class UserController extends Controller
     {
         // daftar pengguna diurutkan dari owner, admin, lalu user (kecuali akun sistem Bot Digika)
         $users = User::humans()
-            ->orderByRaw("FIELD(role, 'owner', 'admin', 'user')")
+            ->orderByRaw("CASE WHEN role = 'owner' THEN 1 WHEN role = 'admin' THEN 2 ELSE 3 END")
             ->orderBy('id')
             ->get();
 

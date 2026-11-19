@@ -83,7 +83,10 @@
                                     <span class="inline-block rounded-full border px-2.5 py-0.5 text-[10px] font-extrabold uppercase {{ $lvl->badge_classes }}">
                                         {{ $lvl->badge_label }}
                                     </span>
-                                    <span class="text-[11px] font-bold text-red-500">❤ {{ $lvl->hp_awal }} HP</span>
+                                    <span class="inline-flex items-center gap-1 text-[11px] font-bold text-red-500">
+                                        <svg class="w-3.5 h-3.5 fill-red-500 shrink-0" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg>
+                                        <span>{{ $lvl->hp_awal }} HP</span>
+                                    </span>
                                 </div>
                                 <h3 class="mt-3 font-heading font-extrabold text-base text-ink group-hover:text-sky transition-colors">
                                     {{ $lvl->nama_level }}

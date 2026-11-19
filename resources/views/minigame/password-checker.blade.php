@@ -1,16 +1,17 @@
 @extends('layouts.app')
 
-@section('title', 'Password Strength Checker — Digi-Safe Purwakarta')
+@section('title', 'Password Strength Checker | Digi-Safe Purwakarta')
 
 @section('content')
 
     @php
         $isEn = app()->getLocale() === 'en';
+        $isDark = ($currentTheme ?? 'light') === 'dark';
     @endphp
 
     <section
         x-data="passwordCheckerLab(@js($isEn))"
-        class="min-h-screen bg-[#F8FAFC] pt-24 sm:pt-28 pb-24 px-4 sm:px-6 lg:px-8"
+        class="min-h-screen {{ $isDark ? 'bg-[#0B1120]' : 'bg-[#F8FAFC]' }} pt-24 sm:pt-28 pb-24 px-4 sm:px-6 lg:px-8 transition-colors duration-300"
     >
         <div class="max-w-4xl mx-auto space-y-6">
 
@@ -58,8 +59,8 @@
                         </h1>
                         <p class="mt-1.5 text-xs sm:text-sm text-white/90 leading-relaxed max-w-md">
                             {{ $isEn
-                                ? 'Type any everyday password (e.g. ganteng123) to analyze weaknesses and get stronger upgraded variations.'
-                                : 'Ketik kata sandi biasa (misal: ganteng123) untuk melihat kelemahannya dan saran kombinasi yang jauh lebih kuat.' }}
+                                ? 'Type your own password to inspect its real strength, spot weak patterns, and generate stronger memorable variations.'
+                                : 'Ketik kata sandi pilihanmu sendiri untuk memeriksa kekuatannya secara langsung dan mendapatkan variasi sandi yang jauh lebih kuat.' }}
                         </p>
                     </div>
 
@@ -83,39 +84,44 @@
                 <div class="p-6 sm:p-8 space-y-6">
                     <!-- input password -->
                     <div>
-                        <label class="block text-xs font-heading font-bold text-ink mb-2">
+                        <label for="pw-checker-input" class="block text-xs font-heading font-bold text-ink mb-2">
                             {{ $isEn ? 'Enter a password to test & strengthen' : 'Masukkan kata sandi yang ingin diuji & diperkuat' }}
                         </label>
                         <div class="relative">
                             <input
+                                id="pw-checker-input"
                                 :type="show ? 'text' : 'password'"
                                 x-model="password"
-                                placeholder="{{ $isEn ? 'Example: ganteng123' : 'Contoh: ganteng123' }}"
+                                placeholder="{{ $isEn ? 'Type your password here...' : 'Ketik kata sandi kamu di sini...' }}"
                                 autocomplete="off"
-                                class="w-full rounded-2xl bg-[#F8FAFC] border border-gray-200 focus:border-sky focus:bg-white pl-4 pr-24 py-3.5 text-sm sm:text-base font-mono text-ink focus:outline-none transition-colors"
+                                class="w-full rounded-2xl bg-[#F8FAFC] border border-gray-200 focus:border-sky focus:bg-white pl-4 pr-32 py-3.5 text-sm sm:text-base font-mono text-ink placeholder:font-sans placeholder:text-gray-400 focus:outline-none transition-colors"
                             >
-                            <button
-                                type="button"
-                                @click="show = !show"
-                                class="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-white border border-gray-200 px-3 py-1.5 text-[11px] font-bold text-ink hover:border-sky cursor-pointer"
-                            >
-                                <span x-text="show ? (isEn ? 'Hide' : 'Sembunyi') : (isEn ? 'Show' : 'Lihat')"></span>
-                            </button>
-                        </div>
-
-                        <!-- contoh cepat -->
-                        <div class="mt-2.5 flex flex-wrap items-center gap-2 text-[11px]">
-                            <span class="text-muted font-medium">{{ $isEn ? 'Quick test:' : 'Coba cepat:' }}</span>
-                            @foreach (['ganteng123', 'purwakarta99', 'sayangku', 'admin1234'] as $sample)
+                            <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
                                 <button
                                     type="button"
-                                    @click="password = @js($sample)"
-                                    class="rounded-full bg-gray-100 hover:bg-sky/15 hover:text-sky px-3 py-1 font-mono font-semibold text-ink/80 transition-colors cursor-pointer"
+                                    x-show="password.length > 0"
+                                    style="display: none;"
+                                    @click="password = ''"
+                                    aria-label="{{ $isEn ? 'Clear password' : 'Hapus kata sandi' }}"
+                                    class="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 text-muted hover:text-ink flex items-center justify-center text-xs font-bold transition-colors cursor-pointer"
                                 >
-                                    {{ $sample }}
+                                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
                                 </button>
-                            @endforeach
+                                <button
+                                    type="button"
+                                    @click="show = !show"
+                                    class="rounded-full bg-white border border-gray-200 px-3 py-1.5 text-[11px] font-bold text-ink hover:border-sky cursor-pointer"
+                                >
+                                    <span x-text="show ? (isEn ? 'Hide' : 'Sembunyi') : (isEn ? 'Show' : 'Lihat')"></span>
+                                </button>
+                            </div>
                         </div>
+
+                        <p class="mt-2 text-[11px] text-muted">
+                            {{ $isEn
+                                ? 'Start typing above to see real-time strength checks and upgraded password recommendations.'
+                                : 'Mulai ketik kata sandi di kolom atas untuk melihat hasil analisis keamanan dan rekomendasi sandi secara langsung.' }}
+                        </p>
                     </div>
 
                     <!-- progress bar & estimasi waktu bobol -->
@@ -230,7 +236,7 @@
         document.addEventListener('alpine:init', () => {
             Alpine.data('passwordCheckerLab', (isEn) => ({
                 isEn,
-                password: 'ganteng123',
+                password: '',
                 show: true,
                 seed: 0,
                 copiedIdx: null,

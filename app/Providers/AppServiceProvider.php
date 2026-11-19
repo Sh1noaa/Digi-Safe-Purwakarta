@@ -8,6 +8,7 @@ use App\Models\MinigameLevel;
 use App\Models\ModulEdukasi;
 use App\Models\SoalMinigame;
 use App\Models\User;
+use App\Services\AdminAnalyticsService;
 use App\Services\SocialSchemaHelper;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\URL;
@@ -50,23 +51,36 @@ class AppServiceProvider extends ServiceProvider
         MinigameLevel::ensureInitialized();
         SocialSchemaHelper::ensureReady();
 
-        // bagikan statistik ringkas untuk panel kanan admin
+        // bagikan statistik ringkas & analitik tren untuk panel admin
         View::composer('admin.*', function ($view) {
+            if (array_key_exists('adminStats', $view->getData())) {
+                return;
+            }
+
             $pendingEdukasiRequests = Schema::hasTable('edukasi_requests')
                 ? EdukasiRequest::where('status', 'pending')->count()
                 : 0;
 
+            $analytics = AdminAnalyticsService::build();
+
+            $hasModul = Schema::hasTable('modul_edukasi');
+            $hasSoal = Schema::hasTable('soal_minigame');
+            $hasLevels = Schema::hasTable('minigame_levels');
+            $hasForum = Schema::hasTable('forum');
+            $hasUsers = Schema::hasTable('users');
+
             $view->with('adminStats', [
-                'total_edukasi' => ModulEdukasi::count(),
-                'edukasi_teks' => ModulEdukasi::where('type', 'teks')->count(),
-                'edukasi_link' => ModulEdukasi::where('type', '!=', 'teks')->orWhereNull('type')->count(),
+                'total_edukasi' => $hasModul ? ModulEdukasi::count() : 0,
+                'edukasi_teks' => $hasModul ? ModulEdukasi::where('type', 'teks')->count() : 0,
+                'edukasi_link' => $hasModul ? ModulEdukasi::where('type', '!=', 'teks')->orWhereNull('type')->count() : 0,
                 'pending_edukasi_requests' => $pendingEdukasiRequests,
-                'total_soal' => SoalMinigame::count(),
-                'total_levels' => MinigameLevel::count(),
-                'total_forum' => Forum::count(),
-                'forum_starred' => Forum::where('is_starred', true)->count(),
-                'total_users' => User::humans()->count(),
-                'total_admins' => User::humans()->whereIn('role', ['owner', 'admin'])->count(),
+                'total_soal' => $hasSoal ? SoalMinigame::count() : 0,
+                'total_levels' => $hasLevels ? MinigameLevel::count() : 0,
+                'total_forum' => $hasForum ? Forum::count() : 0,
+                'forum_starred' => $hasForum ? Forum::where('is_starred', true)->count() : 0,
+                'total_users' => $analytics['user_growth']['total_users'] ?? ($hasUsers ? User::humans()->count() : 0),
+                'total_admins' => $hasUsers ? User::humans()->whereIn('role', ['owner', 'admin'])->count() : 0,
+                'analytics' => $analytics,
             ]);
         });
     }

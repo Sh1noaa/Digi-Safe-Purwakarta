@@ -8,6 +8,8 @@ use App\Models\JawabanForum;
 use App\Models\SkorGame;
 use App\Models\Testimoni;
 use App\Models\User;
+use App\Models\UserFollow;
+use App\Services\AvatarBorderService;
 use App\Services\SocialSchemaHelper;
 use App\Services\UploadValidationHelper;
 use Illuminate\Http\JsonResponse;
@@ -46,10 +48,25 @@ class ProfileController extends Controller
             'nama_lengkap' => ['required', 'string', 'max:100'],
             'specialty_role' => ['nullable', 'string', 'max:60'],
             'bio' => ['nullable', 'string', 'max:350'],
+            'current_password' => ['nullable', 'string'],
             'password' => ['nullable', 'string', 'min:8'],
             'avatar' => UploadValidationHelper::imageRules(5120),
             'banner' => UploadValidationHelper::imageRules(6144),
         ]);
+
+        // Wajib verifikasi password lama jika user non-Google ingin mengganti password
+        if (! empty($validated['password']) && empty($user->oauth_provider)) {
+            $currentPwd = (string) ($validated['current_password'] ?? '');
+            if ($currentPwd === '' || ! Hash::check($currentPwd, (string) $user->password)) {
+                return back()
+                    ->withErrors([
+                        'current_password' => app()->getLocale() === 'en'
+                            ? 'Current password is required and must match your existing password.'
+                            : 'Password lama wajib diisi dengan benar untuk mengganti password.',
+                    ])
+                    ->withInput($request->except(['password', 'current_password']));
+            }
+        }
 
         $data = [
             'nama_lengkap' => $validated['nama_lengkap'],
@@ -57,50 +74,57 @@ class ProfileController extends Controller
             'bio' => $validated['bio'] ?? $user->bio,
         ];
 
-        // hash password baru jika diisi
+        // hash password baru jika diisi & regenerasi session + cabut token API lama bila ada
         if (! empty($validated['password'])) {
             $data['password'] = Hash::make($validated['password']);
+            $request->session()->regenerate();
+            \App\Models\ApiToken::ensureTable();
+            \App\Models\ApiToken::where('user_id', $user->id)->delete();
         }
 
-        // upload foto profil ke public/images/avatars dan storage
+        // upload foto profil ke public/images/avatars dengan ekstensi aman & hapus file lama
         if ($request->hasFile('avatar')) {
             $file = $request->file('avatar');
-            $filename = 'avatar_' . $user->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+            $safeExt = UploadValidationHelper::safeExtension($file);
+            $filename = 'avatar_' . $user->id . '_' . time() . '.' . $safeExt;
 
             $targetDir = public_path('images/avatars');
             if (! is_dir($targetDir)) {
-                mkdir($targetDir, 0777, true);
+                mkdir($targetDir, 0755, true);
             }
 
             $file->move($targetDir, $filename);
 
             $storageDir = storage_path('app/public/avatars');
             if (! is_dir($storageDir)) {
-                mkdir($storageDir, 0777, true);
+                mkdir($storageDir, 0755, true);
             }
             @copy($targetDir . '/' . $filename, $storageDir . '/' . $filename);
 
+            UploadValidationHelper::deleteOldAsset($user->avatar, 'avatars');
             $data['avatar'] = 'images/avatars/' . $filename;
         }
 
-        // upload banner profil (mendukung gif maupun foto biasa)
+        // upload banner profil (mendukung gif maupun foto biasa) dengan ekstensi aman & hapus file lama
         if ($request->hasFile('banner')) {
             $bannerFile = $request->file('banner');
-            $bannerName = 'banner_' . $user->id . '_' . time() . '.' . $bannerFile->getClientOriginalExtension();
+            $safeExt = UploadValidationHelper::safeExtension($bannerFile);
+            $bannerName = 'banner_' . $user->id . '_' . time() . '.' . $safeExt;
 
             $bannerDir = public_path('images/banners');
             if (! is_dir($bannerDir)) {
-                mkdir($bannerDir, 0777, true);
+                mkdir($bannerDir, 0755, true);
             }
 
             $bannerFile->move($bannerDir, $bannerName);
 
             $storageBannerDir = storage_path('app/public/banners');
             if (! is_dir($storageBannerDir)) {
-                mkdir($storageBannerDir, 0777, true);
+                mkdir($storageBannerDir, 0755, true);
             }
             @copy($bannerDir . '/' . $bannerName, $storageBannerDir . '/' . $bannerName);
 
+            UploadValidationHelper::deleteOldAsset($user->banner, 'banners');
             $data['banner'] = 'images/banners/' . $bannerName;
         }
 
@@ -181,6 +205,114 @@ class ProfileController extends Controller
             ->with('success', __('ui.profile.settings_saved'));
     }
 
+    /**
+     * Toggle cepat tema (light/dark) atau bahasa (id/en) dari navbar untuk guest maupun user login.
+     */
+    public function quickPreferences(Request $request): RedirectResponse|JsonResponse
+    {
+        $validated = $request->validate([
+            'locale' => ['nullable', 'string', 'in:id,en'],
+            'theme' => ['nullable', 'string', 'in:light,dark'],
+        ]);
+
+        $updates = [];
+        if (! empty($validated['locale'])) {
+            session(['locale' => $validated['locale']]);
+            App::setLocale($validated['locale']);
+            $updates['locale'] = $validated['locale'];
+        }
+        if (! empty($validated['theme'])) {
+            session(['theme' => $validated['theme']]);
+            $updates['theme'] = $validated['theme'];
+        }
+
+        if (Auth::check() && ! empty($updates)) {
+            User::ensurePreferenceColumns();
+            Auth::user()->update($updates);
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'locale' => session('locale', 'id'),
+                'theme' => session('theme', 'light'),
+            ]);
+        }
+
+        return back();
+    }
+
+    /**
+     * Pasang atau lepas border avatar pengguna dengan validasi syarat unlock di sisi server.
+     */
+    public function updateBorder(Request $request): RedirectResponse|JsonResponse
+    {
+        SocialSchemaHelper::ensureReady();
+        /** @var User $user */
+        $user = Auth::user();
+        $isEn = app()->getLocale() === 'en';
+
+        $validated = $request->validate([
+            'avatar_border' => ['nullable', 'string', 'max:40'],
+        ]);
+
+        $chosen = trim((string) ($validated['avatar_border'] ?? ''));
+        if ($chosen === '' || $chosen === 'none') {
+            $user->update(['avatar_border' => null]);
+
+            $msg = $isEn ? 'Avatar border removed.' : 'Border avatar berhasil dilepas.';
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'avatar_border' => null,
+                    'avatar_border_url' => null,
+                    'message' => $msg,
+                ]);
+            }
+
+            return redirect()->route('profile.edit')->with('success', $msg);
+        }
+
+        if (! in_array($chosen, AvatarBorderService::validKeys(), true)) {
+            $err = $isEn ? 'Invalid avatar border selection.' : 'Pilihan border avatar tidak valid.';
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => $err], 422);
+            }
+
+            return redirect()->route('profile.edit')->with('error', $err);
+        }
+
+        if (! AvatarBorderService::isUnlockedForUser($user, $chosen)) {
+            $err = $isEn
+                ? 'This border is still locked. Complete its unlock requirement first.'
+                : 'Border ini masih terkunci. Selesaikan syarat pencapaiannya terlebih dahulu.';
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => $err], 403);
+            }
+
+            return redirect()->route('profile.edit')->with('error', $err);
+        }
+
+        $user->update(['avatar_border' => $chosen]);
+        $borderUrl = AvatarBorderService::imageUrl($chosen);
+        $borderLabel = AvatarBorderService::label($chosen);
+        $msg = $isEn
+            ? 'Avatar border "' . $borderLabel . '" equipped!'
+            : 'Border avatar "' . $borderLabel . '" berhasil dipasang!';
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'avatar_border' => $chosen,
+                'avatar_border_url' => $borderUrl,
+                'avatar_border_name' => $borderLabel,
+                'message' => $msg,
+            ]);
+        }
+
+        return redirect()->route('profile.edit')->with('success', $msg);
+    }
+
     protected function renderProfile(User $profileUser): View
     {
         SocialSchemaHelper::ensureReady();
@@ -215,6 +347,14 @@ class ProfileController extends Controller
             ->values();
         $friendsCount = $friendsList->count();
 
+        $followersCount = UserFollow::where('following_id', $profileUser->id)->count();
+        $followingCount = UserFollow::where('follower_id', $profileUser->id)->count();
+        $isFollowingProfile = Auth::check() && ! $isOwnProfile
+            ? UserFollow::where('follower_id', Auth::id())->where('following_id', $profileUser->id)->exists()
+            : false;
+
+        $avatarBorders = AvatarBorderService::evaluateForUser($profileUser);
+
         return view('profile.show', compact(
             'profileUser',
             'isOwnProfile',
@@ -230,7 +370,11 @@ class ProfileController extends Controller
             'badges',
             'friendRelation',
             'friendsList',
-            'friendsCount'
+            'friendsCount',
+            'followersCount',
+            'followingCount',
+            'isFollowingProfile',
+            'avatarBorders'
         ));
     }
 }

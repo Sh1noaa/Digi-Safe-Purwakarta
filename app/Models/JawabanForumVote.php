@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 
 class JawabanForumVote extends Model
@@ -32,6 +33,11 @@ class JawabanForumVote extends Model
      */
     public static function ensureTable(): void
     {
+        $cacheKey = 'digisafe_jawaban_forum_votes_ready_v1';
+        if (! app()->runningUnitTests() && Cache::get($cacheKey) === true) {
+            return;
+        }
+
         try {
             if (! Schema::hasTable('jawaban_forum_votes')) {
                 Schema::create('jawaban_forum_votes', function (Blueprint $table) {
@@ -43,6 +49,10 @@ class JawabanForumVote extends Model
 
                     $table->unique(['jawaban_id', 'user_id'], 'jawaban_vote_unique');
                 });
+            }
+
+            if (! app()->runningUnitTests()) {
+                Cache::put($cacheKey, true, now()->addHours(6));
             }
         } catch (\Throwable $e) {
             // Abaikan jika DB belum siap

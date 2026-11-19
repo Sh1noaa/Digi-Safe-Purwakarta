@@ -510,11 +510,13 @@ html.dark .bg-\[\#F8FAFC\],
 html.dark .bg-\[\#F8FAFC\]\/60,
 html.dark .bg-\[\#F8FAFC\]\/80,
 html.dark .bg-\[\#F7F8FC\],
+html.dark .bg-\[\#F7F9FC\],
 html.dark .bg-\[\#F6F7F9\],
 html.dark .bg-\[\#F6F8FB\],
 html.dark .bg-\[\#F5F6F9\],
 html.dark .bg-\[\#F4F6F9\],
 html.dark .bg-\[\#F3F4F6\],
+html.dark .bg-\[\#F9FBF9\],
 html.dark .bg-\[\#FAFAFA\]\/70,
 html.dark .bg-gray-50,
 html.dark .bg-gray-50\/50,
@@ -522,6 +524,18 @@ html.dark .bg-gray-50\/70,
 html.dark .bg-gray-50\/80,
 html.dark .bg-slate-50 {
     background-color: #162032 !important;
+    color: #E2E8F0;
+}
+
+html.dark .bg-\[\#FAFDFF\] {
+    background-color: #16243A !important;
+    color: #F1F5F9 !important;
+}
+
+html.dark .bg-pastel-green,
+html.dark .bg-\[\#E8F5E9\],
+html.dark .bg-\[\#F4FDE0\] {
+    background-color: #13252A !important;
     color: #E2E8F0;
 }
 
@@ -537,14 +551,26 @@ html.dark .bg-amber-100 {
 }
 
 html.dark .bg-emerald-50,
+html.dark .bg-emerald-50\/70,
+html.dark .bg-emerald-50\/75,
 html.dark .bg-emerald-100 {
     background-color: rgba(16, 185, 129, 0.16) !important;
 }
 
 html.dark .bg-red-50,
+html.dark .bg-red-50\/70,
 html.dark .bg-rose-50,
 html.dark .bg-rose-100 {
     background-color: rgba(239, 68, 68, 0.16) !important;
+}
+
+html.dark .bg-purple-soft,
+html.dark .bg-purple-soft\/60 {
+    background-color: rgba(139, 92, 246, 0.22) !important;
+}
+
+html.dark .text-purple-deep {
+    color: #C4B5FD !important;
 }
 
 html.dark .bg-indigo-100 {
@@ -557,14 +583,21 @@ html.dark .text-indigo-700 {
 
 html.dark .text-amber-900,
 html.dark .text-amber-800,
-html.dark .text-amber-700 {
+html.dark .text-amber-700,
+html.dark .text-amber-600 {
     color: #FDE68A !important;
 }
 
-html.dark .text-emerald-700 {
+html.dark .text-emerald-800,
+html.dark .text-emerald-700,
+html.dark .text-emerald-600,
+html.dark .text-\[\#1B5E20\] {
     color: #6EE7B7 !important;
 }
 
+html.dark .text-red-700,
+html.dark .text-red-600,
+html.dark .text-red-500,
 html.dark .text-rose-700,
 html.dark .text-rose-600 {
     color: #FDA4AF !important;
@@ -575,28 +608,96 @@ html.dark .hover\:bg-gray-100:hover {
     background-color: #1E293B !important;
 }
 
+/* Pastel avatar & badge pairs in Dark Mode */
 html.dark .bg-\[\#DBEAFE\],
 html.dark .bg-\[\#DBEAFE\]\/70,
 html.dark .bg-\[\#DBEAFE\]\/60 {
-    background-color: rgba(30, 136, 229, 0.2) !important;
+    background-color: rgba(30, 136, 229, 0.22) !important;
+}
+
+html.dark .text-\[\#1E40AF\],
+html.dark .text-\[\#1E63E9\] {
+    color: #93C5FD !important;
+}
+
+html.dark .bg-\[\#D1FAE5\] {
+    background-color: rgba(16, 185, 129, 0.22) !important;
+}
+
+html.dark .text-\[\#065F46\] {
+    color: #6EE7B7 !important;
+}
+
+html.dark .bg-\[\#FEF3C7\] {
+    background-color: rgba(245, 158, 11, 0.22) !important;
+}
+
+html.dark .text-\[\#92400E\] {
+    color: #FDE68A !important;
+}
+
+html.dark .bg-\[\#FCE7F3\] {
+    background-color: rgba(236, 72, 153, 0.22) !important;
+}
+
+html.dark .text-\[\#9D174D\] {
+    color: #F9A8D4 !important;
+}
+
+html.dark .bg-\[\#E0F2FE\] {
+    background-color: rgba(14, 165, 233, 0.22) !important;
+}
+
+html.dark .text-\[\#0369A1\] {
+    color: #7DD3FC !important;
+}
+
+html.dark .bg-\[\#ECFCCB\] {
+    background-color: rgba(132, 204, 22, 0.22) !important;
+}
+
+html.dark .text-\[\#365314\] {
+    color: #BEF264 !important;
 }
 
 html.dark .bg-gray-100,
-html.dark .bg-gray-200 {
+html.dark .bg-gray-200,
+html.dark .bg-gray-200\/80,
+html.dark .bg-gray-300 {
     background-color: #1E293B !important;
+}
+
+html.dark .fill-gray-200 {
+    fill: #334155 !important;
+    color: #334155 !important;
+}
+
+html.dark .stroke-gray-300 {
+    stroke: #475569 !important;
+}
+
+html.dark .ring-white {
+    --tw-ring-color: #1E293B !important;
 }
 
 html.dark .border-gray-100,
 html.dark .border-gray-200,
 html.dark .border-gray-200\/80,
+html.dark .border-gray-200\/85,
 html.dark .border-gray-200\/90,
 html.dark .border-gray-200\/75,
+html.dark .border-gray-200\/70,
+html.dark .border-gray-200\/60,
+html.dark .border-gray-300,
 html.dark .border-slate-200,
-html.dark .border-white {
+html.dark .border-\[\#DCEEDC\],
+html.dark .border-white,
+html.dark .border-white\/90 {
     border-color: #243247 !important;
 }
 
-html.dark .divide-gray-100 > :not(:last-child) {
+html.dark .divide-gray-100 > :not(:last-child),
+html.dark .divide-gray-200\/85 > :not(:last-child) {
     border-color: #1E293B !important;
 }
 
@@ -706,6 +807,7 @@ html.dark .bento-card-white {
 html.dark .testi-pill-glass {
     background: linear-gradient(135deg, rgba(17, 24, 39, 0.96) 0%, rgba(22, 32, 50, 0.94) 100%) !important;
     border-color: rgba(51, 65, 85, 0.9) !important;
+    box-shadow: 0 22px 50px rgba(0, 0, 0, 0.45), inset 0 1px 2px rgba(255, 255, 255, 0.08) !important;
 }
 
 html.dark .from-\[\#F6F8FB\] {
@@ -873,4 +975,65 @@ html.dark .faq-tab-card.is-active {
 
 html.dark .faq-row-border {
     border-color: #1E293B !important;
+}
+
+/* Halaman Tentang (Hero & Command Bar) + Kurva Forum + Kanvas Grid Admin */
+.about-hero-surface {
+    background: linear-gradient(145deg, #E8F5E9 0%, #F1F8E9 52%, #DCEEDC 100%);
+}
+
+.about-command-bar {
+    background: rgba(255, 255, 255, 0.84);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 16px 38px rgba(0, 0, 0, 0.08);
+}
+
+.admin-grid-canvas {
+    background-image:
+        linear-gradient(to right, rgba(226, 232, 240, 0.65) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(226, 232, 240, 0.65) 1px, transparent 1px);
+    background-size: 32px 32px;
+}
+
+html.dark .about-hero-surface {
+    background: linear-gradient(145deg, #0B1120 0%, #0F1E2E 52%, #0B1726 100%) !important;
+}
+
+html.dark .about-hero-orb-1 {
+    background-color: rgba(16, 185, 129, 0.14) !important;
+}
+
+html.dark .about-hero-orb-2 {
+    background-color: rgba(14, 165, 233, 0.14) !important;
+}
+
+html.dark .about-command-bar {
+    background: rgba(15, 23, 42, 0.90) !important;
+    border-color: #334155 !important;
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.45) !important;
+    color: #F1F5F9 !important;
+}
+
+html.dark .forum-curve-stop-1 {
+    stop-color: #0F294A !important;
+}
+
+html.dark .forum-curve-stop-2 {
+    stop-color: #15457A !important;
+}
+
+html.dark .forum-curve-stop-3 {
+    stop-color: #17345B !important;
+}
+
+html.dark .forum-curve-end-stop {
+    stop-color: #132238 !important;
+}
+
+html.dark .admin-grid-canvas {
+    background-color: #0B1120 !important;
+    background-image:
+        linear-gradient(to right, rgba(51, 65, 85, 0.28) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(51, 65, 85, 0.28) 1px, transparent 1px) !important;
 }

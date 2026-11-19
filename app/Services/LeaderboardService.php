@@ -75,6 +75,7 @@ class LeaderboardService
                 'username' => $user->username,
                 'inisial' => $user->inisial,
                 'avatar_url' => $user->avatar_url,
+                'avatar_border_url' => $user->avatar_border_url,
                 'banner_url' => $user->banner_url,
                 'pastel_class' => $user->pastel_class,
                 'specialty_role' => $privacy['is_private_profile'] ? null : (trim((string) ($user->specialty_role ?? '')) ?: $user->role_label),

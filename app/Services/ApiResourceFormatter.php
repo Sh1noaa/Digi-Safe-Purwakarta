@@ -20,9 +20,16 @@ class ApiResourceFormatter
         $privacy = $user->privacy_config;
         $isPrivateForVisitor = ! $isOwnProfile && $privacy['is_private_profile'];
 
-        $totalSkor = $includeStats ? (int) $user->skorGames()->sum('skor') : (int) ($user->total_skor_game ?? 0);
-        $topSkor = $includeStats ? (int) $user->skorGames()->max('skor_tertinggi') : 0;
-        $totalMain = $includeStats ? (int) $user->skorGames()->count() : 0;
+        $hasLoadedScores = $user->relationLoaded('skorGames');
+        $totalSkor = $includeStats
+            ? (int) ($user->total_skor_game ?? ($hasLoadedScores ? $user->skorGames->sum('skor') : $user->skorGames()->sum('skor')))
+            : (int) ($user->total_skor_game ?? 0);
+        $topSkor = $includeStats
+            ? (int) ($user->top_skor_game ?? ($hasLoadedScores ? $user->skorGames->max('skor_tertinggi') : $user->skorGames()->max('skor_tertinggi')))
+            : 0;
+        $totalMain = $includeStats
+            ? (int) ($user->skor_games_count ?? ($hasLoadedScores ? $user->skorGames->count() : $user->skorGames()->count()))
+            : 0;
         $totalThread = $includeStats ? (int) ($user->forums_count ?? $user->forums()->count()) : 0;
         $totalJawaban = $includeStats ? (int) ($user->jawaban_forums_count ?? $user->jawabanForums()->count()) : 0;
         $totalUlasan = $includeStats ? (int) ($user->testimonis_count ?? $user->testimonis()->count()) : 0;
@@ -41,6 +48,8 @@ class ApiResourceFormatter
             'is_admin' => $user->isAdmin(),
             'has_admin_access' => $user->hasAdminAccess(),
             'avatar_url' => $user->avatar_url,
+            'avatar_border' => $user->avatar_border ?: null,
+            'avatar_border_url' => $user->avatar_border_url,
             'banner_url' => $user->banner_url,
             'pastel_class' => $user->pastel_class,
             'is_private_profile' => (bool) $privacy['is_private_profile'],
@@ -176,7 +185,13 @@ class ApiResourceFormatter
             ];
         });
 
-        $formattedJawaban = $scoredReplies->map(function (array $entry) use ($bestJawabanId, $isEn) {
+        $viewerIsAdmin = false;
+        if ($currentUserId) {
+            $viewerUser = User::find($currentUserId);
+            $viewerIsAdmin = $viewerUser ? $viewerUser->hasAdminAccess() : false;
+        }
+
+        $formattedJawaban = $scoredReplies->map(function (array $entry) use ($bestJawabanId, $isEn, $currentUserId, $viewerIsAdmin) {
             /** @var JawabanForum $ans */
             $ans = $entry['model'];
             $ansName = $ans->user?->nama_lengkap ?: ($ans->user?->username ?: ($isEn ? 'Community Member' : 'Anggota Komunitas'));
@@ -192,12 +207,14 @@ class ApiResourceFormatter
                 'user_name' => $ansName,
                 'user_initial' => mb_strtoupper(mb_substr(trim($ansName), 0, 1)),
                 'user_avatar' => $ans->user?->avatar_url,
+                'user_border_url' => $ans->user?->avatar_border_url,
                 'user_pastel' => $ans->user?->pastel_class ?: 'bg-[#DBEAFE] text-[#1E40AF]',
                 'up_count' => $entry['up_count'],
                 'down_count' => $entry['down_count'],
                 'net_score' => $entry['net_score'],
                 'user_vote' => $entry['user_vote'],
                 'is_most_helpful' => $bestJawabanId !== null && $ans->id === $bestJawabanId,
+                'can_manage' => $currentUserId !== null && ((int) $ans->user_id === (int) $currentUserId || $viewerIsAdmin),
             ];
         })->values()->all();
 
@@ -216,9 +233,11 @@ class ApiResourceFormatter
             'author_name' => $authorName,
             'author_initial' => mb_strtoupper(mb_substr(trim($authorName), 0, 1)),
             'author_avatar' => $item->user?->avatar_url,
+            'author_border_url' => $item->user?->avatar_border_url,
             'author_is_owner' => $isOwnerAuthor,
             'author_is_admin' => ! $isOwnerAuthor && (bool) $item->user?->isAdmin(),
             'author_pastel' => $item->user?->pastel_class ?: 'bg-[#DBEAFE] text-[#1E40AF]',
+            'can_manage' => $currentUserId !== null && ((int) $item->user_id === (int) $currentUserId || $viewerIsAdmin),
             'jawaban_count' => count($formattedJawaban),
             'total_up' => $totalUp,
             'total_down' => $totalDown,
@@ -240,6 +259,7 @@ class ApiResourceFormatter
             'nama' => $t->nama_tampil,
             'inisial' => $t->inisial_tampil,
             'avatar' => $t->avatar_tampil,
+            'border_url' => (! $t->is_anonymous && $t->user) ? $t->user->avatar_border_url : null,
             'pastel_class' => $t->user?->pastel_class ?: 'bg-[#DBEAFE] text-[#1E40AF]',
             'is_owner' => (! $t->is_anonymous && (bool) $t->user?->isOwner()),
             'is_anonymous' => (bool) $t->is_anonymous,

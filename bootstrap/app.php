@@ -4,6 +4,7 @@ use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\ApiAdminMiddleware;
 use App\Http\Middleware\ApiTokenAuth;
 use App\Http\Middleware\ApiTokenOptional;
+use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SetUserPreferences;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -20,6 +21,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies(at: '*');
         $middleware->web(append: [
             SetUserPreferences::class,
+            SecurityHeaders::class,
+        ]);
+        $middleware->api(append: [
+            SecurityHeaders::class,
         ]);
         $middleware->alias([
             'admin' => AdminMiddleware::class,

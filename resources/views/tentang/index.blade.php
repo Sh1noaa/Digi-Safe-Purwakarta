@@ -1,22 +1,21 @@
 @extends('layouts.app')
 
-@section('title', 'Tentang Kami — Digi-Safe Purwakarta')
+@section('title', 'Tentang Kami - Digi-Safe Purwakarta')
 
 @section('content')
 
     <!-- hero section bergaya dokumen editor & floating command bar -->
     <section
-        class="relative pt-28 sm:pt-36 pb-24 px-4 sm:px-6 lg:px-8 overflow-hidden"
-        style="background: linear-gradient(145deg, #E8F5E9 0%, #F1F8E9 52%, #DCEEDC 100%);"
+        class="about-hero-surface relative pt-28 sm:pt-36 pb-24 px-4 sm:px-6 lg:px-8 overflow-hidden"
     >
         <!-- aksen organik lembut di sudut seperti referensi -->
-        <div class="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-[#A5D6A7]/35 blur-3xl pointer-events-none"></div>
-        <div class="absolute -bottom-28 -right-20 w-[420px] h-[420px] rounded-full bg-[#81C784]/40 blur-3xl pointer-events-none"></div>
+        <div class="about-hero-orb-1 absolute -top-24 -left-24 w-96 h-96 rounded-full bg-[#A5D6A7]/35 blur-3xl pointer-events-none"></div>
+        <div class="about-hero-orb-2 absolute -bottom-28 -right-20 w-[420px] h-[420px] rounded-full bg-[#81C784]/40 blur-3xl pointer-events-none"></div>
 
         <div class="relative z-10 max-w-2xl mx-auto">
 
             <!-- tab header nama file di kiri atas dokumen -->
-            <div class="reveal inline-flex items-center gap-2.5 rounded-t-[20px] bg-white px-6 pt-4 pb-2.5 border-t border-x border-white/90">
+            <div class="reveal inline-flex items-center gap-2.5 rounded-t-[20px] bg-white px-6 pt-4 pb-2.5 border-t border-x border-gray-200/80">
                 <span class="w-6 h-6 rounded-md bg-sky/15 text-sky flex items-center justify-center">
                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -30,8 +29,7 @@
 
             <!-- container putih dokumen editor -->
             <div
-                class="reveal rounded-b-[24px] rounded-tr-[24px] bg-white p-6 sm:p-9 pb-14 border border-white/90"
-                style="box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);"
+                class="reveal rounded-b-[24px] rounded-tr-[24px] bg-white p-6 sm:p-9 pb-14 border border-gray-200/80 shadow-neutral"
             >
                 <!-- toolbar dekoratif editor -->
                 <div class="flex flex-wrap items-center justify-between gap-3 pb-4 mb-6 border-b border-gray-100 text-xs text-ink/75 select-none">
@@ -104,12 +102,11 @@
 
             <!-- floating command bar glassmorphism di bawah dokumen -->
             <div
-                class="reveal reveal-delay-1 -mt-8 relative z-20 max-w-md mx-auto rounded-[28px] p-5 border border-white"
-                style="background: rgba(255, 255, 255, 0.78); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); box-shadow: 0 16px 38px rgba(0, 0, 0, 0.08);"
+                class="about-command-bar reveal reveal-delay-1 -mt-8 relative z-20 max-w-md mx-auto rounded-[28px] p-5 border border-white"
             >
                 <div class="flex items-center text-sm sm:text-base font-medium text-ink px-1">
                     <span>{{ __('ui.about.prompt') }}</span>
-                    <span class="inline-block w-[2px] h-5 bg-ink ml-1 animate-pulse"></span>
+                    <span class="inline-block w-[2px] h-5 bg-sky ml-1 animate-pulse"></span>
                 </div>
 
                 <div class="mt-4 flex items-center justify-between">

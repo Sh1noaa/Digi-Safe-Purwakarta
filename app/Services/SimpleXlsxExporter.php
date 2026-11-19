@@ -287,7 +287,15 @@ class SimpleXlsxExporter
             if ($isNumeric) {
                 $cellXmls[] = '<c r="' . $ref . '" s="' . $style . '"><v>' . $val . '</v></c>';
             } else {
-                $escaped = $this->escapeXml((string) $val);
+                $rawText = (string) $val;
+                if (
+                    $rawText !== '-'
+                    && preg_match('/^[\s]*[=+\-@]/u', $rawText)
+                    && ! preg_match('/^@[a-zA-Z0-9_.-]+$/', $rawText)
+                ) {
+                    $rawText = "'" . $rawText;
+                }
+                $escaped = $this->escapeXml($rawText);
                 $cellXmls[] = '<c r="' . $ref . '" s="' . $style . '" t="inlineStr"><is><t xml:space="preserve">' . $escaped . '</t></is></c>';
             }
         }

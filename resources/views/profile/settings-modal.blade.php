@@ -60,7 +60,7 @@
                 <div class="rounded-2xl bg-[#F8FAFC] border border-gray-200/80 p-4 sm:p-5">
                     <div class="mb-3">
                         <h4 class="font-heading font-extrabold text-sm text-ink flex items-center gap-2">
-                            <span>🌐</span>
+                            <svg class="w-4 h-4 text-sky shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg>
                             <span>{{ __('ui.profile.lang_label') }}</span>
                         </h4>
                         <p class="text-[11px] text-muted mt-0.5">{{ __('ui.profile.lang_desc') }}</p>
@@ -121,7 +121,7 @@
                 <div class="rounded-2xl bg-[#F8FAFC] border border-gray-200/80 p-4 sm:p-5">
                     <div class="mb-3">
                         <h4 class="font-heading font-extrabold text-sm text-ink flex items-center gap-2">
-                            <span>🎨</span>
+                            <svg class="w-4 h-4 text-sky shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5" /><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" /></svg>
                             <span>{{ __('ui.profile.theme_label') }}</span>
                         </h4>
                         <p class="text-[11px] text-muted mt-0.5">{{ __('ui.profile.theme_desc') }}</p>
@@ -195,7 +195,7 @@
                 <div class="rounded-2xl bg-[#F8FAFC] border border-gray-200/80 p-4 sm:p-5 space-y-3.5">
                     <div>
                         <h4 class="font-heading font-extrabold text-sm text-ink flex items-center gap-2">
-                            <span>🔒</span>
+                            <svg class="w-4 h-4 text-sky shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
                             <span>{{ __('ui.profile.privacy_label') }}</span>
                         </h4>
                         <p class="text-[11px] text-muted mt-0.5">{{ __('ui.profile.privacy_desc') }}</p>

@@ -88,8 +88,9 @@ class PublicContentApiController extends Controller
 
         $faqGroups = $this->buildFaqGroups($isEn);
 
-        $registeredUsers = User::humans()->withCount(['forums', 'jawabanForums', 'testimonis'])
+        $registeredUsers = User::humans()->withCount(['skorGames', 'forums', 'jawabanForums', 'testimonis'])
             ->withSum('skorGames as total_skor_game', 'skor')
+            ->withMax('skorGames as top_skor_game', 'skor_tertinggi')
             ->orderBy('id')
             ->get()
             ->map(fn (User $u) => ApiResourceFormatter::formatUser($u, $viewer, true))
@@ -115,14 +116,16 @@ class PublicContentApiController extends Controller
         $viewer = Auth::user();
         $search = trim((string) $request->query('q', ''));
 
-        $query = User::humans()->withCount(['forums', 'jawabanForums', 'testimonis'])
+        $query = User::humans()->withCount(['skorGames', 'forums', 'jawabanForums', 'testimonis'])
             ->withSum('skorGames as total_skor_game', 'skor')
+            ->withMax('skorGames as top_skor_game', 'skor_tertinggi')
             ->orderBy('id');
 
         if ($search !== '') {
-            $query->where(function ($q) use ($search) {
-                $q->where('nama_lengkap', 'like', "%{$search}%")
-                    ->orWhere('username', 'like', "%{$search}%");
+            $escaped = str_replace(['\\', '%'], ['\\\\', '\\%'], $search);
+            $query->where(function ($q) use ($escaped) {
+                $q->where('nama_lengkap', 'like', "%{$escaped}%")
+                    ->orWhere('username', 'like', "%{$escaped}%");
             });
         }
 

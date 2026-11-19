@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\ApiToken;
 use App\Models\User;
 use App\Services\ApiResourceFormatter;
+use App\Services\AvatarBorderService;
 use App\Services\SocialSchemaHelper;
 use App\Services\UploadValidationHelper;
 use Illuminate\Http\JsonResponse;
@@ -39,6 +41,7 @@ class ProfileApiController extends Controller
             'username' => ['nullable', 'string', 'min:3', 'max:50', 'alpha_dash', Rule::unique('users', 'username')->ignore($user->id)],
             'specialty_role' => ['nullable', 'string', 'max:60'],
             'bio' => ['nullable', 'string', 'max:350'],
+            'current_password' => ['nullable', 'required_with:password', 'string'],
             'password' => ['nullable', 'string', 'min:8'],
             'avatar' => UploadValidationHelper::imageRules(3072),
             'banner' => UploadValidationHelper::imageRules(5120),
@@ -51,49 +54,68 @@ class ProfileApiController extends Controller
             'bio' => $validated['bio'] ?? $user->bio,
         ];
 
+        $passwordChanged = false;
         if (! empty($validated['password'])) {
+            if (! Hash::check((string) ($validated['current_password'] ?? ''), (string) $user->password)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $isEn ? 'Current password does not match.' : 'Kata sandi saat ini tidak sesuai.',
+                    'errors' => [
+                        'current_password' => [$isEn ? 'Current password does not match.' : 'Kata sandi saat ini tidak sesuai.'],
+                    ],
+                ], 422);
+            }
             $data['password'] = Hash::make($validated['password']);
+            $passwordChanged = true;
         }
 
         if ($request->hasFile('avatar')) {
             $file = $request->file('avatar');
-            $filename = 'avatar_' . $user->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+            $safeExt = UploadValidationHelper::safeExtension($file);
+            $filename = 'avatar_' . $user->id . '_' . time() . '.' . $safeExt;
 
             $targetDir = public_path('images/avatars');
             if (! is_dir($targetDir)) {
-                mkdir($targetDir, 0777, true);
+                mkdir($targetDir, 0755, true);
             }
             $file->move($targetDir, $filename);
 
             $storageDir = storage_path('app/public/avatars');
             if (! is_dir($storageDir)) {
-                mkdir($storageDir, 0777, true);
+                mkdir($storageDir, 0755, true);
             }
             @copy($targetDir . '/' . $filename, $storageDir . '/' . $filename);
 
+            UploadValidationHelper::deleteOldAsset($user->avatar, 'avatars');
             $data['avatar'] = 'images/avatars/' . $filename;
         }
 
         if ($request->hasFile('banner')) {
             $bannerFile = $request->file('banner');
-            $bannerName = 'banner_' . $user->id . '_' . time() . '.' . $bannerFile->getClientOriginalExtension();
+            $safeExt = UploadValidationHelper::safeExtension($bannerFile);
+            $bannerName = 'banner_' . $user->id . '_' . time() . '.' . $safeExt;
 
             $bannerDir = public_path('images/banners');
             if (! is_dir($bannerDir)) {
-                mkdir($bannerDir, 0777, true);
+                mkdir($bannerDir, 0755, true);
             }
             $bannerFile->move($bannerDir, $bannerName);
 
             $storageBannerDir = storage_path('app/public/banners');
             if (! is_dir($storageBannerDir)) {
-                mkdir($storageBannerDir, 0777, true);
+                mkdir($storageBannerDir, 0755, true);
             }
             @copy($bannerDir . '/' . $bannerName, $storageBannerDir . '/' . $bannerName);
 
+            UploadValidationHelper::deleteOldAsset($user->banner, 'banners');
             $data['banner'] = 'images/banners/' . $bannerName;
         }
 
         $user->update($data);
+        if ($passwordChanged) {
+            ApiToken::ensureTable();
+            ApiToken::where('user_id', $user->id)->delete();
+        }
         $user->refresh();
 
         return response()->json([
@@ -160,6 +182,45 @@ class ProfileApiController extends Controller
         return response()->json([
             'success' => true,
             'message' => app()->getLocale() === 'en' ? 'Your role has been updated.' : 'Role komunitas berhasil diperbarui.',
+            'user' => ApiResourceFormatter::formatUser($user, $user, true),
+        ]);
+    }
+
+    public function updateBorder(Request $request): JsonResponse
+    {
+        /** @var User $user */
+        $user = Auth::user();
+        SocialSchemaHelper::ensureReady();
+        $isEn = app()->getLocale() === 'en';
+
+        $validated = $request->validate([
+            'avatar_border' => ['nullable', 'string', 'max:40'],
+        ]);
+
+        $code = isset($validated['avatar_border']) ? trim((string) $validated['avatar_border']) : '';
+        if ($code === '' || $code === 'none') {
+            $code = null;
+        }
+
+        if ($code !== null && ! AvatarBorderService::isUnlockedForUser($user, $code)) {
+            return response()->json([
+                'success' => false,
+                'message' => $isEn
+                    ? 'This border is still locked. Complete its challenge first!'
+                    : 'Bingkai ini masih terkunci. Selesaikan tantangannya terlebih dahulu!',
+            ], 403);
+        }
+
+        $user->update(['avatar_border' => $code]);
+        $user->refresh();
+
+        return response()->json([
+            'success' => true,
+            'message' => $code
+                ? ($isEn ? 'Profile border equipped!' : 'Bingkai profil berhasil dipasang!')
+                : ($isEn ? 'Profile border removed.' : 'Bingkai profil dilepas.'),
+            'avatar_border' => $user->avatar_border,
+            'avatar_border_url' => $user->avatar_border_url,
             'user' => ApiResourceFormatter::formatUser($user, $user, true),
         ]);
     }

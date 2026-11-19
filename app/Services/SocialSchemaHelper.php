@@ -3,26 +3,44 @@
 namespace App\Services;
 
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 
 class SocialSchemaHelper
 {
     private static bool $ensured = false;
 
+    private const CACHE_KEY = 'digisafe_social_schema_ready_v3';
+
     /**
-     * Memastikan tabel pertemanan, pesan chat, dan kolom specialty_role tersedia.
+     * Memastikan tabel pertemanan, pesan chat, dan kolom specialty_role + avatar_border tersedia.
      */
     public static function ensureReady(): void
     {
-        if (self::$ensured && Schema::hasTable('edukasi_requests') && Schema::hasColumn('users', 'specialty_role')) {
+        if (! app()->runningUnitTests() && Cache::get(self::CACHE_KEY) === true) {
+            return;
+        }
+
+        if (
+            self::$ensured
+            && Schema::hasTable('edukasi_requests')
+            && Schema::hasTable('user_follows')
+            && Schema::hasColumn('users', 'specialty_role')
+            && Schema::hasColumn('users', 'avatar_border')
+        ) {
             return;
         }
         self::$ensured = true;
 
         try {
-            if (Schema::hasTable('users') && ! Schema::hasColumn('users', 'specialty_role')) {
+            if (Schema::hasTable('users')) {
                 Schema::table('users', function (Blueprint $table) {
-                    $table->string('specialty_role', 80)->nullable();
+                    if (! Schema::hasColumn('users', 'specialty_role')) {
+                        $table->string('specialty_role', 80)->nullable();
+                    }
+                    if (! Schema::hasColumn('users', 'avatar_border')) {
+                        $table->string('avatar_border', 40)->nullable();
+                    }
                 });
             }
 
@@ -83,6 +101,24 @@ class SocialSchemaHelper
                     $table->boolean('user_notified_read')->default(false);
                     $table->timestamps();
                 });
+            }
+
+            if (! Schema::hasTable('user_follows')) {
+                Schema::create('user_follows', function (Blueprint $table) {
+                    $table->id();
+                    $table->unsignedBigInteger('follower_id');
+                    $table->unsignedBigInteger('following_id');
+                    $table->timestamps();
+
+                    $table->unique(['follower_id', 'following_id']);
+                    $table->index('following_id');
+                    $table->foreign('follower_id')->references('id')->on('users')->cascadeOnDelete();
+                    $table->foreign('following_id')->references('id')->on('users')->cascadeOnDelete();
+                });
+            }
+
+            if (! app()->runningUnitTests()) {
+                Cache::put(self::CACHE_KEY, true, now()->addHours(6));
             }
         } catch (\Throwable $e) {
             // Abaikan bila koneksi DB belum siap

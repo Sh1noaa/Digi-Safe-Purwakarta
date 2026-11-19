@@ -1,19 +1,237 @@
 @extends('layouts.app')
 
-@section('title', ($profileUser->nama_lengkap ?: $profileUser->username) . ' — Profil Digi-Safe Purwakarta')
+@section('title', ($profileUser->nama_lengkap ?: $profileUser->username) . ' | Profil Digi-Safe Purwakarta')
+
+@section('hide_footer', '1')
 
 @section('content')
+
+    @php
+        $isDarkProfile = ($currentTheme ?? 'light') === 'dark';
+        $isEnProfile = app()->getLocale() === 'en';
+    @endphp
+
+    <style>
+        .profile-cursor-stage {
+            --cx: 50%;
+            --cy: 26%;
+            --c-opacity: 0;
+        }
+        .profile-cursor-glow {
+            opacity: var(--c-opacity);
+            transition: opacity 380ms ease;
+            background: radial-gradient(
+                580px circle at var(--cx) var(--cy),
+                {{ $isDarkProfile ? 'rgba(56, 189, 248, 0.22)' : 'rgba(30, 99, 233, 0.16)' }} 0%,
+                {{ $isDarkProfile ? 'rgba(30, 99, 233, 0.11)' : 'rgba(14, 165, 233, 0.08)' }} 35%,
+                {{ $isDarkProfile ? 'rgba(200, 243, 74, 0.05)' : 'rgba(200, 243, 74, 0.055)' }} 55%,
+                transparent 72%
+            );
+        }
+        .profile-cursor-weave {
+            opacity: var(--c-opacity);
+            transition: opacity 420ms ease;
+            background-image:
+                linear-gradient(to right, {{ $isDarkProfile ? 'rgba(56, 189, 248, 0.22)' : 'rgba(30, 99, 233, 0.18)' }} 1px, transparent 1px),
+                linear-gradient(to bottom, {{ $isDarkProfile ? 'rgba(56, 189, 248, 0.22)' : 'rgba(30, 99, 233, 0.18)' }} 1px, transparent 1px),
+                radial-gradient({{ $isDarkProfile ? 'rgba(200, 243, 74, 0.55)' : 'rgba(30, 99, 233, 0.36)' }} 1.25px, transparent 1.25px);
+            background-size: 36px 36px, 36px 36px, 36px 36px;
+            background-position: 0 0, 0 0, -0.5px -0.5px;
+            -webkit-mask-image: radial-gradient(360px circle at var(--cx) var(--cy), rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.38) 46%, transparent 74%);
+            mask-image: radial-gradient(360px circle at var(--cx) var(--cy), rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.38) 46%, transparent 74%);
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .profile-cursor-glow,
+            .profile-cursor-weave {
+                display: none !important;
+            }
+        }
+    </style>
 
     <section
         x-data="{
             open: {{ $errors->any() ? 'true' : 'false' }},
             settingsOpen: false,
             friendsModalOpen: false,
+            followModalOpen: false,
+            followModalTab: 'followers',
+            followListLoading: false,
+            followList: { followers: [], following: [] },
+            isFollowing: {{ ($isFollowingProfile ?? false) ? 'true' : 'false' }},
+            followersCount: {{ (int) ($followersCount ?? 0) }},
+            followingCount: {{ (int) ($followingCount ?? 0) }},
+            followBusy: false,
             previewUrl: null,
             bannerPreviewUrl: null,
             specialtyRole: @js(old('specialty_role', $profileUser->specialty_role ?? '')),
             friendStatus: @js($friendRelation ?? 'none'),
             friendBusy: false,
+            borders: @js($avatarBorders ?? []),
+            equippedBorder: @js($profileUser->avatar_border ?: null),
+            equippedBorderUrl: @js($profileUser->avatar_border_url),
+            borderModalOpen: false,
+            draftBorderKey: @js($profileUser->avatar_border ?: null),
+            draftBorderUrl: @js($profileUser->avatar_border_url),
+            borderBusy: false,
+            borderNotice: '',
+            borderError: '',
+            init() {
+                if ({{ $isOwnProfile ? 'true' : 'false' }} && window.location.hash === '#avatar-borders') {
+                    this.openBorderModal();
+                }
+            },
+            openBorderModal() {
+                this.draftBorderKey = this.equippedBorder || null;
+                this.draftBorderUrl = this.equippedBorderUrl || null;
+                this.borderError = '';
+                this.borderModalOpen = true;
+            },
+            pickDraftBorder(borderKey) {
+                if (!borderKey) {
+                    this.draftBorderKey = null;
+                    this.draftBorderUrl = null;
+                    this.borderError = '';
+                    return;
+                }
+                const target = this.borders.find(b => b.key === borderKey);
+                if (!target || !target.unlocked) return;
+                this.draftBorderKey = target.key;
+                this.draftBorderUrl = target.image_url;
+                this.borderError = '';
+            },
+            cursorRaf: null,
+            targetX: 0,
+            targetY: 0,
+            currentX: 0,
+            currentY: 0,
+            hasCursorPos: false,
+            onCursorMove(e) {
+                if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || window.matchMedia('(pointer: coarse)').matches) return;
+                const rect = this.$el.getBoundingClientRect();
+                this.targetX = e.clientX - rect.left;
+                this.targetY = e.clientY - rect.top;
+                if (!this.hasCursorPos) {
+                    this.currentX = this.targetX;
+                    this.currentY = this.targetY;
+                    this.hasCursorPos = true;
+                }
+                this.$el.style.setProperty('--c-opacity', '1');
+                if (!this.cursorRaf) {
+                    const step = () => {
+                        this.currentX += (this.targetX - this.currentX) * 0.14;
+                        this.currentY += (this.targetY - this.currentY) * 0.14;
+                        this.$el.style.setProperty('--cx', this.currentX.toFixed(1) + 'px');
+                        this.$el.style.setProperty('--cy', this.currentY.toFixed(1) + 'px');
+                        if (Math.abs(this.targetX - this.currentX) > 0.4 || Math.abs(this.targetY - this.currentY) > 0.4) {
+                            this.cursorRaf = requestAnimationFrame(step);
+                        } else {
+                            this.cursorRaf = null;
+                        }
+                    };
+                    this.cursorRaf = requestAnimationFrame(step);
+                }
+            },
+            onCursorLeave() {
+                this.$el.style.setProperty('--c-opacity', '0');
+            },
+            async saveBorderChanges() {
+                if (this.borderBusy) return;
+                const borderKey = this.draftBorderKey || '';
+                if (borderKey) {
+                    const target = this.borders.find(b => b.key === borderKey);
+                    if (!target || !target.unlocked) return;
+                }
+                this.borderBusy = true;
+                this.borderError = '';
+                this.borderNotice = '';
+                try {
+                    const csrf = document.querySelector('meta[name=csrf-token]')?.content || '';
+                    const res = await fetch('{{ route('profile.border') }}', {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': csrf
+                        },
+                        body: JSON.stringify({ avatar_border: borderKey })
+                    });
+                    const data = await res.json();
+                    if (res.ok && data.success) {
+                        this.equippedBorder = data.avatar_border || null;
+                        this.equippedBorderUrl = data.avatar_border_url || null;
+                        this.draftBorderKey = this.equippedBorder;
+                        this.draftBorderUrl = this.equippedBorderUrl;
+                        this.borders = this.borders.map(b => ({ ...b, is_equipped: b.key === this.equippedBorder }));
+                        this.borderModalOpen = false;
+                        if (window.digisafeToast && data.message) {
+                            window.digisafeToast(data.message, 'success');
+                        }
+                    } else {
+                        this.borderError = data.message || 'Gagal memperbarui border.';
+                    }
+                } finally {
+                    this.borderBusy = false;
+                }
+            },
+            async toggleProfileFollow() {
+                if (this.followBusy) return;
+                this.followBusy = true;
+                try {
+                    const csrf = document.querySelector('meta[name=csrf-token]')?.content || '';
+                    const uid = {{ (int) $profileUser->id }};
+                    const res = await fetch(`/users/${uid}/follow`, {
+                        method: 'POST',
+                        headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf }
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        this.isFollowing = Boolean(data.following);
+                        this.followersCount = Number(data.followers_count ?? this.followersCount);
+                    }
+                } finally {
+                    this.followBusy = false;
+                }
+            },
+            async openFollowModal(tab = 'followers') {
+                this.followModalTab = tab;
+                this.followModalOpen = true;
+                this.followListLoading = true;
+                try {
+                    const uid = {{ (int) $profileUser->id }};
+                    const res = await fetch(`/users/${uid}/follows`, { headers: { 'Accept': 'application/json' } });
+                    if (res.ok) {
+                        const data = await res.json();
+                        this.followList = {
+                            followers: data.followers || [],
+                            following: data.following || []
+                        };
+                        this.followersCount = Number(data.followers_count ?? this.followersCount);
+                        this.followingCount = Number(data.following_count ?? this.followingCount);
+                    }
+                } finally {
+                    this.followListLoading = false;
+                }
+            },
+            async toggleFollowItem(item) {
+                if (!item || item.is_me || item._busy) return;
+                item._busy = true;
+                try {
+                    const csrf = document.querySelector('meta[name=csrf-token]')?.content || '';
+                    const res = await fetch(`/users/${item.id}/follow`, {
+                        method: 'POST',
+                        headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf }
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        item.is_following = Boolean(data.following);
+                        if ({{ $isOwnProfile ? 'true' : 'false' }}) {
+                            this.followingCount = Number(data.my_following_count ?? this.followingCount);
+                        }
+                    }
+                } finally {
+                    item._busy = false;
+                }
+            },
             async handleFriendAction(action) {
                 if (this.friendBusy) return;
                 this.friendBusy = true;
@@ -39,9 +257,32 @@
                 }
             }
         }"
-        class="min-h-screen bg-[#F8FAFC] pt-28 sm:pt-32 pb-24 px-4 sm:px-6 lg:px-8 flex items-center"
+        @mousemove.window="onCursorMove($event)"
+        @mouseleave="onCursorLeave()"
+        class="profile-cursor-stage relative min-h-screen {{ $isDarkProfile ? 'bg-[#0B1120]' : 'bg-[#F7F9FC]' }} pt-28 sm:pt-32 pb-20 px-4 sm:px-6 lg:px-8 flex items-center overflow-x-clip transition-colors duration-300"
     >
-        <div class="max-w-4xl w-full mx-auto">
+        <!-- latar belakang minimalist responsif kursor (cahaya halus + kisi arsitektural di sekitar kursor) -->
+        <div aria-hidden="true" class="pointer-events-none absolute inset-0 overflow-hidden z-0 hidden md:block">
+            <div class="profile-cursor-glow absolute inset-0"></div>
+            <div class="profile-cursor-weave absolute inset-0"></div>
+        </div>
+
+        <div class="relative z-10 max-w-4xl w-full mx-auto">
+
+            <!-- notifikasi sukses ubah border avatar -->
+            <div
+                x-show="borderNotice !== ''"
+                x-transition
+                style="display: none;"
+                class="mb-6 rounded-2xl bg-lime/35 border border-lime px-5 py-3.5 flex items-center gap-3 text-xs font-semibold text-ink shadow-2xs"
+            >
+                <span class="w-6 h-6 rounded-full bg-ink text-lime flex items-center justify-center shrink-0">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                        <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                </span>
+                <span x-text="borderNotice"></span>
+            </div>
 
             <!-- notifikasi sukses / error -->
             @if (session('success'))
@@ -68,7 +309,7 @@
 
             @if ($isOwnProfile && $privacy['is_private_profile'])
                 <div class="mb-5 rounded-2xl bg-amber-50 border border-amber-200 px-4 py-3 text-xs font-semibold text-amber-800 flex items-center gap-2.5">
-                    <span>🔒</span>
+                    <svg class="w-4 h-4 text-amber-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
                     <span>{{ __('ui.profile.private_self_notice') }}</span>
                 </div>
             @endif
@@ -118,7 +359,7 @@
                             </button>
                         @elseif ($isPrivateForVisitor)
                             <span class="absolute top-4 right-4 inline-flex items-center gap-1.5 rounded-full bg-ink/85 text-lime px-3.5 py-1.5 text-[11px] font-heading font-bold backdrop-blur-xs">
-                                <span>🔒</span>
+                                <svg class="w-3.5 h-3.5 text-lime shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
                                 <span>{{ __('ui.profile.private_account_badge') }}</span>
                             </span>
                         @endif
@@ -127,14 +368,23 @@
                     <!-- konten kartu di bawah banner -->
                     <div class="px-6 sm:px-10 pb-8 sm:pb-10">
 
-                        <!-- avatar bulat overlap dengan border putih 4px (SELALU TAMPIL) -->
+                        <!-- avatar bulat overlap dengan border putih 4px + border avatar kustom yang reaktif -->
                         <div class="-mt-14 sm:-mt-16 mb-4 flex items-end justify-between">
-                            <div class="relative inline-block">
+                            <div class="relative inline-flex items-center justify-center w-24 h-24 sm:w-28 sm:h-28">
                                 <x-user-avatar
                                     :user="$profileUser"
+                                    :border="''"
                                     size="profile"
                                     class="border-4 border-white shadow-md bg-white"
                                 />
+                                <template x-if="equippedBorderUrl">
+                                    <img
+                                        :src="equippedBorderUrl"
+                                        alt=""
+                                        aria-hidden="true"
+                                        class="pointer-events-none select-none absolute -inset-[22%] w-[144%] h-[144%] max-w-none object-contain z-20 transition-all duration-300"
+                                    >
+                                </template>
                             </div>
                         </div>
 
@@ -146,14 +396,26 @@
                                         <h1 class="font-heading font-extrabold text-2xl sm:text-3xl text-ink tracking-tight">
                                             {{ $profileUser->nama_lengkap ?: $profileUser->username }}
                                         </h1>
-                                        <span class="inline-flex items-center gap-1 rounded-full bg-gray-100 border border-gray-200 px-3 py-1 text-[10px] font-extrabold text-muted uppercase tracking-wider">
-                                            <span>🔒 {{ __('ui.profile.private_account_badge') }}</span>
+                                        <span class="inline-flex items-center gap-1.5 rounded-full bg-gray-100 border border-gray-200 px-3 py-1 text-[10px] font-extrabold text-muted uppercase tracking-wider">
+                                            <svg class="w-3 h-3 text-amber-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                                            <span>{{ __('ui.profile.private_account_badge') }}</span>
                                         </span>
                                     </div>
                                 </div>
 
                                 <div class="flex flex-wrap items-center gap-2.5">
                                     @auth
+                                        <button
+                                            type="button"
+                                            @click="toggleProfileFollow()"
+                                            :disabled="followBusy"
+                                            :class="isFollowing ? 'bg-ink text-lime border-ink' : 'bg-white text-ink border-gray-300 hover:border-sky hover:text-sky'"
+                                            class="inline-flex items-center gap-1.5 rounded-full border font-heading font-bold text-xs px-5 py-2.5 transition-colors cursor-pointer disabled:opacity-60"
+                                        >
+                                            <svg x-show="isFollowing" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display: none;"><polyline points="20 6 9 17 4 12" /></svg>
+                                            <svg x-show="!isFollowing" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+                                            <span x-text="isFollowing ? @js(app()->getLocale() === 'en' ? 'Following' : 'Mengikuti') : @js(app()->getLocale() === 'en' ? 'Follow' : 'Ikuti')"></span>
+                                        </button>
                                         <template x-if="friendStatus === 'accepted'">
                                             <button
                                                 type="button"
@@ -161,7 +423,8 @@
                                                 :disabled="friendBusy"
                                                 class="inline-flex items-center gap-1.5 rounded-full bg-lime text-ink border border-lime font-heading font-bold text-xs px-5 py-2.5 transition-colors cursor-pointer"
                                             >
-                                                <span>✓ Berteman</span>
+                                                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                                                <span>Berteman</span>
                                             </button>
                                         </template>
                                         <template x-if="friendStatus === 'pending_outgoing'">
@@ -181,7 +444,8 @@
                                                 :disabled="friendBusy"
                                                 class="inline-flex items-center gap-1.5 rounded-full bg-sky text-white border border-sky font-heading font-bold text-xs px-5 py-2.5 transition-colors cursor-pointer"
                                             >
-                                                <span>Konfirmasi Pertemanan ✓</span>
+                                                <span>Konfirmasi Pertemanan</span>
+                                                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
                                             </button>
                                         </template>
                                         <template x-if="friendStatus === 'none' || friendStatus === 'declined'">
@@ -214,8 +478,8 @@
                             </div>
 
                             <div class="mt-7 rounded-2xl bg-[#F8FAFC] border border-dashed border-gray-200 p-8 text-center">
-                                <div class="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center mx-auto mb-3 text-xl">
-                                    🔒
+                                <div class="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center mx-auto mb-3">
+                                    <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
                                 </div>
                                 <h2 class="font-heading font-extrabold text-base text-ink">{{ __('ui.profile.private_title') }}</h2>
                                 <p class="mt-1.5 text-xs text-muted max-w-md mx-auto leading-relaxed">
@@ -260,6 +524,24 @@
                                     <div class="mt-2.5 flex flex-wrap items-center gap-2">
                                         <button
                                             type="button"
+                                            @click="openFollowModal('followers')"
+                                            class="inline-flex items-center gap-1.5 rounded-full bg-[#F8FAFC] hover:bg-[#EFF6FF] border border-gray-200 hover:border-sky/40 px-3.5 py-1.5 text-xs font-heading font-bold text-ink transition-colors cursor-pointer"
+                                        >
+                                            <span class="font-extrabold text-sky" x-text="followersCount">{{ $followersCount ?? 0 }}</span>
+                                            <span>{{ app()->getLocale() === 'en' ? 'Followers' : 'Pengikut' }}</span>
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            @click="openFollowModal('following')"
+                                            class="inline-flex items-center gap-1.5 rounded-full bg-[#F8FAFC] hover:bg-[#EFF6FF] border border-gray-200 hover:border-sky/40 px-3.5 py-1.5 text-xs font-heading font-bold text-ink transition-colors cursor-pointer"
+                                        >
+                                            <span class="font-extrabold text-ink" x-text="followingCount">{{ $followingCount ?? 0 }}</span>
+                                            <span>{{ app()->getLocale() === 'en' ? 'Following' : 'Mengikuti' }}</span>
+                                        </button>
+
+                                        <button
+                                            type="button"
                                             @click="friendsModalOpen = true"
                                             class="inline-flex items-center gap-2 rounded-full bg-[#F8FAFC] hover:bg-[#EFF6FF] border border-gray-200 hover:border-sky/40 px-3.5 py-1.5 text-xs font-heading font-bold text-ink transition-colors cursor-pointer"
                                         >
@@ -281,8 +563,9 @@
                                             @endif
                                         </p>
                                     @else
-                                        <p class="mt-1.5 text-xs italic text-muted">
-                                            🔒 {{ __('ui.profile.hidden_location') }}
+                                        <p class="mt-1.5 text-xs italic text-muted inline-flex items-center gap-1.5">
+                                            <svg class="w-3.5 h-3.5 text-amber-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                                            <span>{{ __('ui.profile.hidden_location') }}</span>
                                         </p>
                                     @endif
 
@@ -316,16 +599,39 @@
                                                 </svg>
                                                 <span>{{ __('ui.profile.settings_btn') }}</span>
                                             </button>
+
+                                            <button
+                                                type="button"
+                                                @click="openBorderModal()"
+                                                class="inline-flex items-center gap-2 rounded-full bg-lime/35 border border-lime hover:bg-lime text-ink font-heading font-bold text-xs px-5 py-2.5 transition-colors cursor-pointer"
+                                            >
+                                                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="4" /></svg>
+                                                <span>{{ $isEnProfile ? 'Avatar Borders' : 'Border Avatar' }}</span>
+                                            </button>
                                         @else
                                             @auth
+                                                <button
+                                                    type="button"
+                                                    @click="toggleProfileFollow()"
+                                                    :disabled="followBusy"
+                                                    :class="isFollowing ? 'bg-ink text-lime border-ink' : 'bg-white text-ink border-gray-300 hover:border-sky hover:text-sky'"
+                                                    class="inline-flex items-center gap-1.5 rounded-full border font-heading font-bold text-xs px-5 py-2.5 transition-colors cursor-pointer disabled:opacity-60"
+                                                    title="{{ app()->getLocale() === 'en' ? 'Follow publicly without confirmation' : 'Ikuti profil publik tanpa perlu konfirmasi' }}"
+                                                >
+                                                    <svg x-show="isFollowing" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display: none;"><polyline points="20 6 9 17 4 12" /></svg>
+                                                    <svg x-show="!isFollowing" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+                                                    <span x-text="isFollowing ? @js(app()->getLocale() === 'en' ? 'Following' : 'Mengikuti') : @js(app()->getLocale() === 'en' ? 'Follow' : 'Ikuti')"></span>
+                                                </button>
                                                 <template x-if="friendStatus === 'accepted'">
                                                     <button
                                                         type="button"
                                                         @click="handleFriendAction('remove')"
                                                         :disabled="friendBusy"
                                                         class="inline-flex items-center gap-1.5 rounded-full bg-lime text-ink border border-lime font-heading font-bold text-xs px-5 py-2.5 transition-colors cursor-pointer"
+                                                        title="{{ app()->getLocale() === 'en' ? 'Friends — private chat unlocked (click to unfriend)' : 'Sudah berteman — chat pribadi aktif (klik untuk batal berteman)' }}"
                                                     >
-                                                        <span>✓ Berteman</span>
+                                                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                                                        <span>{{ app()->getLocale() === 'en' ? 'Friends' : 'Berteman' }}</span>
                                                     </button>
                                                 </template>
                                                 <template x-if="friendStatus === 'pending_outgoing'">
@@ -335,7 +641,7 @@
                                                         :disabled="friendBusy"
                                                         class="inline-flex items-center gap-1.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 font-heading font-bold text-xs px-5 py-2.5 transition-colors cursor-pointer"
                                                     >
-                                                        <span>Menunggu Konfirmasi</span>
+                                                        <span>{{ app()->getLocale() === 'en' ? 'Pending Request' : 'Menunggu Konfirmasi' }}</span>
                                                     </button>
                                                 </template>
                                                 <template x-if="friendStatus === 'pending_incoming'">
@@ -345,7 +651,8 @@
                                                         :disabled="friendBusy"
                                                         class="inline-flex items-center gap-1.5 rounded-full bg-sky text-white border border-sky font-heading font-bold text-xs px-5 py-2.5 transition-colors cursor-pointer"
                                                     >
-                                                        <span>Konfirmasi Pertemanan ✓</span>
+                                                        <span>{{ app()->getLocale() === 'en' ? 'Accept Friend' : 'Konfirmasi Pertemanan' }}</span>
+                                                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
                                                     </button>
                                                 </template>
                                                 <template x-if="friendStatus === 'none' || friendStatus === 'declined'">
@@ -354,8 +661,9 @@
                                                         @click="handleFriendAction('request')"
                                                         :disabled="friendBusy"
                                                         class="inline-flex items-center gap-1.5 rounded-full bg-ink hover:bg-sky text-white border border-ink font-heading font-bold text-xs px-5 py-2.5 transition-colors cursor-pointer"
+                                                        title="{{ app()->getLocale() === 'en' ? 'Send friend request to unlock direct private chat' : 'Kirim permintaan teman untuk membuka akses chat pribadi' }}"
                                                     >
-                                                        <span>+ Tambah Teman</span>
+                                                        <span>{{ app()->getLocale() === 'en' ? '+ Add Friend' : '+ Tambah Teman' }}</span>
                                                     </button>
                                                 </template>
 
@@ -381,6 +689,14 @@
                                             >
                                                 {{ __('ui.profile.back_forum') }}
                                             </a>
+
+                                            @auth
+                                                <p class="w-full text-[11px] text-muted mt-1">
+                                                    {{ app()->getLocale() === 'en'
+                                                        ? 'Follow: public profile updates • Add Friend: unlock direct private chat.'
+                                                        : 'Ikuti: pantau profil publik tanpa konfirmasi • Tambah Teman: buka akses chat pribadi.' }}
+                                                </p>
+                                            @endauth
                                         @endif
                                     </div>
                                 </div>
@@ -494,7 +810,9 @@
                                                                 <span class="text-[10px] text-muted block truncate">{{ $qr['desc'] }}</span>
                                                             </div>
                                                             @if ($isCurrentQr)
-                                                                <span class="w-4 h-4 rounded-full bg-sky text-white flex items-center justify-center text-[9px] font-bold shrink-0">✓</span>
+                                                                <span class="w-4 h-4 rounded-full bg-sky text-white flex items-center justify-center shrink-0">
+                                                                    <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                                                                </span>
                                                             @endif
                                                         </button>
                                                     @endforeach
@@ -522,7 +840,10 @@
                                         </div>
 
                                         @if (! $isOwnProfile && $privacy['hide_badges'])
-                                            <p class="text-[11px] italic text-muted">🔒 {{ __('ui.profile.hidden_section') }}</p>
+                                            <p class="text-[11px] italic text-muted inline-flex items-center gap-1">
+                                                <svg class="w-3 h-3 text-amber-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                                                <span>{{ __('ui.profile.hidden_section') }}</span>
+                                            </p>
                                         @elseif (count($badges) > 0)
                                             <div class="flex flex-wrap md:justify-end gap-2">
                                                 @foreach ($badges as $badge)
@@ -584,8 +905,9 @@
                                         </span>
                                     </a>
                                 @else
-                                    <div class="rounded-2xl bg-[#F8FAFC] border border-gray-200/75 p-4 sm:p-5 flex items-center justify-center text-center text-[11px] text-muted">
-                                        🔒 {{ __('ui.profile.hidden_section') }}
+                                    <div class="rounded-2xl bg-[#F8FAFC] border border-gray-200/75 p-4 sm:p-5 flex items-center justify-center gap-1.5 text-center text-[11px] text-muted">
+                                        <svg class="w-3.5 h-3.5 text-amber-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                                        <span>{{ __('ui.profile.hidden_section') }}</span>
                                     </div>
                                 @endif
 
@@ -611,8 +933,9 @@
                                         </span>
                                     </a>
                                 @else
-                                    <div class="rounded-2xl bg-[#F8FAFC] border border-gray-200/75 p-4 sm:p-5 flex items-center justify-center text-center text-[11px] text-muted">
-                                        🔒 {{ __('ui.profile.hidden_section') }}
+                                    <div class="rounded-2xl bg-[#F8FAFC] border border-gray-200/75 p-4 sm:p-5 flex items-center justify-center gap-1.5 text-center text-[11px] text-muted">
+                                        <svg class="w-3.5 h-3.5 text-amber-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                                        <span>{{ __('ui.profile.hidden_section') }}</span>
                                     </div>
                                 @endif
 
@@ -638,8 +961,9 @@
                                         </span>
                                     </a>
                                 @else
-                                    <div class="rounded-2xl bg-[#F8FAFC] border border-gray-200/75 p-4 sm:p-5 flex items-center justify-center text-center text-[11px] text-muted">
-                                        🔒 {{ __('ui.profile.hidden_section') }}
+                                    <div class="rounded-2xl bg-[#F8FAFC] border border-gray-200/75 p-4 sm:p-5 flex items-center justify-center gap-1.5 text-center text-[11px] text-muted">
+                                        <svg class="w-3.5 h-3.5 text-amber-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                                        <span>{{ __('ui.profile.hidden_section') }}</span>
                                     </div>
                                 @endif
 
@@ -652,6 +976,204 @@
             </div>
 
         </div>
+
+        @if ($isOwnProfile)
+            <!-- modal pop-up pemilihan 5 border avatar (opsional, unlock bertahap, dengan pratinjau langsung & tombol Simpan Perubahan) -->
+            <div
+                id="avatar-borders"
+                x-show="borderModalOpen"
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100"
+                x-transition:leave="transition ease-in duration-150"
+                x-transition:leave-start="opacity-100"
+                x-transition:leave-end="opacity-0"
+                style="display: none; background: rgba(10, 15, 30, 0.56);"
+                class="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xs"
+                @keydown.escape.window="borderModalOpen = false"
+            >
+                <div
+                    @click.outside="borderModalOpen = false"
+                    class="w-full max-w-2xl max-h-[88vh] rounded-[26px] border {{ $isDarkProfile ? 'bg-[#0F172A] border-slate-800 text-slate-100' : 'bg-white border-gray-200/80 text-ink' }} shadow-neutral flex flex-col overflow-hidden"
+                >
+                    <!-- header modal + pratinjau langsung avatar user -->
+                    <div class="px-6 py-5 border-b {{ $isDarkProfile ? 'border-slate-800' : 'border-gray-100' }} flex items-center justify-between gap-4">
+                        <div class="flex items-center gap-4 min-w-0">
+                            <div class="relative w-14 h-14 shrink-0 flex items-center justify-center">
+                                @if ($profileUser->avatar_url)
+                                    <img src="{{ $profileUser->avatar_url }}" alt="{{ $profileUser->nama_lengkap ?: $profileUser->username }}" class="w-12 h-12 rounded-full object-cover border-2 border-white shadow-xs">
+                                @else
+                                    <span class="w-12 h-12 rounded-full {{ $profileUser->pastel_class }} font-heading font-extrabold text-sm flex items-center justify-center border-2 border-white shadow-xs">{{ $profileUser->inisial }}</span>
+                                @endif
+                                <template x-if="draftBorderUrl">
+                                    <img :src="draftBorderUrl" alt="" aria-hidden="true" class="pointer-events-none select-none absolute inset-0 w-full h-full scale-[1.24] max-w-none object-contain z-10">
+                                </template>
+                            </div>
+                            <div class="min-w-0">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <h2 class="font-heading font-extrabold text-base sm:text-lg {{ $isDarkProfile ? 'text-white' : 'text-ink' }}">
+                                        {{ $isEnProfile ? 'Avatar Borders' : 'Koleksi Border Avatar' }}
+                                    </h2>
+                                    <span class="rounded-lg border {{ $isDarkProfile ? 'border-slate-700 bg-slate-800 text-slate-200' : 'border-gray-200 bg-[#F8FAFC] text-ink' }} px-2 py-0.5 text-[10px] font-heading font-bold">
+                                        <span x-text="borders.filter(b => b.unlocked).length"></span> / 5 {{ $isEnProfile ? 'Unlocked' : 'Terbuka' }}
+                                    </span>
+                                </div>
+                                <p class="text-[11px] {{ $isDarkProfile ? 'text-slate-400' : 'text-muted' }} mt-0.5 truncate">
+                                    {{ $isEnProfile
+                                        ? 'Choose an unlocked border, preview it above, then click Save Changes.'
+                                        : 'Pilih border yang sudah terbuka, lihat pratinjau di atas, lalu klik Simpan Perubahan.' }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <button
+                            type="button"
+                            @click="borderModalOpen = false"
+                            aria-label="{{ $isEnProfile ? 'Close modal' : 'Tutup jendela' }}"
+                            class="w-9 h-9 rounded-full {{ $isDarkProfile ? 'bg-slate-800 hover:bg-slate-700 text-slate-200' : 'bg-gray-100 hover:bg-gray-200 text-ink' }} flex items-center justify-center shrink-0 transition-colors cursor-pointer"
+                        >
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                        </button>
+                    </div>
+
+                    <!-- daftar pilihan border scrollable -->
+                    <div class="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4 {{ $isDarkProfile ? 'bg-[#0B1120]/60' : 'bg-[#F8FAFC]' }}">
+                        <div
+                            x-show="borderError !== ''"
+                            x-transition
+                            style="display: none;"
+                            class="rounded-xl bg-red-50 border border-red-200 px-4 py-2.5 text-xs font-semibold text-red-700"
+                            x-text="borderError"
+                        ></div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                            <!-- Opsi 0: Tanpa Border -->
+                            <button
+                                type="button"
+                                @click="pickDraftBorder('')"
+                                :class="!draftBorderKey
+                                    ? '{{ $isDarkProfile ? 'border-lime bg-lime/10 ring-1 ring-lime/40' : 'border-sky bg-[#F0F8FF] ring-1 ring-sky/25' }}'
+                                    : '{{ $isDarkProfile ? 'border-slate-800 bg-[#0F172A] hover:border-slate-600' : 'border-gray-200 bg-white hover:border-gray-400' }}'"
+                                class="rounded-2xl border p-4 text-left flex flex-col justify-between gap-3 transition-all cursor-pointer"
+                            >
+                                <div class="flex items-center gap-3.5">
+                                    <div class="relative w-12 h-12 shrink-0 flex items-center justify-center">
+                                        @if ($profileUser->avatar_url)
+                                            <img src="{{ $profileUser->avatar_url }}" alt="" class="w-11 h-11 rounded-full object-cover border-2 border-gray-200">
+                                        @else
+                                            <span class="w-11 h-11 rounded-full {{ $profileUser->pastel_class }} font-heading font-extrabold text-xs flex items-center justify-center border-2 border-gray-200">{{ $profileUser->inisial }}</span>
+                                        @endif
+                                    </div>
+                                    <div class="min-w-0">
+                                        <span class="block text-[10px] font-bold uppercase tracking-wider {{ $isDarkProfile ? 'text-slate-400' : 'text-muted' }}">{{ $isEnProfile ? 'Default' : 'Bawaan' }}</span>
+                                        <span class="block font-heading font-extrabold text-sm {{ $isDarkProfile ? 'text-white' : 'text-ink' }}">{{ $isEnProfile ? 'No Border' : 'Tanpa Border' }}</span>
+                                        <span class="block text-[11px] {{ $isDarkProfile ? 'text-slate-400' : 'text-muted' }} mt-0.5">{{ $isEnProfile ? 'Clean circular avatar' : 'Tampilan avatar polos bersih' }}</span>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center justify-between pt-2 border-t {{ $isDarkProfile ? 'border-slate-800' : 'border-gray-100' }}">
+                                    <span class="text-[10px] font-semibold {{ $isDarkProfile ? 'text-slate-400' : 'text-muted' }}">{{ $isEnProfile ? 'Always available' : 'Selalu tersedia' }}</span>
+                                    <span
+                                        :class="!draftBorderKey ? 'bg-ink text-lime' : '{{ $isDarkProfile ? 'bg-slate-800 text-slate-300' : 'bg-gray-100 text-ink' }}'"
+                                        class="rounded-lg px-2.5 py-0.5 text-[10px] font-heading font-bold"
+                                        x-text="!draftBorderKey ? @js($isEnProfile ? 'Selected' : 'Dipilih') : @js($isEnProfile ? 'Select' : 'Pilih')"
+                                    ></span>
+                                </div>
+                            </button>
+
+                            <!-- Opsi 1..5: 5 Border Prestasi -->
+                            <template x-for="b in borders" :key="b.key">
+                                <button
+                                    type="button"
+                                    @click="b.unlocked && pickDraftBorder(b.key)"
+                                    :disabled="!b.unlocked"
+                                    :class="draftBorderKey === b.key
+                                        ? '{{ $isDarkProfile ? 'border-lime bg-lime/10 ring-1 ring-lime/40 cursor-pointer' : 'border-sky bg-[#F0F8FF] ring-1 ring-sky/25 cursor-pointer' }}'
+                                        : (b.unlocked
+                                            ? '{{ $isDarkProfile ? 'border-slate-800 bg-[#0F172A] hover:border-sky/60 cursor-pointer' : 'border-gray-200 bg-white hover:border-sky/60 cursor-pointer' }}'
+                                            : '{{ $isDarkProfile ? 'border-slate-800/80 bg-slate-900/40 opacity-75 cursor-not-allowed' : 'border-gray-200/80 bg-white/70 opacity-80 cursor-not-allowed' }}')"
+                                    class="rounded-2xl border p-4 text-left flex flex-col justify-between gap-3 transition-all"
+                                >
+                                    <div class="flex items-center gap-3.5">
+                                        <div class="relative w-12 h-12 shrink-0 flex items-center justify-center">
+                                            @if ($profileUser->avatar_url)
+                                                <img src="{{ $profileUser->avatar_url }}" alt="" class="w-11 h-11 rounded-full object-cover" :class="!b.unlocked ? 'grayscale opacity-70' : ''">
+                                            @else
+                                                <span class="w-11 h-11 rounded-full {{ $profileUser->pastel_class }} font-heading font-extrabold text-xs flex items-center justify-center" :class="!b.unlocked ? 'grayscale opacity-70' : ''">{{ $profileUser->inisial }}</span>
+                                            @endif
+                                            <img
+                                                :src="b.image_url"
+                                                :alt="b.name"
+                                                class="pointer-events-none select-none absolute inset-0 w-full h-full scale-[1.24] max-w-none object-contain z-10"
+                                                :class="!b.unlocked ? 'grayscale opacity-65' : ''"
+                                            >
+                                        </div>
+
+                                        <div class="min-w-0 flex-1">
+                                            <div class="flex items-center gap-1.5">
+                                                <span class="text-[10px] font-bold uppercase tracking-wider text-sky" x-text="'Tier ' + b.tier"></span>
+                                                <template x-if="!b.unlocked">
+                                                    <svg class="w-3 h-3 {{ $isDarkProfile ? 'text-slate-400' : 'text-muted' }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                                                </template>
+                                            </div>
+                                            <span class="block font-heading font-extrabold text-sm truncate {{ $isDarkProfile ? 'text-white' : 'text-ink' }}" x-text="b.name"></span>
+                                            <span class="block text-[11px] {{ $isDarkProfile ? 'text-slate-400' : 'text-muted' }} leading-snug mt-0.5" x-text="b.requirement"></span>
+                                        </div>
+                                    </div>
+
+                                    <div class="space-y-1.5 pt-2 border-t {{ $isDarkProfile ? 'border-slate-800' : 'border-gray-100' }}">
+                                        <div class="flex items-center justify-between gap-2 text-[10px]">
+                                            <span class="font-semibold {{ $isDarkProfile ? 'text-slate-400' : 'text-muted' }} truncate" x-text="b.progress_label"></span>
+                                            <span
+                                                :class="draftBorderKey === b.key
+                                                    ? 'bg-ink text-lime'
+                                                    : (b.unlocked ? 'bg-sky/15 text-sky' : '{{ $isDarkProfile ? 'bg-slate-800 text-slate-400' : 'bg-gray-200/80 text-muted' }}')"
+                                                class="shrink-0 rounded-lg px-2.5 py-0.5 font-heading font-bold"
+                                                x-text="draftBorderKey === b.key
+                                                    ? @js($isEnProfile ? 'Selected' : 'Dipilih')
+                                                    : (b.unlocked ? @js($isEnProfile ? 'Select' : 'Pilih') : @js($isEnProfile ? 'Locked' : 'Terkunci'))"
+                                            ></span>
+                                        </div>
+                                        <div class="w-full h-1.5 rounded-full {{ $isDarkProfile ? 'bg-slate-800' : 'bg-gray-200/80' }} overflow-hidden">
+                                            <div
+                                                :class="b.unlocked ? 'bg-emerald-500' : 'bg-sky'"
+                                                :style="'width: ' + b.progress_percent + '%'"
+                                                class="h-full rounded-full transition-all duration-300"
+                                            ></div>
+                                        </div>
+                                    </div>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- footer modal: tombol Batal & Simpan Perubahan -->
+                    <div class="px-6 py-4 border-t {{ $isDarkProfile ? 'border-slate-800 bg-[#0F172A]' : 'border-gray-100 bg-white' }} flex items-center justify-between gap-3">
+                        <span class="text-[11px] {{ $isDarkProfile ? 'text-slate-400' : 'text-muted' }} hidden sm:inline">
+                            {{ $isEnProfile ? 'Border updates across all Digi-Safe pages.' : 'Border akan tampil di seluruh halaman Digi-Safe.' }}
+                        </span>
+                        <div class="flex items-center gap-2.5 ml-auto">
+                            <button
+                                type="button"
+                                @click="borderModalOpen = false"
+                                class="rounded-xl border {{ $isDarkProfile ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-gray-200 text-muted hover:text-ink hover:bg-gray-50' }} px-4 py-2.5 text-xs font-heading font-bold transition-colors cursor-pointer"
+                            >
+                                {{ $isEnProfile ? 'Cancel' : 'Batal' }}
+                            </button>
+                            <button
+                                type="button"
+                                @click="saveBorderChanges()"
+                                :disabled="borderBusy"
+                                class="rounded-xl bg-ink hover:bg-sky text-white font-heading font-bold text-xs px-5 py-2.5 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+                                x-text="borderBusy
+                                    ? @js($isEnProfile ? 'Saving...' : 'Menyimpan...')
+                                    : @js($isEnProfile ? 'Save Changes' : 'Simpan Perubahan')"
+                            ></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
 
         <!-- modal edit profil & banner -->
         @include('profile.edit')
@@ -728,6 +1250,110 @@
                             </div>
                         @endforeach
                     @endif
+                </div>
+            </div>
+        </div>
+
+        <!-- modal pop-up daftar Followers & Following -->
+        <div
+            x-show="followModalOpen"
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+            style="display: none; background: rgba(10, 10, 10, 0.52);"
+            class="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xs"
+            @keydown.escape.window="followModalOpen = false"
+        >
+            <div
+                @click.outside="followModalOpen = false"
+                class="w-full max-w-md max-h-[82vh] rounded-[24px] bg-white border border-gray-200/80 shadow-neutral flex flex-col overflow-hidden"
+            >
+                <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+                    <div>
+                        <h3 class="font-heading font-extrabold text-base text-ink">
+                            {{ $profileUser->nama_lengkap ?: $profileUser->username }}
+                        </h3>
+                        <p class="text-[11px] text-muted">
+                            &#64;{{ $profileUser->username }}
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        @click="followModalOpen = false"
+                        class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-ink flex items-center justify-center cursor-pointer"
+                    >
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                    </button>
+                </div>
+
+                <!-- Tab Pengikut / Mengikuti -->
+                <div class="px-4 py-2.5 bg-[#F8FAFC] border-b border-gray-100 grid grid-cols-2 gap-2">
+                    <button
+                        type="button"
+                        @click="followModalTab = 'followers'"
+                        :class="followModalTab === 'followers' ? 'bg-white text-ink shadow-2xs border-gray-200' : 'text-muted border-transparent hover:text-ink'"
+                        class="rounded-xl border py-2 text-xs font-heading font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                    >
+                        <span>{{ app()->getLocale() === 'en' ? 'Followers' : 'Pengikut' }}</span>
+                        <span class="rounded-full bg-sky/15 text-sky px-2 py-0.5 text-[10px]" x-text="followersCount"></span>
+                    </button>
+                    <button
+                        type="button"
+                        @click="followModalTab = 'following'"
+                        :class="followModalTab === 'following' ? 'bg-white text-ink shadow-2xs border-gray-200' : 'text-muted border-transparent hover:text-ink'"
+                        class="rounded-xl border py-2 text-xs font-heading font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                    >
+                        <span>{{ app()->getLocale() === 'en' ? 'Following' : 'Mengikuti' }}</span>
+                        <span class="rounded-full bg-gray-200/80 text-ink px-2 py-0.5 text-[10px]" x-text="followingCount"></span>
+                    </button>
+                </div>
+
+                <div class="flex-1 overflow-y-auto p-4 space-y-2.5 bg-[#F8FAFC]">
+                    <template x-if="followListLoading">
+                        <div class="py-10 text-center text-xs text-muted">Memuat daftar...</div>
+                    </template>
+
+                    <template x-if="!followListLoading && (followModalTab === 'followers' ? followList.followers : followList.following).length === 0">
+                        <div class="py-10 text-center text-xs text-muted" x-text="followModalTab === 'followers' ? @js(app()->getLocale() === 'en' ? 'No followers yet.' : 'Belum ada pengikut.') : @js(app()->getLocale() === 'en' ? 'Not following anyone yet.' : 'Belum mengikuti siapa pun.')"></div>
+                    </template>
+
+                    <template x-for="u in (followModalTab === 'followers' ? followList.followers : followList.following)" :key="u.id">
+                        <div class="rounded-2xl bg-white border border-gray-100 p-3 flex items-center justify-between gap-3 shadow-2xs">
+                            <a :href="u.profile_url" class="flex items-center gap-3 min-w-0 group">
+                                <span class="relative inline-flex w-9 h-9 shrink-0">
+                                    <template x-if="u.avatar_url">
+                                        <img :src="u.avatar_url" :alt="u.nama" class="w-full h-full rounded-full object-cover">
+                                    </template>
+                                    <template x-if="!u.avatar_url">
+                                        <span :class="u.pastel_class" class="w-full h-full rounded-full font-heading font-bold text-xs flex items-center justify-center" x-text="u.inisial"></span>
+                                    </template>
+                                    <template x-if="u.avatar_border_url">
+                                        <img :src="u.avatar_border_url" alt="" aria-hidden="true" class="pointer-events-none select-none absolute -inset-[22%] w-[144%] h-[144%] max-w-none object-contain z-10">
+                                    </template>
+                                </span>
+                                <div class="min-w-0">
+                                    <p class="font-heading font-bold text-xs text-ink group-hover:text-sky truncate" x-text="u.nama"></p>
+                                    <p class="text-[10px] text-muted truncate" x-text="u.specialty_role || ('@' + u.username)"></p>
+                                </div>
+                            </a>
+
+                            @auth
+                                <template x-if="!u.is_me">
+                                    <button
+                                        type="button"
+                                        @click="toggleFollowItem(u)"
+                                        :disabled="u._busy"
+                                        :class="u.is_following ? 'bg-ink text-lime' : 'bg-sky/10 hover:bg-sky text-sky hover:text-white'"
+                                        class="shrink-0 rounded-full text-[11px] font-heading font-bold px-3.5 py-1.5 transition-colors cursor-pointer"
+                                        x-text="u.is_following ? @js(app()->getLocale() === 'en' ? 'Following' : 'Mengikuti') : @js(app()->getLocale() === 'en' ? 'Follow' : 'Ikuti')"
+                                    ></button>
+                                </template>
+                            @endauth
+                        </div>
+                    </template>
                 </div>
             </div>
         </div>

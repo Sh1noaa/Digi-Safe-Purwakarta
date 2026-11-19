@@ -4,12 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\ApiToken;
 use App\Models\User;
+use App\Rules\ValidRealEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -27,15 +29,16 @@ class AuthController extends Controller
 
     public function login(Request $request): RedirectResponse
     {
-        // validasi form login
+        // validasi form login (tolak format & domain disposable/asal-asalan)
         $credentials = $request->validate([
-            'email' => ['required', 'email'],
+            'email' => ['required', 'string', 'max:100', new ValidRealEmail(checkDns: false)],
             'password' => ['required', 'string'],
         ], [
             'email.required' => 'Alamat email wajib diisi.',
-            'email.email' => 'Format alamat email tidak valid.',
             'password.required' => 'Password wajib diisi.',
         ]);
+
+        $credentials['email'] = Str::lower(trim($credentials['email']));
 
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
@@ -58,19 +61,19 @@ class AuthController extends Controller
 
     public function register(Request $request): RedirectResponse
     {
-        // validasi form registrasi
+        // validasi form registrasi (wajib email aktif & valid dengan cek MX domain)
         $validated = $request->validate([
             'nama_lengkap' => ['required', 'string', 'max:100'],
-            'username' => ['required', 'string', 'max:50', 'alpha_dash', 'unique:users,username'],
-            'email' => ['required', 'string', 'email', 'max:100', 'unique:users,email'],
+            'username' => ['required', 'string', 'min:3', 'max:50', 'alpha_dash', 'unique:users,username'],
+            'email' => ['required', 'string', 'max:100', new ValidRealEmail(checkDns: true), 'unique:users,email'],
             'password' => ['required', 'string', 'min:8'],
         ], [
             'nama_lengkap.required' => 'Nickname / Nama lengkap wajib diisi.',
             'username.required' => 'Username wajib diisi.',
+            'username.min' => 'Username minimal 3 karakter.',
             'username.unique' => 'Username sudah digunakan.',
             'username.alpha_dash' => 'Username hanya boleh berisi huruf, angka, strip, dan garis bawah.',
             'email.required' => 'Alamat email wajib diisi.',
-            'email.email' => 'Format email tidak valid.',
             'email.unique' => 'Email sudah terdaftar.',
             'password.required' => 'Password wajib diisi.',
             'password.min' => 'Password minimal 8 karakter.',
@@ -78,9 +81,9 @@ class AuthController extends Controller
 
         // simpan user baru dengan role default user
         $user = User::create([
-            'nama_lengkap' => $validated['nama_lengkap'],
-            'username' => $validated['username'],
-            'email' => $validated['email'],
+            'nama_lengkap' => trim($validated['nama_lengkap']),
+            'username' => trim($validated['username']),
+            'email' => Str::lower(trim($validated['email'])),
             'password' => Hash::make($validated['password']),
             'role' => 'user',
         ]);
@@ -124,7 +127,6 @@ class AuthController extends Controller
         } else {
             $state = Str::random(40);
             $request->session()->put('google_oauth_state', $state);
-            Cache::put('google_oauth_web_' . $state, true, now()->addMinutes(10));
         }
 
         $redirectUri = trim((string) config('services.google.redirect')) ?: route('auth.google.callback');
@@ -165,11 +167,10 @@ class AuthController extends Controller
             }
         } else {
             $expectedState = (string) $request->session()->pull('google_oauth_state', '');
-            $validCachedWebState = $incomingState !== '' && (bool) Cache::pull('google_oauth_web_' . $incomingState, false);
-            $sessionMatches = $expectedState !== '' && hash_equals($expectedState, $incomingState);
+            $sessionMatches = $expectedState !== '' && $incomingState !== '' && hash_equals($expectedState, $incomingState);
 
-            if (! $sessionMatches && ! $validCachedWebState) {
-                return $failRedirect('Sesi login Google kedaluwarsa. Silakan coba lagi.');
+            if (! $sessionMatches) {
+                return $failRedirect('Sesi login Google tidak valid atau kedaluwarsa. Silakan coba lagi.');
             }
         }
 
@@ -190,7 +191,7 @@ class AuthController extends Controller
                 ]);
 
             if (! $tokenResponse->successful() || ! $tokenResponse->json('access_token')) {
-                return $failRedirect('Gagal memverifikasi token dari Google. Pastikan Redirect URI (' . $redirectUri . ') sudah terdaftar di Google Cloud Console.');
+                return $failRedirect('Gagal memverifikasi token dari Google. Silakan coba login ulang.');
             }
 
             $profileResponse = Http::withToken((string) $tokenResponse->json('access_token'))
@@ -202,17 +203,20 @@ class AuthController extends Controller
                 return $failRedirect('Gagal mengambil profil akun Google Anda.');
             }
         } catch (\Throwable $e) {
-            return $failRedirect('Tidak dapat terhubung ke layanan Google OAuth: ' . $e->getMessage());
+            Log::warning('Google OAuth callback error', ['error' => $e->getMessage()]);
+
+            return $failRedirect('Tidak dapat terhubung ke layanan Google saat ini. Silakan coba beberapa saat lagi.');
         }
 
         $googleUser = $profileResponse->json();
         $googleId = (string) ($googleUser['sub'] ?? '');
         $email = Str::lower(trim((string) ($googleUser['email'] ?? '')));
+        $emailVerified = filter_var($googleUser['email_verified'] ?? false, FILTER_VALIDATE_BOOLEAN);
         $fullName = trim((string) ($googleUser['name'] ?? ''));
         $avatarUrl = trim((string) ($googleUser['picture'] ?? ''));
 
-        if ($googleId === '' || $email === '') {
-            return $failRedirect('Akun Google tidak menyertakan alamat email yang valid.');
+        if ($googleId === '' || $email === '' || ! $emailVerified) {
+            return $failRedirect('Akun Google harus memiliki alamat email yang terverifikasi.');
         }
 
         $user = self::findOrCreateGoogleUser($googleId, $email, $fullName, $avatarUrl);

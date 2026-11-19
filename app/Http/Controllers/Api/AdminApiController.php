@@ -11,6 +11,7 @@ use App\Models\ModulEdukasi;
 use App\Models\SkorGame;
 use App\Models\SoalMinigame;
 use App\Models\User;
+use App\Services\AdminAnalyticsService;
 use App\Services\ApiResourceFormatter;
 use App\Services\SocialSchemaHelper;
 use Illuminate\Http\JsonResponse;
@@ -30,14 +31,15 @@ class AdminApiController extends Controller
         return response()->json([
             'success' => true,
             'stats' => [
-                'users_count' => User::humans()->count(),
-                'modules_count' => ModulEdukasi::count(),
-                'pending_requests_count' => EdukasiRequest::where('status', 'pending')->count(),
-                'questions_count' => SoalMinigame::count(),
-                'levels_count' => MinigameLevel::count(),
-                'forums_count' => Forum::count(),
-                'plays_count' => SkorGame::count(),
+                'users_count' => Schema::hasTable('users') ? User::humans()->count() : 0,
+                'modules_count' => Schema::hasTable('modul_edukasi') ? ModulEdukasi::count() : 0,
+                'pending_requests_count' => Schema::hasTable('edukasi_requests') ? EdukasiRequest::where('status', 'pending')->count() : 0,
+                'questions_count' => Schema::hasTable('soal_minigame') ? SoalMinigame::count() : 0,
+                'levels_count' => Schema::hasTable('minigame_levels') ? MinigameLevel::count() : 0,
+                'forums_count' => Schema::hasTable('forum') ? Forum::count() : 0,
+                'plays_count' => Schema::hasTable('skor_game') ? SkorGame::count() : 0,
             ],
+            'analytics' => AdminAnalyticsService::build(),
         ]);
     }
 
@@ -107,7 +109,10 @@ class AdminApiController extends Controller
             ->values();
 
         $users = User::humans()
-            ->orderByRaw("FIELD(role, 'owner', 'admin', 'user')")
+            ->withCount(['skorGames', 'forums', 'jawabanForums', 'testimonis'])
+            ->withSum('skorGames as total_skor_game', 'skor')
+            ->withMax('skorGames as top_skor_game', 'skor_tertinggi')
+            ->orderByRaw("CASE WHEN role = 'owner' THEN 1 WHEN role = 'admin' THEN 2 ELSE 3 END")
             ->orderBy('id')
             ->get()
             ->map(fn (User $u) => ApiResourceFormatter::formatUser($u, Auth::user(), true))
@@ -124,6 +129,7 @@ class AdminApiController extends Controller
                 'forums_count' => $forums->count(),
                 'plays_count' => SkorGame::count(),
             ],
+            'analytics' => AdminAnalyticsService::build(),
             'modules' => $modules,
             'edukasi_requests' => $requests,
             'levels' => $levels,
@@ -140,7 +146,7 @@ class AdminApiController extends Controller
             'kategori' => ['required', 'string', 'max:100'],
             'type' => ['required', 'string', 'in:teks,link'],
             'konten' => ['required_if:type,teks', 'nullable', 'string'],
-            'url' => ['required_if:type,link', 'nullable', 'url', 'max:500'],
+            'url' => ['required_if:type,link', 'nullable', 'url:http,https', 'max:500'],
         ]);
 
         $modul = ModulEdukasi::create([
@@ -170,7 +176,7 @@ class AdminApiController extends Controller
             'kategori' => ['required', 'string', 'max:100'],
             'type' => ['required', 'string', 'in:teks,link'],
             'konten' => ['required_if:type,teks', 'nullable', 'string'],
-            'url' => ['required_if:type,link', 'nullable', 'url', 'max:500'],
+            'url' => ['required_if:type,link', 'nullable', 'url:http,https', 'max:500'],
         ]);
 
         $edukasi->update([

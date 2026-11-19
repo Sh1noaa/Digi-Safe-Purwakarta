@@ -103,7 +103,7 @@
                         x-transition:enter-start="opacity-0 scale-95"
                         x-transition:enter-end="opacity-100 scale-100"
                     >
-                        <x-user-profile-card :user="$u" :linkToDirectory="false" />
+                        <x-user-profile-card :user="$u" :followingIds="$followingIds ?? []" :linkToDirectory="false" />
                     </div>
                 @endforeach
             </div>

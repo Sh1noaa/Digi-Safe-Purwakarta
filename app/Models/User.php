@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
@@ -33,6 +34,7 @@ class User extends Authenticatable
         'bio',
         'avatar',
         'banner',
+        'avatar_border',
         'badge_json',
         'created_at',
         'oauth_provider',
@@ -45,6 +47,8 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'reset_token',
+        'remember_token',
+        'oauth_uid',
     ];
 
     protected function casts(): array
@@ -61,6 +65,11 @@ class User extends Authenticatable
      */
     public static function ensurePreferenceColumns(): void
     {
+        $cacheKey = 'digisafe_user_pref_cols_ready_v2';
+        if (! app()->runningUnitTests() && Cache::get($cacheKey) === true) {
+            return;
+        }
+
         try {
             if (! Schema::hasTable('users')) {
                 return;
@@ -84,10 +93,27 @@ class User extends Authenticatable
                 if (! Schema::hasColumn('users', 'oauth_uid')) {
                     $table->string('oauth_uid', 120)->nullable();
                 }
+                if (! Schema::hasColumn('users', 'avatar_border')) {
+                    $table->string('avatar_border', 40)->nullable();
+                }
             });
+
+            if (! app()->runningUnitTests()) {
+                Cache::put($cacheKey, true, now()->addHours(6));
+            }
         } catch (\Throwable $e) {
             // Abaikan bila DB belum siap
         }
+    }
+
+    public function getAvatarBorderUrlAttribute(): ?string
+    {
+        return \App\Services\AvatarBorderService::imageUrl($this->avatar_border ?? null);
+    }
+
+    public function getAvatarBorderNameAttribute(): ?string
+    {
+        return \App\Services\AvatarBorderService::label($this->avatar_border ?? null);
     }
 
     public function getPrivacyConfigAttribute(): array
@@ -402,5 +428,26 @@ class User extends Authenticatable
         }
 
         return $newlyUnlocked;
+    }
+
+    public function followers(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'user_follows', 'following_id', 'follower_id')->withTimestamps();
+    }
+
+    public function following(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'user_follows', 'follower_id', 'following_id')->withTimestamps();
+    }
+
+    public function isFollowing(int $targetUserId): bool
+    {
+        if ((int) $this->id === $targetUserId) {
+            return false;
+        }
+
+        return UserFollow::where('follower_id', $this->id)
+            ->where('following_id', $targetUserId)
+            ->exists();
     }
 }

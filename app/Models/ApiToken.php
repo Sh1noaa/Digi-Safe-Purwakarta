@@ -8,6 +8,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
@@ -41,6 +42,11 @@ class ApiToken extends Model
      */
     public static function ensureTable(): void
     {
+        $cacheKey = 'digisafe_api_tokens_table_ready_v1';
+        if (! app()->runningUnitTests() && Cache::get($cacheKey) === true) {
+            return;
+        }
+
         try {
             if (! Schema::hasTable('api_tokens')) {
                 Schema::create('api_tokens', function (Blueprint $table) {
@@ -52,6 +58,10 @@ class ApiToken extends Model
                     $table->timestamp('expires_at')->nullable();
                     $table->timestamps();
                 });
+            }
+
+            if (! app()->runningUnitTests()) {
+                Cache::put($cacheKey, true, now()->addHours(6));
             }
         } catch (\Throwable $e) {
             // Abaikan jika koneksi DB belum siap

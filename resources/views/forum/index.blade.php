@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Forum Komunitas — Digi-Safe Purwakarta')
+@section('title', 'Forum Komunitas - Digi-Safe Purwakarta')
 
 @section('content')
 
@@ -93,10 +93,10 @@
                     <svg class="hidden md:block w-full h-[450px]" viewBox="0 0 1440 450" preserveAspectRatio="none" aria-hidden="true">
                         <defs>
                             <linearGradient id="forumCurveGrad" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stop-color="#1565C0" />
-                                <stop offset="62%" stop-color="#1E88E5" />
-                                <stop offset="88%" stop-color="#64B5F6" />
-                                <stop offset="100%" stop-color="#F0F8FF" />
+                                <stop class="forum-curve-stop-1" offset="0%" stop-color="#1565C0" />
+                                <stop class="forum-curve-stop-2" offset="62%" stop-color="#1E88E5" />
+                                <stop class="forum-curve-stop-3" offset="88%" stop-color="#64B5F6" />
+                                <stop class="forum-curve-end-stop" offset="100%" stop-color="#F0F8FF" />
                             </linearGradient>
                         </defs>
                         <path
@@ -114,7 +114,7 @@
                             {{ __('ui.forum.hub_sub') }}
                         </p>
 
-                        <span class="mt-4 inline-block rounded-lg bg-[#F0F8FF] border border-sky/20 md:border-transparent md:bg-white text-sky md:text-ink font-bold text-[10px] px-3 py-1 shadow-xs">
+                        <span class="mt-4 inline-block rounded-lg bg-white border border-sky/20 text-ink font-bold text-[10px] px-3 py-1 shadow-xs">
                             {{ __('ui.forum.filter_label') }}
                         </span>
 
@@ -127,7 +127,7 @@
                                     :class="activeCategory === cat.name
                                         ? 'scale-105 md:scale-110 ring-2 ring-sky md:ring-3 md:ring-white shadow-md ' + cat.bg
                                         : 'opacity-90 hover:opacity-100 hover:scale-105 ' + cat.bg"
-                                    class="px-3.5 py-2 md:py-2.5 rounded-2xl text-white font-heading font-bold text-[11px] flex items-center gap-1.5 transition-all cursor-pointer"
+                                    class="px-3.5 py-2 md:py-2.5 rounded-2xl border border-white/20 text-white font-heading font-bold text-[11px] flex items-center gap-1.5 transition-all cursor-pointer"
                                 >
                                     <span x-text="cat.label"></span>
                                 </button>
@@ -153,9 +153,9 @@
                                 type="button"
                                 @click="setSort('terbaru')"
                                 :class="activeSort === 'terbaru'
-                                    ? 'bg-ink text-white shadow-xs'
-                                    : 'bg-[#F0F8FF] text-ink/75 hover:text-ink'"
-                                class="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-all cursor-pointer"
+                                    ? 'bg-sky text-white border-sky shadow-xs'
+                                    : 'bg-[#F0F8FF] border-gray-200/80 text-ink/75 hover:text-ink'"
+                                class="inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-bold transition-all cursor-pointer"
                             >
                                 <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                                     <circle cx="12" cy="12" r="9" />
@@ -168,9 +168,9 @@
                                 type="button"
                                 @click="setSort('membantu')"
                                 :class="activeSort === 'membantu'
-                                    ? 'bg-sky text-white shadow-xs'
-                                    : 'bg-[#F0F8FF] text-ink/75 hover:text-ink'"
-                                class="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-all cursor-pointer"
+                                    ? 'bg-sky text-white border-sky shadow-xs'
+                                    : 'bg-[#F0F8FF] border-gray-200/80 text-ink/75 hover:text-ink'"
+                                class="inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-bold transition-all cursor-pointer"
                             >
                                 <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
@@ -264,46 +264,71 @@
                                 class="rounded-[22px] border p-6 flex flex-col justify-between shadow-2xs hover:-translate-y-1 hover:shadow-neutral transition-all duration-300"
                             >
                                 <div>
-                                    <!-- badge disematkan & badge most helpful pada kartu forum -->
-                                    <template x-if="item.is_starred || item.has_most_helpful">
-                                        <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
-                                            <div class="flex flex-wrap items-center gap-1.5">
-                                                <template x-if="item.is_starred">
-                                                    <span class="inline-flex items-center gap-1.5 rounded-full bg-ink text-lime px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider">
-                                                        <svg class="w-3 h-3 text-lime" viewBox="0 0 24 24" fill="currentColor">
-                                                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                                                        </svg>
-                                                        <span>{{ __('ui.forum.pinned') }}</span>
-                                                    </span>
-                                                </template>
-
-                                                <template x-if="item.has_most_helpful">
-                                                    <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 border border-emerald-200 text-emerald-800 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider">
-                                                        <span>👍</span>
-                                                        <span>{{ __('ui.forum.most_helpful') }}</span>
-                                                    </span>
-                                                </template>
-                                            </div>
-
+                                    <!-- badge disematkan & badge most helpful + kontrol Pin khusus Admin/Owner -->
+                                    <div class="mb-3 flex flex-wrap items-center justify-between gap-2" x-show="item.is_starred || item.has_most_helpful || isAdmin">
+                                        <div class="flex flex-wrap items-center gap-1.5">
                                             <template x-if="item.is_starred">
-                                                <span class="text-[10px] font-semibold text-sky">{{ __('ui.forum.community_priority') }}</span>
+                                                <span class="inline-flex items-center gap-1.5 rounded-full bg-ink text-lime px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider">
+                                                    <svg class="w-3 h-3 text-lime" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path d="M12 17v5" />
+                                                        <path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z" />
+                                                    </svg>
+                                                    <span>{{ __('ui.forum.pinned') }}</span>
+                                                </span>
+                                            </template>
+
+                                            <template x-if="item.has_most_helpful">
+                                                <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 border border-emerald-200 text-emerald-800 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider">
+                                                    <svg class="w-3 h-3 text-emerald-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
+                                                    </svg>
+                                                    <span>{{ __('ui.forum.most_helpful') }}</span>
+                                                </span>
                                             </template>
                                         </div>
-                                    </template>
+
+                                        <div class="flex items-center gap-2">
+                                            <template x-if="item.is_starred && !isAdmin">
+                                                <span class="text-[10px] font-semibold text-sky">{{ __('ui.forum.community_priority') }}</span>
+                                            </template>
+
+                                            <template x-if="isAdmin">
+                                                <button
+                                                    type="button"
+                                                    @click.stop="togglePinForum(item)"
+                                                    :disabled="pinningId === item.id"
+                                                    :class="item.is_starred ? 'bg-ink text-lime border-ink' : 'bg-gray-50 hover:bg-sky/10 text-muted hover:text-sky border-gray-200'"
+                                                    class="inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-heading font-bold transition-all cursor-pointer disabled:opacity-50"
+                                                    :title="item.is_starred ? 'Lepas Pin Diskusi' : 'Pin Diskusi ke Atas'"
+                                                >
+                                                    <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path d="M12 17v5" />
+                                                        <path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z" />
+                                                    </svg>
+                                                    <span x-text="item.is_starred ? 'Lepas Pin' : 'Pin Forum'"></span>
+                                                </button>
+                                            </template>
+                                        </div>
+                                    </div>
 
                                     <!-- header card: avatar + nama user + waktu + kategori -->
                                     <div class="flex items-center justify-between gap-3">
                                         <a :href="item.author_profile_url || '#'" class="flex items-center gap-2.5 min-w-0 group/author">
-                                            <template x-if="item.author_avatar">
-                                                <img :src="item.author_avatar" :alt="item.author_name" class="w-9 h-9 rounded-full object-cover ring-2 ring-sky/20 shrink-0 group-hover/author:scale-105 transition-transform">
-                                            </template>
-                                            <template x-if="!item.author_avatar">
-                                                <span
-                                                    :class="item.author_is_owner ? 'bg-ink text-lime' : (item.author_pastel || 'bg-[#DBEAFE] text-[#1E40AF]')"
-                                                    class="w-9 h-9 rounded-full font-heading font-extrabold text-xs flex items-center justify-center shrink-0 group-hover/author:scale-105 transition-transform"
-                                                    x-text="item.author_initial"
-                                                ></span>
-                                            </template>
+                                            <span class="relative inline-flex w-9 h-9 shrink-0">
+                                                <template x-if="item.author_avatar">
+                                                    <img :src="item.author_avatar" :alt="item.author_name" class="w-full h-full rounded-full object-cover ring-2 ring-sky/20 group-hover/author:scale-105 transition-transform">
+                                                </template>
+                                                <template x-if="!item.author_avatar">
+                                                    <span
+                                                        :class="item.author_is_owner ? 'bg-ink text-lime' : (item.author_pastel || 'bg-[#DBEAFE] text-[#1E40AF]')"
+                                                        class="w-full h-full rounded-full font-heading font-extrabold text-xs flex items-center justify-center group-hover/author:scale-105 transition-transform"
+                                                        x-text="item.author_initial"
+                                                    ></span>
+                                                </template>
+                                                <template x-if="item.author_border_url">
+                                                    <img :src="item.author_border_url" alt="" aria-hidden="true" class="pointer-events-none select-none absolute -inset-[22%] w-[144%] h-[144%] max-w-none object-contain z-10">
+                                                </template>
+                                            </span>
 
                                             <div class="min-w-0">
                                                 <div class="flex items-center gap-1.5">
@@ -343,7 +368,7 @@
                                     </div>
                                 </div>
 
-                                <!-- footer card: tombol "Pendapat?" + total jawaban + vote 👍/👎 -->
+                                <!-- footer card: tombol "Pendapat?" + total jawaban + vote -->
                                 <div class="mt-5 pt-4 border-t border-gray-100 flex items-center justify-between gap-3">
                                     <div class="flex flex-wrap items-center gap-2.5 text-[11px] font-semibold text-muted">
                                         <span class="inline-flex items-center gap-1">
@@ -354,12 +379,12 @@
                                         </span>
 
                                         <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 px-2 py-0.5 text-[10px] font-bold">
-                                            <span>👍</span>
+                                            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" /></svg>
                                             <span x-text="item.total_up || 0"></span>
                                         </span>
 
                                         <span class="inline-flex items-center gap-1 rounded-full bg-red-50 text-red-600 px-2 py-0.5 text-[10px] font-bold">
-                                            <span>👎</span>
+                                            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17" /></svg>
                                             <span x-text="item.total_down || 0"></span>
                                         </span>
                                     </div>
@@ -415,23 +440,94 @@
                         <h3 class="font-heading font-bold text-lg text-ink leading-snug" x-text="selectedForum ? selectedForum.judul : ''"></h3>
                     </div>
 
-                    <!-- tombol close (X) -->
-                    <button
-                        type="button"
-                        @click="open = false"
-                        class="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-ink flex items-center justify-center shrink-0 transition-colors cursor-pointer"
-                        aria-label="{{ __('ui.forum.close_modal') }}"
-                    >
-                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                            <path d="M18 6L6 18M6 6l12 12" />
-                        </svg>
-                    </button>
+                    <!-- tombol aksi pemilik (edit/hapus) & close (X) -->
+                    <div class="flex items-center gap-1.5 shrink-0">
+                        <template x-if="selectedForum && selectedForum.can_manage">
+                            <div class="flex items-center gap-1.5">
+                                <button
+                                    type="button"
+                                    @click="startEditForum()"
+                                    class="inline-flex items-center gap-1 rounded-full bg-sky/10 hover:bg-sky hover:text-white text-sky px-3 py-1.5 text-[11px] font-heading font-bold transition-colors cursor-pointer"
+                                    title="Edit Diskusi"
+                                >
+                                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" /></svg>
+                                    <span class="hidden sm:inline">{{ app()->getLocale() === 'en' ? 'Edit' : 'Edit' }}</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="deleteSelectedForum()"
+                                    :disabled="deletingForum"
+                                    class="inline-flex items-center gap-1 rounded-full bg-red-50 hover:bg-red-600 hover:text-white text-red-600 px-3 py-1.5 text-[11px] font-heading font-bold transition-colors cursor-pointer disabled:opacity-50"
+                                    title="Hapus Diskusi"
+                                >
+                                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" /></svg>
+                                    <span class="hidden sm:inline">{{ app()->getLocale() === 'en' ? 'Delete' : 'Hapus' }}</span>
+                                </button>
+                            </div>
+                        </template>
+
+                        <button
+                            type="button"
+                            @click="open = false; editingForum = false"
+                            class="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-ink flex items-center justify-center shrink-0 transition-colors cursor-pointer"
+                            aria-label="{{ __('ui.forum.close_modal') }}"
+                        >
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                                <path d="M18 6L6 18M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- isi pertanyaan & daftar jawaban -->
                 <div class="p-6 overflow-y-auto space-y-5 flex-1">
+                    <!-- form edit inline untuk pemilik diskusi -->
+                    <form
+                        x-show="editingForum"
+                        style="display: none;"
+                        @submit.prevent="saveEditForum()"
+                        class="rounded-2xl bg-sky/5 border border-sky/25 p-4 space-y-3"
+                    >
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-heading font-bold text-sky">{{ app()->getLocale() === 'en' ? 'Edit Your Discussion' : 'Edit Diskusi Anda' }}</span>
+                            <button type="button" @click="editingForum = false" class="text-[11px] font-semibold text-muted hover:text-ink cursor-pointer">{{ app()->getLocale() === 'en' ? 'Cancel' : 'Batal' }}</button>
+                        </div>
+                        <input
+                            type="text"
+                            x-model="editForm.judul"
+                            required
+                            maxlength="255"
+                            class="w-full rounded-xl bg-white border border-gray-200 px-3.5 py-2 text-xs font-semibold text-ink focus:outline-none focus:border-sky"
+                        >
+                        <select
+                            x-model="editForm.kategori"
+                            class="w-full rounded-xl bg-white border border-gray-200 px-3.5 py-2 text-xs font-semibold text-ink focus:outline-none focus:border-sky"
+                        >
+                            <option value="Phishing">Phishing</option>
+                            <option value="Privasi">{{ __('ui.forum.cat_privacy') }}</option>
+                            <option value="Malware">Malware</option>
+                            <option value="Penipuan">{{ __('ui.forum.cat_fraud') }}</option>
+                            <option value="Tanya Pakar">{{ __('ui.forum.ask_expert') }}</option>
+                        </select>
+                        <textarea
+                            x-model="editForm.pertanyaan"
+                            rows="3"
+                            required
+                            maxlength="3000"
+                            class="w-full rounded-xl bg-white border border-gray-200 px-3.5 py-2 text-xs text-ink focus:outline-none focus:border-sky resize-none"
+                        ></textarea>
+                        <div class="flex justify-end gap-2">
+                            <button
+                                type="submit"
+                                :disabled="savingEdit"
+                                class="rounded-full bg-sky hover:bg-sky-light text-white font-heading font-bold text-xs px-4 py-2 transition-colors cursor-pointer disabled:opacity-50"
+                                x-text="savingEdit ? '...' : @js(app()->getLocale() === 'en' ? 'Save Changes' : 'Simpan Perubahan')"
+                            ></button>
+                        </div>
+                    </form>
+
                     <!-- box pertanyaan lengkap -->
-                    <div class="rounded-2xl bg-[#F0F8FF] border border-sky/15 p-4 text-xs sm:text-sm text-ink leading-relaxed" x-text="selectedForum ? selectedForum.pertanyaan : ''"></div>
+                    <div x-show="!editingForum" class="rounded-2xl bg-[#F0F8FF] border border-sky/15 p-4 text-xs sm:text-sm text-ink leading-relaxed" x-text="selectedForum ? selectedForum.pertanyaan : ''"></div>
 
                     <div class="flex flex-wrap items-center justify-between gap-2">
                         <h4 class="font-heading font-bold text-xs uppercase tracking-wider text-muted" x-text="selectedForum ? (@js(__('ui.forum.replies_list')) + ' (' + selectedForum.jawaban.length + ')') : @js(__('ui.forum.replies_list'))"></h4>
@@ -465,7 +561,7 @@
                         </div>
                     </template>
 
-                    <!-- list jawaban dengan tombol emoji 👍 / 👎 (1x per user tiap pesan) & label Most Helpful -->
+                    <!-- list jawaban dengan tombol vote (1x per user tiap pesan) & label Most Helpful -->
                     <div class="space-y-3" x-show="selectedForum && selectedForum.jawaban.length > 0">
                         <template x-for="ans in (selectedForum ? selectedForum.jawaban : [])" :key="ans.id">
                             <div
@@ -477,16 +573,21 @@
                                 <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
                                     <div class="flex flex-wrap items-center gap-2">
                                         <a :href="ans.user_profile_url || '#'" class="flex items-center gap-2 group/ans">
-                                            <template x-if="ans.user_avatar">
-                                                <img :src="ans.user_avatar" :alt="ans.user_name" class="w-7 h-7 rounded-full object-cover group-hover/ans:scale-105 transition-transform">
-                                            </template>
-                                            <template x-if="!ans.user_avatar">
-                                                <span
-                                                    :class="ans.is_owner ? 'bg-ink text-lime' : (ans.user_pastel || 'bg-[#DBEAFE] text-[#1E40AF]')"
-                                                    class="w-7 h-7 rounded-full font-heading font-bold text-[10px] flex items-center justify-center group-hover/ans:scale-105 transition-transform"
-                                                    x-text="ans.user_initial"
-                                                ></span>
-                                            </template>
+                                            <span class="relative inline-flex w-7 h-7 shrink-0">
+                                                <template x-if="ans.user_avatar">
+                                                    <img :src="ans.user_avatar" :alt="ans.user_name" class="w-full h-full rounded-full object-cover group-hover/ans:scale-105 transition-transform">
+                                                </template>
+                                                <template x-if="!ans.user_avatar">
+                                                    <span
+                                                        :class="ans.is_owner ? 'bg-ink text-lime' : (ans.user_pastel || 'bg-[#DBEAFE] text-[#1E40AF]')"
+                                                        class="w-full h-full rounded-full font-heading font-bold text-[10px] flex items-center justify-center group-hover/ans:scale-105 transition-transform"
+                                                        x-text="ans.user_initial"
+                                                    ></span>
+                                                </template>
+                                                <template x-if="ans.user_border_url">
+                                                    <img :src="ans.user_border_url" alt="" aria-hidden="true" class="pointer-events-none select-none absolute -inset-[22%] w-[144%] h-[144%] max-w-none object-contain z-10">
+                                                </template>
+                                            </span>
 
                                             <span class="font-heading font-bold text-xs text-ink group-hover/ans:text-sky transition-colors" x-text="ans.user_name"></span>
 
@@ -508,13 +609,32 @@
 
                                         <template x-if="ans.is_most_helpful">
                                             <span class="inline-flex items-center gap-1 rounded-full bg-emerald-600 text-white font-heading font-extrabold text-[10px] px-2.5 py-0.5 shadow-2xs">
-                                                <span>🏆</span>
+                                                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+                                                    <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+                                                    <path d="M4 22h16" />
+                                                    <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
+                                                    <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
+                                                    <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
+                                                </svg>
                                                 <span>Most Helpful</span>
                                             </span>
                                         </template>
                                     </div>
 
-                                    <span class="text-[10px] text-muted" x-text="ans.waktu"></span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-[10px] text-muted" x-text="ans.waktu"></span>
+                                        <template x-if="ans.can_manage">
+                                            <button
+                                                type="button"
+                                                @click="deleteJawaban(ans)"
+                                                class="inline-flex items-center justify-center w-6 h-6 rounded-full text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors cursor-pointer"
+                                                title="{{ app()->getLocale() === 'en' ? 'Delete reply' : 'Hapus balasan' }}"
+                                            >
+                                                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6M14 11v6" /></svg>
+                                            </button>
+                                        </template>
+                                    </div>
                                 </div>
 
                                 <p class="text-xs text-ink/90 leading-relaxed pl-9" x-text="ans.jawaban"></p>
@@ -532,7 +652,7 @@
                                             class="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-heading font-bold transition-all cursor-pointer disabled:opacity-60"
                                             title="{{ __('ui.forum.vote_up_title') }}"
                                         >
-                                            <span class="text-sm leading-none">👍</span>
+                                            <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" /></svg>
                                             <span>{{ __('ui.forum.helpful_btn') }}</span>
                                             <span
                                                 :class="ans.user_vote === 'up' ? 'bg-white/25 text-white' : 'bg-emerald-50 text-emerald-700'"
@@ -551,7 +671,7 @@
                                             class="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-heading font-bold transition-all cursor-pointer disabled:opacity-60"
                                             title="{{ __('ui.forum.vote_down_title') }}"
                                         >
-                                            <span class="text-sm leading-none">👎</span>
+                                            <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17" /></svg>
                                             <span
                                                 :class="ans.user_vote === 'down' ? 'bg-white/25 text-white' : 'bg-red-50 text-red-600'"
                                                 class="rounded-full px-1.5 py-0.2 text-[10px] font-extrabold"
@@ -659,16 +779,16 @@
 
                         <div>
                             <label class="block text-xs font-bold text-ink mb-1.5">{{ __('ui.forum.topic_category_label') }}</label>
-                            <select
-                                x-model="newForum.kategori"
-                                class="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-xs text-ink focus:outline-none focus:border-sky bg-white"
-                            >
-                                <option value="Phishing">Phishing</option>
-                                <option value="Privasi">{{ __('ui.forum.cat_privacy') }}</option>
-                                <option value="Malware">Malware</option>
-                                <option value="Penipuan">{{ __('ui.forum.cat_fraud') }}</option>
-                                <option value="Tanya Pakar">{{ __('ui.forum.ask_expert') }}</option>
-                            </select>
+                            <x-custom-select
+                                model="newForum.kategori"
+                                :options="[
+                                    ['value' => 'Phishing', 'label' => 'Phishing', 'dot' => '#F59E0B'],
+                                    ['value' => 'Privasi', 'label' => __('ui.forum.cat_privacy'), 'dot' => '#8B5CF6'],
+                                    ['value' => 'Malware', 'label' => 'Malware', 'dot' => '#EF4444'],
+                                    ['value' => 'Penipuan', 'label' => __('ui.forum.cat_fraud'), 'dot' => '#0EA5E9'],
+                                    ['value' => 'Tanya Pakar', 'label' => __('ui.forum.ask_expert'), 'dot' => '#10B981'],
+                                ]"
+                            />
                         </div>
 
                         <div>
@@ -711,6 +831,8 @@
                 forums: initialForums || [],
                 activeSort: initialSort || 'terbaru',
                 isAuthenticated: !!isAuthenticated,
+                isAdmin: {{ (Auth::check() && Auth::user()->hasAdminAccess()) ? 'true' : 'false' }},
+                pinningId: null,
                 activeCategory: 'semua',
                 searchQuery: '',
                 open: false,
@@ -722,6 +844,14 @@
                 feedbackMessage: '',
                 createOpen: false,
                 creating: false,
+                editingForum: false,
+                savingEdit: false,
+                deletingForum: false,
+                editForm: {
+                    judul: '',
+                    kategori: 'Phishing',
+                    pertanyaan: ''
+                },
                 liveTimer: null,
                 newForum: {
                     judul: '',
@@ -746,12 +876,122 @@
                 },
 
                 init() {
-                    // Polling real-time setiap 3 detik agar vote 👍/👎, badge Most Helpful, dan pesan baru tersinkron langsung
+                    // Polling sinkronisasi setiap 12 detik saat tab aktif agar server tetap ringan
                     this.liveTimer = setInterval(() => {
                         if (document.visibilityState === 'visible') {
                             this.refreshLiveData();
                         }
-                    }, 3000);
+                    }, 12000);
+                },
+
+                async togglePinForum(item) {
+                    if (!this.isAdmin || !item || this.pinningId === item.id) return;
+                    this.pinningId = item.id;
+                    try {
+                        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                        const res = await fetch(`/admin/forum/${item.id}/star`, {
+                            method: 'PATCH',
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': csrf
+                            }
+                        });
+                        if (res.ok) {
+                            const data = await res.json();
+                            item.is_starred = Boolean(data.is_starred);
+                            this.refreshLiveData();
+                        }
+                    } finally {
+                        this.pinningId = null;
+                    }
+                },
+
+                startEditForum() {
+                    if (!this.selectedForum || !this.selectedForum.can_manage) return;
+                    this.editForm = {
+                        judul: this.selectedForum.judul || '',
+                        kategori: this.selectedForum.kategori || 'Phishing',
+                        pertanyaan: this.selectedForum.pertanyaan || ''
+                    };
+                    this.editingForum = true;
+                },
+
+                async saveEditForum() {
+                    if (!this.selectedForum || this.savingEdit) return;
+                    this.savingEdit = true;
+                    try {
+                        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                        const res = await fetch(`/forum/${this.selectedForum.id}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': csrf
+                            },
+                            body: JSON.stringify(this.editForm)
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.success && data.forum) {
+                            this.selectedForum = data.forum;
+                            const idx = this.forums.findIndex(f => f.id === data.forum.id);
+                            if (idx !== -1) this.forums[idx] = data.forum;
+                            this.editingForum = false;
+                            this.feedbackMessage = data.message || '';
+                            if (window.digisafeToast && data.message) window.digisafeToast(data.message);
+                        }
+                    } finally {
+                        this.savingEdit = false;
+                    }
+                },
+
+                async deleteSelectedForum() {
+                    if (!this.selectedForum || this.deletingForum) return;
+                    const ok = window.confirm(@js(app()->getLocale() === 'en' ? 'Delete this discussion permanently?' : 'Hapus diskusi ini secara permanen?'));
+                    if (!ok) return;
+                    this.deletingForum = true;
+                    try {
+                        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                        const targetId = this.selectedForum.id;
+                        const res = await fetch(`/forum/${targetId}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': csrf
+                            }
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            this.forums = this.forums.filter(f => f.id !== targetId);
+                            this.selectedForum = null;
+                            this.open = false;
+                            this.editingForum = false;
+                            if (window.digisafeToast && data.message) window.digisafeToast(data.message);
+                        }
+                    } finally {
+                        this.deletingForum = false;
+                    }
+                },
+
+                async deleteJawaban(ans) {
+                    if (!ans || !ans.can_manage) return;
+                    const ok = window.confirm(@js(app()->getLocale() === 'en' ? 'Delete this reply?' : 'Hapus balasan ini?'));
+                    if (!ok) return;
+                    const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                    const res = await fetch(`/forum/jawaban/${ans.id}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': csrf
+                        }
+                    });
+                    const data = await res.json();
+                    if (res.ok && data.success && data.forum) {
+                        this.selectedForum = data.forum;
+                        const idx = this.forums.findIndex(f => f.id === data.forum.id);
+                        if (idx !== -1) this.forums[idx] = data.forum;
+                        this.feedbackMessage = data.message || '';
+                        if (window.digisafeToast && data.message) window.digisafeToast(data.message);
+                    }
                 },
 
                 refreshLiveData() {

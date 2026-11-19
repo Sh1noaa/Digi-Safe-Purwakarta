@@ -124,10 +124,19 @@ class MinigameController extends Controller
             $benarCount = 0;
             $salahCount = 0;
             foreach ($allUserScores as $row) {
-                $b = max(1, (int) round(max(0, $row->skor) / 10));
-                $s = $row->skor >= 80 ? 1 : ($row->skor >= 50 ? 2 : 3);
-                $benarCount += $b;
-                $salahCount += $s;
+                $rowBenar = (int) ($row->benar ?? 0);
+                $rowSalah = (int) ($row->salah ?? 0);
+
+                if (($rowBenar + $rowSalah) > 0) {
+                    $benarCount += $rowBenar;
+                    $salahCount += $rowSalah;
+                } else {
+                    // Fallback hanya untuk data lama sebelum kolom benar/salah tercatat
+                    $b = max(0, (int) round(max(0, $row->skor) / 10));
+                    $s = $row->skor >= 100 ? 0 : ($row->skor >= 80 ? 1 : ($row->skor >= 50 ? 2 : 3));
+                    $benarCount += $b;
+                    $salahCount += $s;
+                }
             }
 
             if ($stats['total_main'] > 0) {
@@ -215,10 +224,10 @@ class MinigameController extends Controller
     {
         $validated = $request->validate([
             'game_type' => ['required', 'string', 'in:phishing,cyber-defender,link-trap'],
-            'skor' => ['required', 'integer', 'min:0'],
-            'benar' => ['nullable', 'integer', 'min:0'],
-            'salah' => ['nullable', 'integer', 'min:0'],
-            'avg_time_sec' => ['nullable', 'numeric', 'min:0'],
+            'skor' => ['required', 'integer', 'min:0', 'max:5000'],
+            'benar' => ['nullable', 'integer', 'min:0', 'max:100'],
+            'salah' => ['nullable', 'integer', 'min:0', 'max:100'],
+            'avg_time_sec' => ['nullable', 'numeric', 'min:0', 'max:300'],
         ]);
 
         if (! Auth::check()) {
@@ -233,9 +242,14 @@ class MinigameController extends Controller
 
         $user = Auth::user();
         $userId = $user->id;
-        $skorBaru = (int) $validated['skor'];
         $benar = (int) ($validated['benar'] ?? 0);
         $salah = (int) ($validated['salah'] ?? 0);
+        $skorBaru = (int) $validated['skor'];
+        if ($benar > 0) {
+            $skorBaru = min($skorBaru, max(100, $benar * 250));
+        } elseif ($salah > 0) {
+            $skorBaru = 0;
+        }
         $avgTime = (float) ($validated['avg_time_sec'] ?? 99);
 
         $prevHighest = (int) SkorGame::where('user_id', $userId)

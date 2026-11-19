@@ -176,18 +176,26 @@
                             ></span>
                         </div>
 
-                        <!-- foto profil kanan yang melewati bar (seperti karakter mario di referensi 1) -->
+                        <!-- foto profil kanan yang melewati bar + border avatar jika terpasang -->
                         <div
-                            :class="idx === 0
-                                ? '-top-6 right-5 w-24 h-24 rounded-[24px] rotate-3 group-hover:rotate-0 group-hover:scale-110 ring-4'
-                                : '-top-2 right-6 w-16 h-16 rounded-[18px] -rotate-2 group-hover:rotate-3 group-hover:scale-110 ring-[3px]'"
-                            class="absolute ring-white bg-white shadow-xl overflow-hidden transition-transform duration-300 flex items-center justify-center z-20"
+                            :class="[
+                                idx === 0
+                                    ? '-top-6 right-5 w-24 h-24 rotate-3 group-hover:rotate-0 group-hover:scale-110'
+                                    : '-top-2 right-6 w-16 h-16 -rotate-2 group-hover:rotate-3 group-hover:scale-110',
+                                row.avatar_border_url ? 'rounded-full' : (idx === 0 ? 'rounded-[24px] ring-4 ring-white shadow-xl' : 'rounded-[18px] ring-[3px] ring-white shadow-xl')
+                            ]"
+                            class="absolute bg-white transition-transform duration-300 flex items-center justify-center z-20"
                         >
-                            <template x-if="row.avatar_url">
-                                <img :src="row.avatar_url" :alt="row.nama" class="w-full h-full object-cover">
-                            </template>
-                            <template x-if="!row.avatar_url">
-                                <div :class="row.pastel_class" class="w-full h-full flex items-center justify-center font-heading font-extrabold text-xl" x-text="row.inisial"></div>
+                            <div :class="row.avatar_border_url ? 'rounded-full' : (idx === 0 ? 'rounded-[24px]' : 'rounded-[18px]')" class="w-full h-full overflow-hidden flex items-center justify-center">
+                                <template x-if="row.avatar_url">
+                                    <img :src="row.avatar_url" :alt="row.nama" class="w-full h-full object-cover">
+                                </template>
+                                <template x-if="!row.avatar_url">
+                                    <div :class="row.pastel_class" class="w-full h-full flex items-center justify-center font-heading font-extrabold text-xl" x-text="row.inisial"></div>
+                                </template>
+                            </div>
+                            <template x-if="row.avatar_border_url">
+                                <img :src="row.avatar_border_url" alt="" aria-hidden="true" class="pointer-events-none select-none absolute -inset-[22%] w-[144%] h-[144%] max-w-none object-contain z-10">
                             </template>
                         </div>
 
@@ -240,7 +248,10 @@
                                                 <span :class="visibleRows[1].pastel_class" class="w-full h-full flex items-center justify-center font-heading font-extrabold text-base" x-text="visibleRows[1].inisial"></span>
                                             </template>
                                         </div>
-                                        <span class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-[#1E63E9] text-white text-[10px] font-extrabold border-2 border-white flex items-center justify-center">2</span>
+                                        <template x-if="visibleRows[1].avatar_border_url">
+                                            <img :src="visibleRows[1].avatar_border_url" alt="" aria-hidden="true" class="pointer-events-none select-none absolute -inset-[22%] w-[144%] h-[144%] max-w-none object-contain z-10">
+                                        </template>
+                                        <span class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-[#1E63E9] text-white text-[10px] font-extrabold border-2 border-white flex items-center justify-center z-20">2</span>
                                     </div>
                                     <p class="mt-3 font-heading font-bold text-xs text-ink max-w-[92px] truncate" x-text="visibleRows[1].nama"></p>
                                     <p class="text-[10px] font-semibold text-sky" x-text="visibleRows[1].metric_main"></p>
@@ -265,7 +276,10 @@
                                             <span :class="visibleRows[0].pastel_class" class="w-full h-full flex items-center justify-center font-heading font-extrabold text-xl" x-text="visibleRows[0].inisial"></span>
                                         </template>
                                     </div>
-                                    <span class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-lime text-ink text-[11px] font-extrabold border-2 border-white flex items-center justify-center">1</span>
+                                    <template x-if="visibleRows[0].avatar_border_url">
+                                        <img :src="visibleRows[0].avatar_border_url" alt="" aria-hidden="true" class="pointer-events-none select-none absolute -inset-[22%] w-[144%] h-[144%] max-w-none object-contain z-10">
+                                    </template>
+                                    <span class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-lime text-ink text-[11px] font-extrabold border-2 border-white flex items-center justify-center z-20">1</span>
                                 </div>
                                 <p class="mt-3.5 font-heading font-extrabold text-xs text-ink max-w-[105px] truncate" x-text="visibleRows[0].nama"></p>
                                 <p class="text-[11px] font-bold text-[#1E63E9]" x-text="visibleRows[0].metric_main"></p>
@@ -285,7 +299,10 @@
                                                 <span :class="visibleRows[2].pastel_class" class="w-full h-full flex items-center justify-center font-heading font-extrabold text-base" x-text="visibleRows[2].inisial"></span>
                                             </template>
                                         </div>
-                                        <span class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-[#10B981] text-white text-[10px] font-extrabold border-2 border-white flex items-center justify-center">3</span>
+                                        <template x-if="visibleRows[2].avatar_border_url">
+                                            <img :src="visibleRows[2].avatar_border_url" alt="" aria-hidden="true" class="pointer-events-none select-none absolute -inset-[22%] w-[144%] h-[144%] max-w-none object-contain z-10">
+                                        </template>
+                                        <span class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-[#10B981] text-white text-[10px] font-extrabold border-2 border-white flex items-center justify-center z-20">3</span>
                                     </div>
                                     <p class="mt-3 font-heading font-bold text-xs text-ink max-w-[92px] truncate" x-text="visibleRows[2].nama"></p>
                                     <p class="text-[10px] font-semibold text-emerald-600" x-text="visibleRows[2].metric_main"></p>
@@ -310,12 +327,17 @@
                                     >
                                         <div class="flex items-center gap-2.5 min-w-0">
                                             <span class="font-heading font-extrabold text-xs w-5 text-center shrink-0" x-text="mRow.rank"></span>
-                                            <div class="w-7 h-7 rounded-full bg-white overflow-hidden shrink-0 flex items-center justify-center">
-                                                <template x-if="mRow.avatar_url">
-                                                    <img :src="mRow.avatar_url" class="w-full h-full object-cover">
-                                                </template>
-                                                <template x-if="!mRow.avatar_url">
-                                                    <span :class="mRow.pastel_class" class="w-full h-full flex items-center justify-center font-bold text-[10px]" x-text="mRow.inisial"></span>
+                                            <div class="relative w-7 h-7 shrink-0">
+                                                <div class="w-full h-full rounded-full bg-white overflow-hidden flex items-center justify-center">
+                                                    <template x-if="mRow.avatar_url">
+                                                        <img :src="mRow.avatar_url" class="w-full h-full object-cover">
+                                                    </template>
+                                                    <template x-if="!mRow.avatar_url">
+                                                        <span :class="mRow.pastel_class" class="w-full h-full flex items-center justify-center font-bold text-[10px]" x-text="mRow.inisial"></span>
+                                                    </template>
+                                                </div>
+                                                <template x-if="mRow.avatar_border_url">
+                                                    <img :src="mRow.avatar_border_url" alt="" aria-hidden="true" class="pointer-events-none select-none absolute -inset-[22%] w-[144%] h-[144%] max-w-none object-contain z-10">
                                                 </template>
                                             </div>
                                             <span class="font-heading font-bold text-xs truncate" x-text="mRow.nama"></span>

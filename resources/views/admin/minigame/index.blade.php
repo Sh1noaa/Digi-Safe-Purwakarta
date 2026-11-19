@@ -242,18 +242,18 @@
 
                         <div>
                             <label class="block text-xs font-bold text-ink mb-1.5">Warna Tema Badge</label>
-                            <select
+                            <x-custom-select
                                 name="warna"
-                                x-model="levelForm.warna"
-                                class="w-full rounded-xl bg-white border border-gray-200 px-3.5 py-2.5 text-xs font-semibold text-ink focus:outline-none focus:border-sky"
-                            >
-                                <option value="emerald">Hijau (Emerald)</option>
-                                <option value="sky">Biru (Sky)</option>
-                                <option value="amber">Kuning/Oranye (Amber)</option>
-                                <option value="purple">Ungu (Purple)</option>
-                                <option value="red">Merah (Red)</option>
-                                <option value="lime">Lime Neon</option>
-                            </select>
+                                model="levelForm.warna"
+                                :options="[
+                                    ['value' => 'emerald', 'label' => 'Hijau (Emerald)', 'dot' => '#10B981'],
+                                    ['value' => 'sky', 'label' => 'Biru (Sky)', 'dot' => '#0EA5E9'],
+                                    ['value' => 'amber', 'label' => 'Kuning / Oranye (Amber)', 'dot' => '#F59E0B'],
+                                    ['value' => 'purple', 'label' => 'Ungu (Purple)', 'dot' => '#8B5CF6'],
+                                    ['value' => 'red', 'label' => 'Merah (Red)', 'dot' => '#EF4444'],
+                                    ['value' => 'lime', 'label' => 'Lime Neon', 'dot' => '#A3E635'],
+                                ]"
+                            />
                         </div>
                     </div>
 
@@ -485,36 +485,49 @@
         <div x-show="subTab === 'soal'">
 
             <!-- Bar Filter Game & Level -->
+            @php
+                $levelFilterOpts = collect([
+                    ['value' => 'semua', 'label' => 'Semua Level (' . $levels->count() . ' Level)'],
+                ])->merge($levels->map(fn ($l) => [
+                    'value' => $l->slug,
+                    'label' => $l->badge_label . ' — ' . $l->nama_level,
+                ]))->all();
+
+                $levelFormOpts = $levels->map(fn ($l) => [
+                    'value' => $l->slug,
+                    'label' => $l->badge_label,
+                    'desc' => $l->nama_level,
+                ])->all();
+            @endphp
             <form method="GET" action="{{ route('admin.minigame.index') }}" class="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-[#F8FAFC] border border-gray-200/80 p-3.5">
-                <div class="flex flex-wrap items-center gap-2.5">
+                <div class="flex flex-wrap items-center gap-3">
                     <div class="flex items-center gap-2">
-                        <label class="text-xs font-bold text-ink">Game:</label>
-                        <select
+                        <label class="text-xs font-bold text-ink shrink-0">Game:</label>
+                        <x-custom-select
                             name="game"
-                            onchange="this.form.submit()"
-                            class="rounded-xl bg-white border border-gray-200 px-3 py-1.5 text-xs font-semibold text-ink focus:outline-none focus:border-sky"
-                        >
-                            <option value="semua" {{ $filterGame === 'semua' ? 'selected' : '' }}>Semua Game</option>
-                            <option value="phishing" {{ $filterGame === 'phishing' ? 'selected' : '' }}>Phishing Hunter</option>
-                            <option value="cyber-defender" {{ $filterGame === 'cyber-defender' ? 'selected' : '' }}>Cyber Defender</option>
-                            <option value="link-trap" {{ $filterGame === 'link-trap' ? 'selected' : '' }}>Link or Trap</option>
-                        </select>
+                            :value="$filterGame"
+                            :autoSubmit="true"
+                            variant="compact"
+                            widthClass="w-44"
+                            :options="[
+                                ['value' => 'semua', 'label' => 'Semua Game'],
+                                ['value' => 'phishing', 'label' => 'Phishing Hunter', 'dot' => '#0EA5E9'],
+                                ['value' => 'cyber-defender', 'label' => 'Cyber Defender', 'dot' => '#10B981'],
+                                ['value' => 'link-trap', 'label' => 'Link or Trap', 'dot' => '#F59E0B'],
+                            ]"
+                        />
                     </div>
 
                     <div class="flex items-center gap-2">
-                        <label class="text-xs font-bold text-ink">Level:</label>
-                        <select
+                        <label class="text-xs font-bold text-ink shrink-0">Level:</label>
+                        <x-custom-select
                             name="level"
-                            onchange="this.form.submit()"
-                            class="rounded-xl bg-white border border-gray-200 px-3 py-1.5 text-xs font-semibold text-ink focus:outline-none focus:border-sky"
-                        >
-                            <option value="semua" {{ $filterLevel === 'semua' ? 'selected' : '' }}>Semua Level ({{ $levels->count() }} Level)</option>
-                            @foreach ($levels as $lvlOption)
-                                <option value="{{ $lvlOption->slug }}" {{ $filterLevel === $lvlOption->slug ? 'selected' : '' }}>
-                                    {{ $lvlOption->badge_label }} — {{ $lvlOption->nama_level }}
-                                </option>
-                            @endforeach
-                        </select>
+                            :value="$filterLevel"
+                            :autoSubmit="true"
+                            variant="compact"
+                            widthClass="w-56"
+                            :options="$levelFilterOpts"
+                        />
                     </div>
                 </div>
 
@@ -554,44 +567,39 @@
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div>
                             <label class="block text-xs font-bold text-ink mb-1.5">Pilih Game</label>
-                            <select
+                            <x-custom-select
                                 name="game_level"
-                                x-model="form.game_level"
-                                class="w-full rounded-xl bg-white border border-gray-200 px-3.5 py-2.5 text-xs font-semibold text-ink focus:outline-none focus:border-sky"
-                            >
-                                <option value="phishing">Phishing Hunter</option>
-                                <option value="cyber-defender">Cyber Defender</option>
-                                <option value="link-trap">Link or Trap</option>
-                            </select>
+                                model="form.game_level"
+                                :options="[
+                                    ['value' => 'phishing', 'label' => 'Phishing Hunter', 'dot' => '#0EA5E9'],
+                                    ['value' => 'cyber-defender', 'label' => 'Cyber Defender', 'dot' => '#10B981'],
+                                    ['value' => 'link-trap', 'label' => 'Link or Trap', 'dot' => '#F59E0B'],
+                                ]"
+                            />
                         </div>
 
                         <div>
                             <label class="block text-xs font-bold text-ink mb-1.5">Level Kesulitan</label>
-                            <select
+                            <x-custom-select
                                 name="tingkat"
-                                x-model="form.tingkat"
-                                class="w-full rounded-xl bg-white border border-gray-200 px-3.5 py-2.5 text-xs font-semibold text-ink focus:outline-none focus:border-sky"
-                            >
-                                @foreach ($levels as $lvlOpt)
-                                    <option value="{{ $lvlOpt->slug }}">
-                                        {{ $lvlOpt->badge_label }} ({{ $lvlOpt->nama_level }})
-                                    </option>
-                                @endforeach
-                            </select>
+                                model="form.tingkat"
+                                :options="$levelFormOpts"
+                            />
                         </div>
 
                         <div>
                             <label class="block text-xs font-bold text-ink mb-1.5">Jawaban Benar</label>
-                            <select
+                            <x-custom-select
                                 name="jawaban_benar"
-                                x-model="form.jawaban_benar"
-                                class="w-full rounded-xl bg-lime/35 border border-lime px-3.5 py-2.5 text-xs font-extrabold text-ink focus:outline-none focus:border-ink"
-                            >
-                                <option value="A">Pilihan A</option>
-                                <option value="B">Pilihan B</option>
-                                <option value="C">Pilihan C</option>
-                                <option value="D">Pilihan D</option>
-                            </select>
+                                model="form.jawaban_benar"
+                                variant="lime"
+                                :options="[
+                                    ['value' => 'A', 'label' => 'Pilihan A'],
+                                    ['value' => 'B', 'label' => 'Pilihan B'],
+                                    ['value' => 'C', 'label' => 'Pilihan C'],
+                                    ['value' => 'D', 'label' => 'Pilihan D'],
+                                ]"
+                            />
                         </div>
                     </div>
 

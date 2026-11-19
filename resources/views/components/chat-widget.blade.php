@@ -121,14 +121,17 @@
                             <template x-if="activeUser.is_bot">
                                 <img :src="activeUser.avatar_url || '{{ asset('images/bot-digika.jpg') }}'" alt="Bot Digika" class="w-8 h-8 rounded-full object-cover ring-2 ring-sky/35 bg-white shrink-0">
                             </template>
-                            <template x-if="!activeUser.is_bot && activeUser.avatar_url">
-                                <a :href="activeUser.profile_url" class="shrink-0">
-                                    <img :src="activeUser.avatar_url" class="w-8 h-8 rounded-full object-cover">
-                                </a>
-                            </template>
-                            <template x-if="!activeUser.is_bot && !activeUser.avatar_url">
-                                <a :href="activeUser.profile_url" class="shrink-0">
-                                    <span :class="activeUser.pastel_class" class="w-8 h-8 rounded-full font-heading font-bold text-xs flex items-center justify-center" x-text="activeUser.inisial"></span>
+                            <template x-if="!activeUser.is_bot">
+                                <a :href="activeUser.profile_url" class="relative inline-flex w-8 h-8 shrink-0">
+                                    <template x-if="activeUser.avatar_url">
+                                        <img :src="activeUser.avatar_url" class="w-full h-full rounded-full object-cover">
+                                    </template>
+                                    <template x-if="!activeUser.avatar_url">
+                                        <span :class="activeUser.pastel_class" class="w-full h-full rounded-full font-heading font-bold text-xs flex items-center justify-center" x-text="activeUser.inisial"></span>
+                                    </template>
+                                    <template x-if="activeUser.avatar_border_url">
+                                        <img :src="activeUser.avatar_border_url" alt="" aria-hidden="true" class="pointer-events-none select-none absolute -inset-[22%] w-[144%] h-[144%] max-w-none object-contain z-10">
+                                    </template>
                                 </a>
                             </template>
                             <div class="min-w-0">
@@ -204,11 +207,18 @@
                                 <template x-if="item.user.is_bot">
                                     <img :src="item.user.avatar_url || '{{ asset('images/bot-digika.jpg') }}'" alt="Bot Digika" class="w-10 h-10 rounded-full object-cover ring-2 ring-sky/30 bg-white shrink-0">
                                 </template>
-                                <template x-if="!item.user.is_bot && item.user.avatar_url">
-                                    <img :src="item.user.avatar_url" class="w-10 h-10 rounded-full object-cover shrink-0">
-                                </template>
-                                <template x-if="!item.user.is_bot && !item.user.avatar_url">
-                                    <span :class="item.user.pastel_class" class="w-10 h-10 rounded-full font-heading font-bold text-xs flex items-center justify-center shrink-0" x-text="item.user.inisial"></span>
+                                <template x-if="!item.user.is_bot">
+                                    <span class="relative inline-flex w-10 h-10 shrink-0">
+                                        <template x-if="item.user.avatar_url">
+                                            <img :src="item.user.avatar_url" class="w-full h-full rounded-full object-cover">
+                                        </template>
+                                        <template x-if="!item.user.avatar_url">
+                                            <span :class="item.user.pastel_class" class="w-full h-full rounded-full font-heading font-bold text-xs flex items-center justify-center" x-text="item.user.inisial"></span>
+                                        </template>
+                                        <template x-if="item.user.avatar_border_url">
+                                            <img :src="item.user.avatar_border_url" alt="" aria-hidden="true" class="pointer-events-none select-none absolute -inset-[22%] w-[144%] h-[144%] max-w-none object-contain z-10">
+                                        </template>
+                                    </span>
                                 </template>
 
                                 <div class="flex-1 min-w-0">
@@ -217,7 +227,7 @@
                                             <span class="font-heading font-bold text-xs text-ink truncate" x-text="item.user.nama"></span>
                                             <span x-show="item.user.is_bot" class="shrink-0 rounded-full bg-sky/15 text-sky px-1.5 py-0.5 text-[8px] font-extrabold uppercase">BOT</span>
                                         </div>
-                                        <span class="text-[10px] text-muted shrink-0" x-text="item.last_time || ''"></span>
+                                        <span class="text-[10px] text-muted shrink-0" :title="item.last_full_date || ''" x-text="item.last_time || ''"></span>
                                     </div>
                                     <div class="flex items-center justify-between gap-2 mt-0.5">
                                         <p class="text-[11px] text-muted truncate" x-text="item.last_message ? ((item.last_sender_me ? 'Kamu: ' : '') + item.last_message) : (item.user.specialty_role || 'Berteman — mulai chat!')"></p>
@@ -241,12 +251,17 @@
                                 <template x-for="req in requests" :key="req.friendship_id">
                                     <div class="rounded-2xl bg-white border border-amber-200/80 p-3 space-y-2 shadow-2xs">
                                         <div class="flex items-center gap-2.5">
-                                            <template x-if="req.user.avatar_url">
-                                                <img :src="req.user.avatar_url" class="w-8 h-8 rounded-full object-cover shrink-0">
-                                            </template>
-                                            <template x-if="!req.user.avatar_url">
-                                                <span :class="req.user.pastel_class" class="w-8 h-8 rounded-full font-bold text-[11px] flex items-center justify-center shrink-0" x-text="req.user.inisial"></span>
-                                            </template>
+                                            <span class="relative inline-flex w-8 h-8 shrink-0">
+                                                <template x-if="req.user.avatar_url">
+                                                    <img :src="req.user.avatar_url" class="w-full h-full rounded-full object-cover">
+                                                </template>
+                                                <template x-if="!req.user.avatar_url">
+                                                    <span :class="req.user.pastel_class" class="w-full h-full rounded-full font-bold text-[11px] flex items-center justify-center" x-text="req.user.inisial"></span>
+                                                </template>
+                                                <template x-if="req.user.avatar_border_url">
+                                                    <img :src="req.user.avatar_border_url" alt="" aria-hidden="true" class="pointer-events-none select-none absolute -inset-[22%] w-[144%] h-[144%] max-w-none object-contain z-10">
+                                                </template>
+                                            </span>
                                             <div class="min-w-0 flex-1">
                                                 <p class="font-heading font-bold text-xs text-ink truncate" x-text="req.user.nama"></p>
                                                 <p class="text-[10px] text-muted truncate" x-text="req.user.specialty_role || ('@' + req.user.username)"></p>
@@ -254,8 +269,9 @@
                                         </div>
                                         <p x-show="req.message_preview" class="text-[11px] bg-[#F8FAFC] rounded-xl px-2.5 py-1.5 text-ink/85 italic" x-text="'\"' + req.message_preview + '\"'"></p>
                                         <div class="flex items-center gap-2">
-                                            <button type="button" @click="respondRequest(req.user.id, 'accept')" class="flex-1 rounded-full bg-[#1E63E9] hover:bg-ink text-white text-[11px] font-bold py-1.5 transition-colors cursor-pointer">
-                                                {{ $isEnChat ? 'Accept & Chat' : 'Konfirmasi ✓' }}
+                                            <button type="button" @click="respondRequest(req.user.id, 'accept')" class="flex-1 rounded-full bg-[#1E63E9] hover:bg-ink text-white text-[11px] font-bold py-1.5 transition-colors cursor-pointer inline-flex items-center justify-center gap-1">
+                                                <span>{{ $isEnChat ? 'Accept & Chat' : 'Konfirmasi' }}</span>
+                                                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
                                             </button>
                                             <button type="button" @click="respondRequest(req.user.id, 'decline')" class="rounded-full bg-gray-100 hover:bg-red-100 hover:text-red-700 text-muted text-[11px] font-bold px-3 py-1.5 transition-colors cursor-pointer">
                                                 {{ $isEnChat ? 'Decline' : 'Tolak' }}
@@ -282,12 +298,17 @@
                             <template x-for="row in directory" :key="row.user.id">
                                 <div class="rounded-2xl bg-white border border-gray-100 p-2.5 flex items-center justify-between gap-2.5 shadow-2xs">
                                     <div class="flex items-center gap-2.5 min-w-0">
-                                        <template x-if="row.user.avatar_url">
-                                            <img :src="row.user.avatar_url" class="w-9 h-9 rounded-full object-cover shrink-0">
-                                        </template>
-                                        <template x-if="!row.user.avatar_url">
-                                            <span :class="row.user.pastel_class" class="w-9 h-9 rounded-full font-bold text-xs flex items-center justify-center shrink-0" x-text="row.user.inisial"></span>
-                                        </template>
+                                        <span class="relative inline-flex w-9 h-9 shrink-0">
+                                            <template x-if="row.user.avatar_url">
+                                                <img :src="row.user.avatar_url" class="w-full h-full rounded-full object-cover">
+                                            </template>
+                                            <template x-if="!row.user.avatar_url">
+                                                <span :class="row.user.pastel_class" class="w-full h-full rounded-full font-bold text-xs flex items-center justify-center" x-text="row.user.inisial"></span>
+                                            </template>
+                                            <template x-if="row.user.avatar_border_url">
+                                                <img :src="row.user.avatar_border_url" alt="" aria-hidden="true" class="pointer-events-none select-none absolute -inset-[22%] w-[144%] h-[144%] max-w-none object-contain z-10">
+                                            </template>
+                                        </span>
                                         <div class="min-w-0">
                                             <a :href="row.user.profile_url" class="font-heading font-bold text-xs text-ink hover:text-[#1E63E9] block truncate" x-text="row.user.nama"></a>
                                             <span class="text-[10px] text-muted block truncate" x-text="row.user.specialty_role || ('@' + row.user.username)"></span>
@@ -347,14 +368,32 @@
                             </div>
                         </template>
 
-                        <template x-for="m in messages" :key="m.id">
-                            <div :class="m.is_mine ? 'justify-end' : 'justify-start'" class="flex">
-                                <div
-                                    :class="m.is_mine ? 'bg-[#1E63E9] text-white rounded-2xl rounded-br-sm' : (activeUser.is_bot ? 'bg-white border border-sky/30 text-ink rounded-2xl rounded-bl-sm' : 'bg-white border border-gray-200/80 text-ink rounded-2xl rounded-bl-sm')"
-                                    class="max-w-[84%] px-3.5 py-2.5 shadow-2xs"
-                                >
-                                    <p class="text-xs leading-relaxed break-words whitespace-pre-line" x-text="m.message"></p>
-                                    <span :class="m.is_mine ? 'text-white/70' : 'text-muted'" class="text-[9px] block text-right mt-1" x-text="m.time"></span>
+                        <template x-for="(m, mIdx) in messages" :key="m.id">
+                            <div>
+                                <!-- Pemisah Tanggal, Bulan & Tahun ala WhatsApp -->
+                                <template x-if="m.date_label && (mIdx === 0 || messages[mIdx - 1].date_key !== m.date_key)">
+                                    <div class="flex justify-center my-2.5">
+                                        <span class="inline-flex items-center gap-1.5 rounded-full bg-white border border-gray-200/80 shadow-2xs px-3 py-1 text-[10px] font-heading font-bold text-muted">
+                                            <svg class="w-3 h-3 text-sky shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                                                <line x1="16" y1="2" x2="16" y2="6" />
+                                                <line x1="8" y1="2" x2="8" y2="6" />
+                                                <line x1="3" y1="10" x2="21" y2="10" />
+                                            </svg>
+                                            <span x-text="m.date_label"></span>
+                                        </span>
+                                    </div>
+                                </template>
+
+                                <div :class="m.is_mine ? 'justify-end' : 'justify-start'" class="flex">
+                                    <div
+                                        :title="m.full_datetime || ''"
+                                        :class="m.is_mine ? 'bg-[#1E63E9] text-white rounded-2xl rounded-br-sm' : (activeUser.is_bot ? 'bg-white border border-sky/30 text-ink rounded-2xl rounded-bl-sm' : 'bg-white border border-gray-200/80 text-ink rounded-2xl rounded-bl-sm')"
+                                        class="max-w-[84%] px-3.5 py-2.5 shadow-2xs"
+                                    >
+                                        <p class="text-xs leading-relaxed break-words whitespace-pre-line" x-text="m.message"></p>
+                                        <span :class="m.is_mine ? 'text-white/70' : 'text-muted'" class="text-[9px] block text-right mt-1" x-text="m.time"></span>
+                                    </div>
                                 </div>
                             </div>
                         </template>
@@ -489,17 +528,22 @@
 
                 if (this.isLoggedIn) {
                     this.pollUnread();
+                    let tickCount = 0;
                     this.poller = setInterval(() => {
+                        if (document.visibilityState !== 'visible') {
+                            return;
+                        }
+                        tickCount++;
                         if (this.open) {
                             if (this.activeUser) {
                                 this.loadMessages(this.activeUser.id, false);
                             } else {
                                 this.loadSummary();
                             }
-                        } else {
+                        } else if (tickCount % 2 === 0) {
                             this.pollUnread();
                         }
-                    }, 5000);
+                    }, 6000);
                 }
             },
 

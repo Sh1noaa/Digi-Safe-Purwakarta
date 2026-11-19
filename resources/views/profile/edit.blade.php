@@ -236,8 +236,10 @@
                                 </div>
                                 <span
                                     x-show="specialtyRole === @js($opt['value'])"
-                                    class="w-5 h-5 rounded-full bg-sky text-white flex items-center justify-center shrink-0 text-[10px] font-bold"
-                                >✓</span>
+                                    class="w-5 h-5 rounded-full bg-sky text-white flex items-center justify-center shrink-0"
+                                >
+                                    <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                                </span>
                             </button>
                         @endforeach
                     </div>
@@ -254,15 +256,30 @@
                     >{{ old('bio', $profileUser->bio) }}</textarea>
                 </div>
 
-                <!-- password baru opsional -->
-                <div>
-                    <label class="block text-xs font-bold text-ink mb-1.5">{{ $isEnEdit ? 'New Password (Optional)' : 'Password Baru (Opsional)' }}</label>
-                    <input
-                        type="password"
-                        name="password"
-                        placeholder="{{ $isEnEdit ? 'Leave blank if you do not want to change your password' : 'Biarkan kosong jika tidak ingin mengubah password' }}"
-                        class="w-full rounded-xl bg-white border border-gray-200 px-4 py-2.5 text-xs text-ink focus:outline-none focus:border-sky"
-                    >
+                <!-- password baru opsional (wajib konfirmasi password lama untuk akun non-Google) -->
+                <div class="space-y-3 rounded-2xl bg-gray-50/70 border border-gray-100 p-3.5">
+                    @if (empty($user->oauth_provider))
+                        <div>
+                            <label class="block text-xs font-bold text-ink mb-1.5">{{ $isEnEdit ? 'Current Password (Required to change password)' : 'Password Lama (Wajib diisi jika ganti password)' }}</label>
+                            <input
+                                type="password"
+                                name="current_password"
+                                autocomplete="current-password"
+                                placeholder="{{ $isEnEdit ? 'Enter your current password' : 'Masukkan password lama Anda' }}"
+                                class="w-full rounded-xl bg-white border border-gray-200 px-4 py-2.5 text-xs text-ink focus:outline-none focus:border-sky"
+                            >
+                        </div>
+                    @endif
+                    <div>
+                        <label class="block text-xs font-bold text-ink mb-1.5">{{ $isEnEdit ? 'New Password (Optional)' : 'Password Baru (Opsional)' }}</label>
+                        <input
+                            type="password"
+                            name="password"
+                            autocomplete="new-password"
+                            placeholder="{{ $isEnEdit ? 'Leave blank if you do not want to change your password' : 'Biarkan kosong jika tidak ingin mengubah password' }}"
+                            class="w-full rounded-xl bg-white border border-gray-200 px-4 py-2.5 text-xs text-ink focus:outline-none focus:border-sky"
+                        >
+                    </div>
                 </div>
 
                 <div class="pt-3 flex items-center justify-end gap-2.5 border-t border-gray-100">

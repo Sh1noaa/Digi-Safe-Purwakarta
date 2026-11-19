@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Testimoni & Ulasan — Digi-Safe Purwakarta')
+@section('title', 'Testimoni & Ulasan - Digi-Safe Purwakarta')
 
 @section('content')
 
@@ -13,6 +13,7 @@
                 'nama' => $t->nama_tampil,
                 'inisial' => $t->inisial_tampil,
                 'avatar' => $t->avatar_tampil,
+                'border_url' => (! $t->is_anonymous && $t->user) ? $t->user->avatar_border_url : null,
                 'pastel_class' => $t->user?->pastel_class ?: 'bg-[#DBEAFE] text-[#1E40AF]',
                 'is_owner' => (! $t->is_anonymous && (bool) $t->user?->isOwner()),
                 'is_anonymous' => (bool) $t->is_anonymous,
@@ -38,9 +39,11 @@
             x-transition:leave-start="opacity-100 translate-y-0"
             x-transition:leave-end="opacity-0 -translate-y-3"
             style="display: none;"
-            class="fixed top-20 left-1/2 -translate-x-1/2 z-50 rounded-full bg-ink text-white px-6 py-3 text-xs font-semibold shadow-neutral flex items-center gap-2.5"
+            class="fixed top-20 right-4 sm:right-6 z-[95] rounded-2xl bg-ink text-white border border-lime/40 px-4 py-3 text-xs font-semibold shadow-[0_14px_34px_rgba(15,23,42,0.22)] flex items-center gap-2.5 max-w-sm"
         >
-            <span class="w-5 h-5 rounded-full bg-lime text-ink flex items-center justify-center font-bold">✓</span>
+            <span class="w-5 h-5 rounded-full bg-lime text-ink flex items-center justify-center shrink-0">
+                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+            </span>
             <span x-text="toastMessage"></span>
         </div>
 
@@ -158,7 +161,7 @@
                             <button
                                 type="button"
                                 @click="openModal()"
-                                class="group inline-flex items-center gap-4 rounded-full bg-ink hover:bg-sky text-white pl-7 pr-3 py-3 sm:pl-9 sm:pr-3.5 sm:py-3.5 ring-4 ring-ink/10 hover:ring-sky/25 shadow-xl hover:scale-105 hover:-translate-y-1 active:scale-95 transition-all duration-300 cursor-pointer"
+                                class="group inline-flex items-center gap-4 rounded-full bg-ink hover:bg-sky text-white border border-slate-700/40 pl-7 pr-3 py-3 sm:pl-9 sm:pr-3.5 sm:py-3.5 ring-4 ring-ink/10 hover:ring-sky/25 shadow-xl hover:scale-105 hover:-translate-y-1 active:scale-95 transition-all duration-300 cursor-pointer"
                             >
                                 <div class="text-left">
                                     <span class="block text-[10px] font-bold uppercase tracking-[0.16em] text-lime group-hover:text-white/90 leading-none">
@@ -202,9 +205,17 @@
                     >
                         <div class="inline-flex items-center gap-2 rounded-full bg-gray-50 border border-gray-200/80 px-4 py-2 shadow-2xs group-hover:border-sky/40 transition-colors">
                             <div class="flex items-center -space-x-1.5">
-                                <span class="w-6 h-6 rounded-full bg-sky text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-white">R</span>
-                                <span class="w-6 h-6 rounded-full bg-lime text-ink text-[10px] font-bold flex items-center justify-center ring-2 ring-white">F</span>
-                                <span class="w-6 h-6 rounded-full bg-ink text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-white">A</span>
+                                @forelse ($testimonis->take(3) as $heroRev)
+                                    @if (! $heroRev->is_anonymous && $heroRev->avatar_tampil)
+                                        <img src="{{ $heroRev->avatar_tampil }}" alt="{{ $heroRev->nama_tampil }}" class="w-6 h-6 rounded-full object-cover ring-2 ring-white">
+                                    @else
+                                        <span class="w-6 h-6 rounded-full {{ $heroRev->is_anonymous ? 'bg-gray-200 text-muted' : ($heroRev->user?->pastel_class ?: 'bg-sky text-white') }} text-[10px] font-bold flex items-center justify-center ring-2 ring-white">
+                                            {{ $heroRev->inisial_tampil }}
+                                        </span>
+                                    @endif
+                                @empty
+                                    <span class="w-6 h-6 rounded-full bg-sky text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-white">D</span>
+                                @endforelse
                             </div>
                             <span class="text-ink font-bold" x-text="'Lihat ' + items.length + ' Ulasan Pengguna Lainnya di Bawah'"></span>
                         </div>
@@ -298,7 +309,7 @@
                         style="filter: blur(2px);"
                         class="cursor-pointer transition-all duration-200 opacity-20 scale-75 -rotate-6 -translate-y-2 text-center max-w-lg px-4"
                     >
-                        <p class="font-heading font-bold text-lg sm:text-2xl text-ink truncate" x-text="itemAtOffset(-2).judul || itemAtOffset(-2).cerita"></p>
+                        <p class="font-heading font-bold text-lg sm:text-2xl text-ink truncate" x-text="itemAtOffset(-2).cerita"></p>
                     </div>
 
                     <!-- item -1 -->
@@ -307,7 +318,7 @@
                         style="filter: blur(0.8px);"
                         class="cursor-pointer transition-all duration-200 opacity-40 scale-90 -rotate-3 my-2 text-center max-w-xl px-4"
                     >
-                        <p class="font-heading font-bold text-xl sm:text-3xl text-ink truncate" x-text="itemAtOffset(-1).judul || itemAtOffset(-1).cerita"></p>
+                        <p class="font-heading font-bold text-xl sm:text-3xl text-ink truncate" x-text="itemAtOffset(-1).cerita"></p>
                     </div>
 
                     <!-- kapsul utama di tengah layar -->
@@ -339,6 +350,10 @@
                                         <span class="font-heading font-extrabold text-2xl" x-text="currentItem().inisial"></span>
                                     </template>
                                 </a>
+                            </template>
+
+                            <template x-if="!currentItem().is_anonymous && currentItem().border_url">
+                                <img :src="currentItem().border_url" alt="" aria-hidden="true" class="pointer-events-none select-none absolute -inset-[22%] w-[144%] h-[144%] max-w-none object-contain z-10">
                             </template>
                         </div>
 
@@ -377,7 +392,7 @@
                         style="filter: blur(0.8px);"
                         class="cursor-pointer transition-all duration-200 opacity-40 scale-90 rotate-3 my-2 text-center max-w-xl px-4"
                     >
-                        <p class="font-heading font-bold text-xl sm:text-3xl text-ink truncate" x-text="itemAtOffset(1).judul || itemAtOffset(1).cerita"></p>
+                        <p class="font-heading font-bold text-xl sm:text-3xl text-ink truncate" x-text="itemAtOffset(1).cerita"></p>
                     </div>
 
                     <!-- item +2 -->
@@ -386,7 +401,7 @@
                         style="filter: blur(2px);"
                         class="cursor-pointer transition-all duration-200 opacity-20 scale-75 rotate-6 translate-y-2 text-center max-w-lg px-4"
                     >
-                        <p class="font-heading font-bold text-lg sm:text-2xl text-ink truncate" x-text="itemAtOffset(2).judul || itemAtOffset(2).cerita"></p>
+                        <p class="font-heading font-bold text-lg sm:text-2xl text-ink truncate" x-text="itemAtOffset(2).cerita"></p>
                     </div>
 
                     <!-- indikator titik ulasan -->
@@ -420,9 +435,9 @@
                                 :class="activeIndex === uIdx ? 'border-sky ring-2 ring-sky/15 bg-[#FAFDFF]' : 'border-gray-100 bg-white hover:border-sky/40'"
                                 class="rounded-3xl border p-5 shadow-2xs flex items-start gap-4 transition-all cursor-pointer"
                             >
-                                <div class="shrink-0">
+                                <div class="relative shrink-0">
                                     <template x-if="!ulasan.is_anonymous && ulasan.avatar">
-                                        <a :href="ulasan.profile_url || '#'" @click.stop>
+                                        <a :href="ulasan.profile_url || '#'" @click.stop class="block">
                                             <img :src="ulasan.avatar" :alt="ulasan.nama" class="w-11 h-11 rounded-full object-cover hover:scale-105 transition-transform">
                                         </a>
                                     </template>
@@ -444,6 +459,9 @@
                                             </template>
                                         </a>
                                     </template>
+                                    <template x-if="!ulasan.is_anonymous && ulasan.border_url">
+                                        <img :src="ulasan.border_url" alt="" aria-hidden="true" class="pointer-events-none select-none absolute -inset-[22%] w-[144%] h-[144%] max-w-none object-contain z-10">
+                                    </template>
                                 </div>
 
                                 <div class="flex-1 min-w-0">
@@ -461,9 +479,8 @@
                                         <template x-for="s in 5" :key="s">
                                             <svg
                                                 class="w-3.5 h-3.5"
-                                                :class="s <= ulasan.rating ? 'text-lime fill-lime stroke-ink/40' : 'text-gray-200 fill-gray-200'"
+                                                :class="s <= ulasan.rating ? 'text-amber-400 fill-amber-400' : 'text-gray-200 fill-gray-200'"
                                                 viewBox="0 0 24 24"
-                                                stroke-width="1"
                                             >
                                                 <path d="M12 2l2.9 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l7.1-1.01L12 2z" />
                                             </svg>
@@ -514,82 +531,112 @@
                     </button>
                 </div>
 
-                <!-- form ulasan -->
-                <form @submit.prevent="submitUlasan()" class="mt-5 space-y-5">
+                @auth
+                    <!-- form ulasan -->
+                    <form @submit.prevent="submitUlasan()" class="mt-5 space-y-5">
 
-                    <!-- input rating bintang interaktif -->
-                    <div>
-                        <label class="block text-xs font-bold text-ink mb-2">{{ __('ui.testi.rating_label') }}</label>
-                        <div class="flex items-center gap-2">
-                            <template x-for="star in 5" :key="star">
-                                <button
-                                    type="button"
-                                    @mouseenter="hoverRating = star"
-                                    @mouseleave="hoverRating = 0"
-                                    @click="form.rating = star"
-                                    class="p-1 focus:outline-none transition-transform hover:scale-110 cursor-pointer"
-                                    :aria-label="'Star ' + star"
-                                >
-                                    <svg
-                                        class="w-8 h-8 transition-colors"
-                                        :class="star <= (hoverRating || form.rating) ? 'text-lime fill-lime stroke-ink' : 'text-gray-200 fill-gray-200 stroke-gray-300'"
-                                        viewBox="0 0 24 24"
-                                        stroke-width="1.5"
+                        <!-- input rating bintang interaktif -->
+                        <div>
+                            <label class="block text-xs font-bold text-ink mb-2">{{ __('ui.testi.rating_label') }}</label>
+                            <div class="flex items-center gap-2">
+                                <template x-for="star in 5" :key="star">
+                                    <button
+                                        type="button"
+                                        @mouseenter="hoverRating = star"
+                                        @mouseleave="hoverRating = 0"
+                                        @click="form.rating = star"
+                                        class="p-1 focus:outline-none transition-transform hover:scale-110 cursor-pointer"
+                                        :aria-label="'Star ' + star"
                                     >
-                                        <path d="M12 2l2.9 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l7.1-1.01L12 2z" />
-                                    </svg>
-                                </button>
-                            </template>
-                            <span class="ml-2 text-xs font-bold text-muted" x-text="(hoverRating || form.rating) + ' / 5'"></span>
+                                        <svg
+                                            class="w-8 h-8 transition-colors"
+                                            :class="star <= (hoverRating || form.rating) ? 'text-amber-400 fill-amber-400 stroke-amber-500' : 'text-gray-200 fill-gray-200 stroke-gray-300'"
+                                            viewBox="0 0 24 24"
+                                            stroke-width="1.5"
+                                        >
+                                            <path d="M12 2l2.9 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l7.1-1.01L12 2z" />
+                                        </svg>
+                                    </button>
+                                </template>
+                                <span class="ml-2 text-xs font-bold text-muted" x-text="(hoverRating || form.rating) + ' / 5'"></span>
+                            </div>
+                        </div>
+
+                        <!-- textarea cerita -->
+                        <div>
+                            <label for="cerita" class="block text-xs font-bold text-ink mb-1.5">{{ __('ui.testi.story_label') }}</label>
+                            <textarea
+                                id="cerita"
+                                x-model="form.cerita"
+                                rows="4"
+                                required
+                                placeholder="{{ __('ui.testi.story_placeholder') }}"
+                                class="w-full rounded-2xl border border-gray-200 px-4 py-3 text-xs text-ink placeholder:text-gray-400 focus:outline-none focus:border-sky resize-none"
+                            ></textarea>
+                        </div>
+
+                        <!-- checkbox sembunyikan nama (anonim) -->
+                        <div class="flex items-center gap-2.5">
+                            <input
+                                id="is_anonymous"
+                                type="checkbox"
+                                x-model="form.is_anonymous"
+                                class="w-4 h-4 rounded-sm border-gray-300 text-sky focus:ring-sky cursor-pointer"
+                            >
+                            <label for="is_anonymous" class="text-xs font-medium text-ink/85 cursor-pointer">
+                                {{ __('ui.testi.anonymous') }}
+                            </label>
+                        </div>
+
+                        <div x-show="errorMsg !== ''" class="text-xs font-semibold text-red-600" x-text="errorMsg"></div>
+
+                        <!-- tombol kirim ulasan -->
+                        <div class="pt-2 flex items-center justify-end gap-3">
+                            <button
+                                type="button"
+                                @click="open = false"
+                                class="rounded-full border border-gray-200 px-5 py-2.5 text-xs font-semibold text-muted hover:text-ink cursor-pointer"
+                            >
+                                {{ __('ui.testi.cancel') }}
+                            </button>
+                            <button
+                                type="submit"
+                                :disabled="submitting"
+                                class="rounded-full bg-sky hover:bg-sky-light text-white font-heading font-bold text-xs px-7 py-3 shadow-sm hover:-translate-y-0.5 transition-all cursor-pointer disabled:opacity-50"
+                            >
+                                <span x-text="submitting ? @js(__('ui.testi.saving')) : @js(__('ui.testi.publish_review'))"></span>
+                            </button>
+                        </div>
+                    </form>
+                @else
+                    <!-- ajakan login bagi tamu agar tidak terkena error 401 -->
+                    <div class="mt-5 rounded-2xl bg-[#F8FAFC] border border-gray-200 p-6 text-center space-y-3">
+                        <div class="w-12 h-12 rounded-2xl bg-sky/10 text-sky flex items-center justify-center mx-auto">
+                            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                            </svg>
+                        </div>
+                        <h4 class="font-heading font-extrabold text-base text-ink">
+                            {{ app()->getLocale() === 'en' ? 'Sign in to write a review' : 'Masuk terlebih dahulu untuk menulis ulasan' }}
+                        </h4>
+                        <p class="text-xs text-muted leading-relaxed">
+                            {{ app()->getLocale() === 'en'
+                                ? 'To keep community reviews authentic and spam-free, please sign in with your Digi-Safe account.'
+                                : 'Untuk menjaga keaslian ulasan komunitas dan mencegah spam, silakan masuk menggunakan akun Digi-Safe Anda.' }}
+                        </p>
+                        <div class="pt-2 flex flex-wrap items-center justify-center gap-2.5">
+                            <a href="{{ route('login') }}"
+                                class="inline-flex items-center justify-center rounded-full bg-sky hover:bg-sky-light text-white font-heading font-bold text-xs px-6 py-2.5 transition-colors">
+                                {{ app()->getLocale() === 'en' ? 'Sign In' : 'Masuk Sekarang' }}
+                            </a>
+                            <a href="{{ route('register') }}"
+                                class="inline-flex items-center justify-center rounded-full bg-white border border-gray-300 hover:border-ink text-ink font-heading font-bold text-xs px-6 py-2.5 transition-colors">
+                                {{ app()->getLocale() === 'en' ? 'Create Account' : 'Daftar Akun' }}
+                            </a>
                         </div>
                     </div>
-
-                    <!-- textarea cerita -->
-                    <div>
-                        <label for="cerita" class="block text-xs font-bold text-ink mb-1.5">{{ __('ui.testi.story_label') }}</label>
-                        <textarea
-                            id="cerita"
-                            x-model="form.cerita"
-                            rows="4"
-                            required
-                            placeholder="{{ __('ui.testi.story_placeholder') }}"
-                            class="w-full rounded-2xl border border-gray-200 px-4 py-3 text-xs text-ink placeholder:text-gray-400 focus:outline-none focus:border-sky resize-none"
-                        ></textarea>
-                    </div>
-
-                    <!-- checkbox sembunyikan nama (anonim) -->
-                    <div class="flex items-center gap-2.5">
-                        <input
-                            id="is_anonymous"
-                            type="checkbox"
-                            x-model="form.is_anonymous"
-                            class="w-4 h-4 rounded-sm border-gray-300 text-sky focus:ring-sky cursor-pointer"
-                        >
-                        <label for="is_anonymous" class="text-xs font-medium text-ink/85 cursor-pointer">
-                            {{ __('ui.testi.anonymous') }}
-                        </label>
-                    </div>
-
-                    <div x-show="errorMsg !== ''" class="text-xs font-semibold text-red-600" x-text="errorMsg"></div>
-
-                    <!-- tombol kirim ulasan -->
-                    <div class="pt-2 flex items-center justify-end gap-3">
-                        <button
-                            type="button"
-                            @click="open = false"
-                            class="rounded-full border border-gray-200 px-5 py-2.5 text-xs font-semibold text-muted hover:text-ink cursor-pointer"
-                        >
-                            {{ __('ui.testi.cancel') }}
-                        </button>
-                        <button
-                            type="submit"
-                            :disabled="submitting"
-                            class="rounded-full bg-sky hover:bg-sky-light text-white font-heading font-bold text-xs px-7 py-3 shadow-sm hover:-translate-y-0.5 transition-all cursor-pointer disabled:opacity-50"
-                        >
-                            <span x-text="submitting ? @js(__('ui.testi.saving')) : @js(__('ui.testi.publish_review'))"></span>
-                        </button>
-                    </div>
-                </form>
+                @endauth
             </div>
         </div>
 
@@ -668,8 +715,19 @@
                         },
                         body: JSON.stringify(this.form)
                     })
-                    .then(res => res.json())
+                    .then(async res => {
+                        if (res.status === 401) {
+                            this.errorMsg = @js(app()->getLocale() === 'en' ? 'Please sign in first to publish a review.' : 'Silakan masuk terlebih dahulu untuk menerbitkan ulasan.');
+                            return null;
+                        }
+                        if (res.status === 429) {
+                            this.errorMsg = @js(app()->getLocale() === 'en' ? 'Too many submissions. Please wait a minute.' : 'Terlalu banyak pengiriman. Mohon tunggu sebentar.');
+                            return null;
+                        }
+                        return res.json();
+                    })
                     .then(data => {
+                        if (!data) return;
                         if (data.success) {
                             if (data.item) {
                                 this.items.unshift(data.item);

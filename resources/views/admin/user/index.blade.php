@@ -22,7 +22,7 @@
         </div>
 
         <!-- tabel daftar pengguna -->
-        <div class="mt-6 overflow-x-auto rounded-2xl border border-gray-200/80">
+        <div class="mt-6 overflow-x-auto md:overflow-visible rounded-2xl border border-gray-200/80">
             <table class="w-full text-left border-collapse">
                 <thead>
                     <tr class="bg-[#F8FAFC] border-b border-gray-200/80 text-[11px] font-heading font-bold uppercase tracking-wider text-muted">
@@ -106,13 +106,17 @@
                                     <form action="{{ route('admin.user.role', $u->id) }}" method="POST" class="inline-flex items-center justify-end gap-2">
                                         @csrf
                                         @method('PATCH')
-                                        <select
+                                        <x-custom-select
                                             name="role"
-                                            class="rounded-xl bg-white border border-gray-200 px-3 py-1.5 text-xs font-semibold text-ink focus:outline-none focus:border-sky"
-                                        >
-                                            <option value="user" {{ $u->role === 'user' ? 'selected' : '' }}>User</option>
-                                            <option value="admin" {{ $u->role === 'admin' ? 'selected' : '' }}>Admin</option>
-                                        </select>
+                                            :value="$u->role"
+                                            variant="compact"
+                                            align="right"
+                                            widthClass="w-32"
+                                            :options="[
+                                                ['value' => 'user', 'label' => 'User', 'dot' => '#94A3B8', 'desc' => 'Warga Siber'],
+                                                ['value' => 'admin', 'label' => 'Admin', 'dot' => '#84CC16', 'desc' => 'Pengelola Panel'],
+                                            ]"
+                                        />
 
                                         <button
                                             type="submit"

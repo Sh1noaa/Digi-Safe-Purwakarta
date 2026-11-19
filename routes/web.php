@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BerandaController;
 use App\Http\Controllers\EdukasiController;
+use App\Http\Controllers\FollowController;
 use App\Http\Controllers\ForumController;
 use App\Http\Controllers\LeaderboardController;
 use App\Http\Controllers\MinigameController;
@@ -31,15 +32,17 @@ Route::get('/download-apk', function () {
 Route::get('/pendaftar', [BerandaController::class, 'usersDirectory'])->name('users.directory');
 Route::get('/edukasi', [EdukasiController::class, 'index'])->name('edukasi');
 Route::get('/tentang', [TentangController::class, 'index'])->name('tentang.index');
+Route::post('/preferences/quick', [ProfileController::class, 'quickPreferences'])->middleware('throttle:30,1')->name('preferences.quick');
 
 // rute halaman profil pengguna (lihat, edit profil, & pengaturan bahasa/tema/privasi)
 Route::middleware('auth')->group(function () {
-    Route::post('/edukasi/request', [EdukasiController::class, 'storeRequest'])->name('edukasi.request.store');
+    Route::post('/edukasi/request', [EdukasiController::class, 'storeRequest'])->middleware('throttle:10,1')->name('edukasi.request.store');
     Route::post('/edukasi/request/mark-seen', [EdukasiController::class, 'markRequestsSeen'])->name('edukasi.request.seen');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::put('/profile/role', [ProfileController::class, 'updateRole'])->name('profile.role');
-    Route::put('/profile/settings', [ProfileController::class, 'updateSettings'])->name('profile.settings');
+    Route::put('/profile', [ProfileController::class, 'update'])->middleware('throttle:20,1')->name('profile.update');
+    Route::put('/profile/role', [ProfileController::class, 'updateRole'])->middleware('throttle:20,1')->name('profile.role');
+    Route::put('/profile/border', [ProfileController::class, 'updateBorder'])->middleware('throttle:20,1')->name('profile.border');
+    Route::put('/profile/settings', [ProfileController::class, 'updateSettings'])->middleware('throttle:20,1')->name('profile.settings');
 });
 Route::get('/profile/{user}', [ProfileController::class, 'show'])->name('profile.show');
 
@@ -49,7 +52,7 @@ Route::get('/minigame', [MinigameController::class, 'index'])->name('minigame.in
 Route::get('/minigame/password-checker', [MinigameController::class, 'passwordChecker'])->name('minigame.password-checker');
 
 Route::middleware('auth')->group(function () {
-    Route::post('/minigame/save-score', [MinigameController::class, 'saveScore'])->name('minigame.save-score');
+    Route::post('/minigame/save-score', [MinigameController::class, 'saveScore'])->middleware('throttle:15,1')->name('minigame.save-score');
     Route::get('/minigame/{type}', [MinigameController::class, 'play'])->name('minigame.play');
 
     // rute pertemanan & live chat antar pengguna
@@ -57,30 +60,39 @@ Route::middleware('auth')->group(function () {
     Route::get('/chat/summary', [SocialChatController::class, 'summary'])->name('chat.summary');
     Route::get('/chat/users', [SocialChatController::class, 'searchUsers'])->name('chat.users');
     Route::get('/chat/messages/{user}', [SocialChatController::class, 'messages'])->name('chat.messages');
-    Route::post('/chat/messages/{user}', [SocialChatController::class, 'sendMessage'])->name('chat.send');
+    Route::post('/chat/messages/{user}', [SocialChatController::class, 'sendMessage'])->middleware('throttle:30,1')->name('chat.send');
 
-    Route::post('/friends/request/{user}', [SocialChatController::class, 'sendFriendRequest'])->name('friends.request');
-    Route::post('/friends/accept/{user}', [SocialChatController::class, 'acceptFriendRequest'])->name('friends.accept');
-    Route::post('/friends/decline/{user}', [SocialChatController::class, 'declineFriendRequest'])->name('friends.decline');
-    Route::delete('/friends/{user}', [SocialChatController::class, 'removeFriendship'])->name('friends.remove');
+    Route::post('/friends/request/{user}', [SocialChatController::class, 'sendFriendRequest'])->middleware('throttle:20,1')->name('friends.request');
+    Route::post('/friends/accept/{user}', [SocialChatController::class, 'acceptFriendRequest'])->middleware('throttle:20,1')->name('friends.accept');
+    Route::post('/friends/decline/{user}', [SocialChatController::class, 'declineFriendRequest'])->middleware('throttle:20,1')->name('friends.decline');
+    Route::delete('/friends/{user}', [SocialChatController::class, 'removeFriendship'])->middleware('throttle:20,1')->name('friends.remove');
+
+    // rute follow / unfollow pengguna
+    Route::post('/users/{user}/follow', [FollowController::class, 'toggle'])->middleware('throttle:30,1')->name('users.follow.toggle');
 });
+
+// daftar followers & following publik untuk modal profil
+Route::get('/users/{user}/follows', [FollowController::class, 'list'])->name('users.follows.list');
 
 // rute halaman forum komunitas & simpan jawaban + voting realtime ajax
 Route::get('/forum', [ForumController::class, 'index'])->name('forum.index');
 Route::get('/forum/live-data', [ForumController::class, 'liveData'])->name('forum.live-data');
-Route::post('/forum', [ForumController::class, 'store'])->middleware('auth')->name('forum.store');
-Route::post('/forum/{forum}/jawaban', [ForumController::class, 'storeJawaban'])->middleware('auth')->name('forum.jawaban.store');
-Route::post('/forum/jawaban/{jawaban}/vote', [ForumController::class, 'voteJawaban'])->middleware('auth')->name('forum.jawaban.vote');
+Route::post('/forum', [ForumController::class, 'store'])->middleware(['auth', 'throttle:20,1'])->name('forum.store');
+Route::put('/forum/{forum}', [ForumController::class, 'update'])->middleware(['auth', 'throttle:20,1'])->name('forum.update');
+Route::delete('/forum/{forum}', [ForumController::class, 'destroy'])->middleware(['auth', 'throttle:20,1'])->name('forum.destroy');
+Route::post('/forum/{forum}/jawaban', [ForumController::class, 'storeJawaban'])->middleware(['auth', 'throttle:20,1'])->name('forum.jawaban.store');
+Route::delete('/forum/jawaban/{jawaban}', [ForumController::class, 'destroyJawaban'])->middleware(['auth', 'throttle:20,1'])->name('forum.jawaban.destroy');
+Route::post('/forum/jawaban/{jawaban}/vote', [ForumController::class, 'voteJawaban'])->middleware(['auth', 'throttle:30,1'])->name('forum.jawaban.vote');
 
-// rute halaman testimoni & simpan ulasan
+// rute halaman testimoni & simpan ulasan (wajib login + rate limit anti-spam)
 Route::get('/testimoni', [TestimoniController::class, 'index'])->name('testimoni.index');
-Route::post('/testimoni', [TestimoniController::class, 'store'])->name('testimoni.store');
+Route::post('/testimoni', [TestimoniController::class, 'store'])->middleware(['auth', 'throttle:5,1'])->name('testimoni.store');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [AuthController::class, 'login'])->name('login.store');
+    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1')->name('login.store');
     Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
-    Route::post('/register', [AuthController::class, 'register'])->name('register.store');
+    Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:5,1')->name('register.store');
 });
 
 // rute OAuth Google di luar guest middleware agar mode=mobile (APK) selalu lancar
@@ -135,9 +147,21 @@ Route::get('/storage/{path}', function (string $path) {
     $baseDir = realpath(storage_path('app/public'));
     $fullPath = $baseDir ? realpath($baseDir . DIRECTORY_SEPARATOR . ltrim($path, '/\\')) : false;
 
-    if (! $baseDir || ! $fullPath || ! str_starts_with($fullPath, $baseDir) || ! is_file($fullPath)) {
+    if (
+        ! $baseDir
+        || ! $fullPath
+        || ! str_starts_with($fullPath, $baseDir . DIRECTORY_SEPARATOR)
+        || ! is_file($fullPath)
+    ) {
         abort(404);
     }
 
-    return response()->file($fullPath);
+    $ext = strtolower(pathinfo($fullPath, PATHINFO_EXTENSION));
+    if (in_array($ext, ['php', 'phtml', 'phar', 'html', 'htm', 'svg', 'js'], true)) {
+        abort(403);
+    }
+
+    return response()->file($fullPath, [
+        'X-Content-Type-Options' => 'nosniff',
+    ]);
 })->where('path', '.*')->name('storage.fallback');

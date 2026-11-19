@@ -42,3 +42,14 @@ CREATE TABLE IF NOT EXISTS `chat_messages` (
   KEY `chat_messages_sender_id_receiver_id_index` (`sender_id`,`receiver_id`),
   KEY `chat_messages_receiver_id_is_read_index` (`receiver_id`,`is_read`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `user_follows` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `follower_id` bigint(20) unsigned NOT NULL,
+  `following_id` bigint(20) unsigned NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `user_follows_follower_id_following_id_unique` (`follower_id`,`following_id`),
+  KEY `user_follows_following_id_index` (`following_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

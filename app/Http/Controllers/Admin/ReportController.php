@@ -26,7 +26,7 @@ class ReportController extends Controller
 
         $users = User::humans()->with(['skorGames'])
             ->withCount(['forums', 'jawabanForums', 'testimonis'])
-            ->orderByRaw("FIELD(role, 'owner', 'admin', 'user')")
+            ->orderByRaw("CASE WHEN role = 'owner' THEN 1 WHEN role = 'admin' THEN 2 ELSE 3 END")
             ->orderBy('id')
             ->get();
 

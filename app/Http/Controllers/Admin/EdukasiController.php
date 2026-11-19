@@ -39,7 +39,7 @@ class EdukasiController extends Controller
             'kategori' => ['required', 'string', 'max:100'],
             'type' => ['required', 'string', 'in:teks,link'],
             'konten' => ['required_if:type,teks', 'nullable', 'string'],
-            'url' => ['required_if:type,link', 'nullable', 'url', 'max:500'],
+            'url' => ['required_if:type,link', 'nullable', 'url:http,https', 'max:500'],
         ]);
 
         ModulEdukasi::create([
@@ -68,7 +68,7 @@ class EdukasiController extends Controller
             'kategori' => ['required', 'string', 'max:100'],
             'type' => ['required', 'string', 'in:teks,link'],
             'konten' => ['required_if:type,teks', 'nullable', 'string'],
-            'url' => ['required_if:type,link', 'nullable', 'url', 'max:500'],
+            'url' => ['required_if:type,link', 'nullable', 'url:http,https', 'max:500'],
         ]);
 
         $edukasi->update([

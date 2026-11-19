@@ -76,6 +76,102 @@ class ForumController extends Controller
         ]);
     }
 
+    public function update(Request $request, Forum $forum): JsonResponse
+    {
+        $user = Auth::user();
+        if ((int) $forum->user_id !== (int) $user->id && ! $user->hasAdminAccess()) {
+            return response()->json([
+                'success' => false,
+                'message' => app()->getLocale() === 'en'
+                    ? 'You can only edit your own discussion.'
+                    : 'Anda hanya dapat mengedit diskusi milik Anda sendiri.',
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'judul' => ['required', 'string', 'max:255'],
+            'kategori' => ['required', 'string', 'max:50'],
+            'pertanyaan' => ['required', 'string', 'max:3000'],
+        ]);
+
+        $forum->update([
+            'judul' => trim($validated['judul']),
+            'kategori' => trim($validated['kategori']),
+            'pertanyaan' => trim($validated['pertanyaan']),
+        ]);
+
+        $forum->load(['user', 'jawaban.user', 'jawaban.votes']);
+        $forum->jawaban_count = $forum->jawaban->count();
+
+        return response()->json([
+            'success' => true,
+            'message' => app()->getLocale() === 'en'
+                ? 'Discussion updated successfully.'
+                : 'Diskusi berhasil diperbarui.',
+            'forum' => $this->formatForumItem($forum, $user->id),
+        ]);
+    }
+
+    public function destroy(Forum $forum): JsonResponse
+    {
+        $user = Auth::user();
+        if ((int) $forum->user_id !== (int) $user->id && ! $user->hasAdminAccess()) {
+            return response()->json([
+                'success' => false,
+                'message' => app()->getLocale() === 'en'
+                    ? 'You can only delete your own discussion.'
+                    : 'Anda hanya dapat menghapus diskusi milik Anda sendiri.',
+            ], 403);
+        }
+
+        $jawabanIds = $forum->jawaban()->pluck('id');
+        if ($jawabanIds->isNotEmpty()) {
+            JawabanForumVote::whereIn('jawaban_id', $jawabanIds)->delete();
+        }
+        $forum->jawaban()->delete();
+        $forum->delete();
+
+        return response()->json([
+            'success' => true,
+            'deleted_id' => $forum->id,
+            'message' => app()->getLocale() === 'en'
+                ? 'Discussion deleted successfully.'
+                : 'Diskusi berhasil dihapus.',
+        ]);
+    }
+
+    public function destroyJawaban(JawabanForum $jawaban): JsonResponse
+    {
+        $user = Auth::user();
+        if ((int) $jawaban->user_id !== (int) $user->id && ! $user->hasAdminAccess()) {
+            return response()->json([
+                'success' => false,
+                'message' => app()->getLocale() === 'en'
+                    ? 'You can only delete your own reply.'
+                    : 'Anda hanya dapat menghapus balasan milik Anda sendiri.',
+            ], 403);
+        }
+
+        $forum = $jawaban->forum;
+        JawabanForumVote::where('jawaban_id', $jawaban->id)->delete();
+        $jawaban->delete();
+
+        $formattedForum = null;
+        if ($forum) {
+            $forum->load(['user', 'jawaban.user', 'jawaban.votes']);
+            $forum->jawaban_count = $forum->jawaban->count();
+            $formattedForum = $this->formatForumItem($forum, $user->id);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => app()->getLocale() === 'en'
+                ? 'Reply deleted successfully.'
+                : 'Balasan berhasil dihapus.',
+            'forum' => $formattedForum,
+        ]);
+    }
+
     public function storeJawaban(Request $request, Forum $forum): JsonResponse
     {
         JawabanForumVote::ensureTable();
@@ -225,7 +321,9 @@ class ForumController extends Controller
             ];
         });
 
-        $formattedJawaban = $scoredReplies->map(function (array $entry) use ($bestJawabanId) {
+        $currentUserIsAdmin = $currentUserId !== null && (bool) Auth::user()?->hasAdminAccess();
+
+        $formattedJawaban = $scoredReplies->map(function (array $entry) use ($bestJawabanId, $currentUserId, $currentUserIsAdmin) {
             /** @var JawabanForum $ans */
             $ans = $entry['model'];
             $ansName = $ans->user?->nama_lengkap ?: ($ans->user?->username ?: __('ui.forum.community_member'));
@@ -236,10 +334,12 @@ class ForumController extends Controller
                 'jawaban' => $ans->jawaban,
                 'is_owner' => $isOwner,
                 'is_admin' => ! $isOwner && (bool) ($ans->is_admin || $ans->user?->isAdmin()),
+                'can_manage' => $currentUserId !== null && ((int) $ans->user_id === (int) $currentUserId || $currentUserIsAdmin),
                 'waktu' => $ans->created_at ? $ans->created_at->diffForHumans() : __('ui.forum.just_now'),
                 'user_name' => $ansName,
                 'user_initial' => mb_strtoupper(mb_substr(trim($ansName), 0, 1)),
                 'user_avatar' => $ans->user?->avatar_url,
+                'user_border_url' => $ans->user?->avatar_border_url,
                 'user_pastel' => $ans->user?->pastel_class ?: 'bg-[#DBEAFE] text-[#1E40AF]',
                 'user_profile_url' => $ans->user ? route('profile.show', $ans->user->id) : '#',
                 'up_count' => $entry['up_count'],
@@ -257,12 +357,14 @@ class ForumController extends Controller
             'kategori' => $item->kategori ?: 'Umum',
             'status' => $item->status ?: 'terbuka',
             'is_starred' => (bool) $item->is_starred,
+            'can_manage' => $currentUserId !== null && ((int) $item->user_id === (int) $currentUserId || $currentUserIsAdmin),
             'views' => (int) $item->views,
             'created_ts' => $item->created_at ? $item->created_at->timestamp : 0,
             'waktu' => $item->created_at ? $item->created_at->diffForHumans() : __('ui.forum.just_now'),
             'author_name' => $authorName,
             'author_initial' => mb_strtoupper(mb_substr(trim($authorName), 0, 1)),
             'author_avatar' => $item->user?->avatar_url,
+            'author_border_url' => $item->user?->avatar_border_url,
             'author_pastel' => $item->user?->pastel_class ?: 'bg-[#DBEAFE] text-[#1E40AF]',
             'author_profile_url' => $item->user ? route('profile.show', $item->user->id) : '#',
             'author_is_owner' => (bool) $item->user?->isOwner(),
