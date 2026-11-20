@@ -13,29 +13,55 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class AuthApiController extends Controller
 {
+    /** Dummy hash agar durasi cek login konstan dan mencegah enumerasi email via timing attack. */
+    private const DUMMY_BCRYPT_HASH = '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi';
+
     public function login(Request $request): JsonResponse
     {
         $isEn = app()->getLocale() === 'en';
 
         $validated = $request->validate([
             'email' => ['required', 'string', 'max:100', new ValidRealEmail(checkDns: false)],
-            'password' => ['required', 'string'],
+            'password' => ['required', 'string', 'max:128'],
             'device_name' => ['nullable', 'string', 'max:80'],
         ]);
 
         $emailLower = Str::lower(trim($validated['email']));
-        $user = User::query()->where('email', $emailLower)->first();
+        $throttleKey = 'login-api:' . sha1($emailLower . '|' . $request->ip());
 
-        if (! $user || ! Hash::check($validated['password'], (string) $user->password)) {
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+
+            return response()->json([
+                'success' => false,
+                'retry_after' => $seconds,
+                'message' => $isEn
+                    ? "Too many failed login attempts. Try again in {$seconds} seconds."
+                    : "Terlalu banyak percobaan login gagal. Coba lagi dalam {$seconds} detik.",
+            ], 429);
+        }
+
+        $user = User::query()->where('email', $emailLower)->first();
+        $passwordValid = $user
+            ? Hash::check($validated['password'], (string) $user->password)
+            : Hash::check($validated['password'], self::DUMMY_BCRYPT_HASH) && false;
+
+        if (! $user || $user->isBot() || ! $passwordValid) {
+            RateLimiter::hit($throttleKey, 60);
+
             return response()->json([
                 'success' => false,
                 'message' => $isEn ? 'Invalid email or password.' : 'Email atau password salah.',
             ], 422);
         }
+
+        RateLimiter::clear($throttleKey);
 
         $token = ApiToken::issueFor($user, (string) ($validated['device_name'] ?? 'flutter_apk'));
 
@@ -52,17 +78,32 @@ class AuthApiController extends Controller
     {
         $isEn = app()->getLocale() === 'en';
 
+        if ($request->filled('username')) {
+            $request->merge(['username' => Str::lower(trim((string) $request->input('username')))]);
+        }
+
         $validated = $request->validate([
             'nama_lengkap' => ['nullable', 'string', 'max:100'],
-            'username' => ['nullable', 'string', 'min:3', 'max:50', 'alpha_dash', 'unique:users,username'],
+            'username' => [
+                'nullable',
+                'string',
+                'min:3',
+                'max:50',
+                'alpha_dash',
+                Rule::notIn(AuthController::RESERVED_USERNAMES),
+                'unique:users,username',
+            ],
             'email' => ['required', 'string', 'max:100', new ValidRealEmail(checkDns: true), 'unique:users,email'],
-            'password' => ['required', 'string', 'min:8'],
+            'password' => ['required', 'string', 'min:8', 'max:128'],
             'device_name' => ['nullable', 'string', 'max:80'],
         ]);
 
         $emailLower = Str::lower(trim($validated['email']));
         $base = preg_replace('/[^a-zA-Z0-9_]/', '_', Str::before($emailLower, '@')) ?: 'warga';
         $base = trim(Str::lower(Str::limit($base, 36, '')), '_') ?: 'warga';
+        if (in_array($base, AuthController::RESERVED_USERNAMES, true)) {
+            $base = 'warga_' . $base;
+        }
         $username = filled($validated['username'] ?? null) ? trim((string) $validated['username']) : $base;
         if (blank($validated['username'] ?? null)) {
             $candidate = $username;
@@ -84,6 +125,7 @@ class AuthApiController extends Controller
             'email' => $emailLower,
             'password' => Hash::make($validated['password']),
             'role' => 'user',
+            'privacy_settings' => ['has_local_password' => true],
         ]);
 
         $token = ApiToken::issueFor($user, (string) ($validated['device_name'] ?? 'flutter_apk'));
@@ -101,6 +143,17 @@ class AuthApiController extends Controller
     {
         $isEn = app()->getLocale() === 'en';
 
+        $expectedClientId = trim((string) config('services.google.client_id'));
+        // Fail closed: jangan pernah menerima token Google tanpa verifikasi audience Client ID
+        if ($expectedClientId === '') {
+            return response()->json([
+                'success' => false,
+                'message' => $isEn
+                    ? 'Google Sign-In is currently unavailable on the server.'
+                    : 'Login Google belum dikonfigurasi pada server.',
+            ], 503);
+        }
+
         $validated = $request->validate([
             'id_token' => ['nullable', 'string'],
             'access_token' => ['nullable', 'string'],
@@ -108,7 +161,6 @@ class AuthApiController extends Controller
         ]);
 
         $googleData = null;
-        $expectedClientId = trim((string) config('services.google.client_id'));
 
         if (! empty($validated['id_token'])) {
             $resp = Http::when(app()->environment('local'), fn ($http) => $http->withoutVerifying())
@@ -119,7 +171,7 @@ class AuthApiController extends Controller
             if ($resp->successful()) {
                 $candidate = $resp->json();
                 $tokenAud = (string) ($candidate['aud'] ?? '');
-                if ($expectedClientId === '' || hash_equals($expectedClientId, $tokenAud)) {
+                if (hash_equals($expectedClientId, $tokenAud)) {
                     $googleData = $candidate;
                 }
             }
@@ -130,10 +182,8 @@ class AuthApiController extends Controller
                     'access_token' => $validated['access_token'],
                 ]);
 
-            $audValid = $tokenInfoResp->successful() && (
-                $expectedClientId === ''
-                || hash_equals($expectedClientId, (string) ($tokenInfoResp->json('aud') ?? ''))
-            );
+            $audValid = $tokenInfoResp->successful()
+                && hash_equals($expectedClientId, (string) ($tokenInfoResp->json('aud') ?? ''));
 
             if ($audValid) {
                 $resp = Http::withToken($validated['access_token'])

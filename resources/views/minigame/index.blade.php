@@ -510,6 +510,107 @@
                                 </a>
                             </article>
 
+                            <!-- GAME 5: SIMULASI CHAT WHATSAPP & FILE .APK (15 KONTAK · MULTI-TURN · MULTI-ENDING) -->
+                            <article
+                                x-show="search === '' || 'whatsapp wa apk penipuan chat kurir tilang undangan simulasi pinjol bpjs'.includes(search.toLowerCase())"
+                                class="md:col-span-2 group relative rounded-[24px] bg-white border border-emerald-200/90 shadow-neutral hover:-translate-y-1.5 transition-all duration-300 overflow-hidden"
+                            >
+                                <div class="grid grid-cols-1 sm:grid-cols-12 items-stretch">
+                                     <div class="sm:col-span-5 relative min-h-[200px] sm:min-h-[230px] bg-[#FAF8F3] overflow-hidden border-b sm:border-b-0 sm:border-r border-gray-100">
+                                         <img
+                                             src="{{ asset('images/thumb-wa-simulator.jpg') }}"
+                                             alt="{{ $isEn ? 'WhatsApp & .APK Scam Simulator Thumbnail' : 'Thumbnail Simulasi Chat WhatsApp & .APK' }}"
+                                             loading="lazy"
+                                             class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+                                         >
+                                         <span class="absolute top-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-ink/85 backdrop-blur-xs text-white px-3 py-1 text-[10px] font-heading font-extrabold uppercase tracking-wider shadow-xs">
+                                             <span class="w-1.5 h-1.5 rounded-full bg-lime"></span>
+                                             {{ $isEn ? '15 Contacts · Multi-Ending' : '15 Orang · Multi-Ending' }}
+                                         </span>
+                                     </div>
+                                     <div class="sm:col-span-7 p-6 flex flex-col justify-between gap-4">
+                                         <div>
+                                             <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 text-emerald-800 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider">
+                                                 {{ $isEn ? 'INTERACTIVE CHAT SIMULATOR' : 'SIMULASI CHAT INTERAKTIF' }}
+                                             </span>
+                                             <h3 class="mt-2 font-heading font-extrabold text-lg sm:text-xl text-ink group-hover:text-emerald-700 transition-colors">
+                                                 {{ $isEn ? 'WhatsApp & .APK Scam Simulator' : 'Simulasi Waspada Penipuan WhatsApp & File .APK' }}
+                                             </h3>
+                                             <p class="mt-1.5 text-xs text-muted leading-relaxed">
+                                                 {{ $isEn
+                                                     ? 'Chat directly with 15 realistic scam personas across extended multi-turn dialogues (fake couriers, wedding .APK, E-TLE tickets, bank fee scams, illegal loan sharks, BPJS .APK, customs giveaways). Every choice branches into a different ending!'
+                                                     : 'Rasakan pengalaman chat bertahap yang panjang layaknya WhatsApp bersama 15 kontak penipu berbeda (kurir .APK, undangan nikah, tilang E-TLE, CS bank palsu, pinjol salah transfer, BPJS .APK, hingga lelang bea cukai). Setiap pilihan menuju ending berbeda!' }}
+                                             </p>
+                                         </div>
+                                         <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-gray-100">
+                                             <span class="text-[11px] font-semibold text-muted">
+                                                 {{ $isEn ? '15 Personas · Bilingual ID/EN · Safe Sandbox' : '15 Kontak · Bilingual ID/EN · 100% Simulasi Aman' }}
+                                             </span>
+                                             <a
+                                                 href="{{ route('minigame.wa-simulator') }}"
+                                                 class="inline-flex items-center gap-2 rounded-full bg-[#075E54] hover:bg-ink text-white font-heading font-extrabold text-xs px-6 py-3 transition-colors"
+                                             >
+                                                 <span>{{ $isEn ? 'Open Chat Simulator' : 'Buka Simulasi Chat WA' }}</span>
+                                                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                     <polygon points="5 3 19 12 5 21 5 3" />
+                                                 </svg>
+                                             </a>
+                                         </div>
+                                     </div>
+                                </div>
+                            </article>
+
+                            <!-- GAME 6: PEMINDAI TAUTAN & QR CODE PHISHING (LINK & QR SCANNER) -->
+                            <article
+                                x-show="search === '' || 'link qr scanner phishing url domain qris barcode apk cek tautan'.includes(search.toLowerCase())"
+                                class="md:col-span-2 group relative rounded-[24px] bg-white border border-sky-200/90 shadow-neutral hover:-translate-y-1.5 transition-all duration-300 overflow-hidden"
+                            >
+                                <div class="grid grid-cols-1 sm:grid-cols-12 items-stretch">
+                                    <div class="sm:col-span-5 relative min-h-[200px] sm:min-h-[230px] bg-[#FAF8F3] overflow-hidden border-b sm:border-b-0 sm:border-r border-gray-100">
+                                        <img
+                                            src="{{ asset('images/thumb-link-scanner.jpg') }}"
+                                            alt="{{ $isEn ? 'Link & QR Phishing Scanner Thumbnail' : 'Thumbnail Pemindai Tautan & QR Phishing' }}"
+                                            loading="lazy"
+                                            class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+                                        >
+                                        <span class="absolute top-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-ink/85 backdrop-blur-xs text-white px-3 py-1 text-[10px] font-heading font-extrabold uppercase tracking-wider shadow-xs">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-lime"></span>
+                                            {{ $isEn ? 'URL & QR Forensics' : 'Forensik URL & QR Code' }}
+                                        </span>
+                                    </div>
+                                    <div class="sm:col-span-7 p-6 flex flex-col justify-between gap-4">
+                                        <div>
+                                            <span class="inline-flex items-center gap-1.5 rounded-full bg-sky/10 text-sky px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider">
+                                                {{ $isEn ? 'CYBER SECURITY UTILITY' : 'ALAT DETEKSI SIBER' }}
+                                            </span>
+                                            <h3 class="mt-2 font-heading font-extrabold text-lg sm:text-xl text-ink group-hover:text-sky transition-colors">
+                                                {{ $isEn ? 'Link & QR Code Phishing Scanner' : 'Pemindai Tautan & QR Code Phishing' }}
+                                            </h3>
+                                            <p class="mt-1.5 text-xs text-muted leading-relaxed">
+                                                {{ $isEn
+                                                    ? 'Paste any suspicious link or upload a QR Code image to dissect its domain anatomy, detect brand impersonation (BRI, BCA, JNE, DANA, .go.id), uncover hidden .APK/.EXE malware files, and test sample QR phishing cases.'
+                                                    : 'Tempel tautan mencurigakan atau unggah gambar QR Code untuk membedah anatomi domain, mendeteksi pencatutan nama bank/instansi (BRI, BCA, JNE, DANA, .go.id), membongkar file .APK berbahaya, serta menguji simulasi QRIS palsu.' }}
+                                            </p>
+                                        </div>
+                                        <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-gray-100">
+                                            <span class="text-[11px] font-semibold text-muted">
+                                                {{ $isEn ? 'Instant heuristic analysis · Zero data stored' : 'Analisis heuristik instan · Aman tanpa membuka link' }}
+                                            </span>
+                                            <a
+                                                href="{{ route('minigame.link-scanner') }}"
+                                                class="inline-flex items-center gap-2 rounded-full bg-sky hover:bg-ink text-white font-heading font-extrabold text-xs px-6 py-3 transition-colors"
+                                            >
+                                                <span>{{ $isEn ? 'Open Link & QR Scanner' : 'Buka Pemindai Link & QR' }}</span>
+                                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <circle cx="11" cy="11" r="8" />
+                                                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                                                </svg>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </article>
+
                         </div>
                     </div>
 

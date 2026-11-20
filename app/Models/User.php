@@ -330,6 +330,57 @@ class User extends Authenticatable
         return null;
     }
 
+    /**
+     * Daftar preset warna Banner Default (6 Solid + 6 Gradient).
+     */
+    public static function bannerPresets(bool $isEn = false): array
+    {
+        return [
+            'solid' => [
+                ['key' => 'solid-navy', 'label' => $isEn ? 'Cyber Navy' : 'Navy Siber', 'css' => '#0F172A'],
+                ['key' => 'solid-royal', 'label' => $isEn ? 'Royal Blue' : 'Biru Royal', 'css' => '#1E63E9'],
+                ['key' => 'solid-emerald', 'label' => $isEn ? 'Emerald Shield' : 'Hijau Zamrud', 'css' => '#059669'],
+                ['key' => 'solid-teal', 'label' => $isEn ? 'Ocean Teal' : 'Toska Samudra', 'css' => '#0D9488'],
+                ['key' => 'solid-amber', 'label' => $isEn ? 'Warm Amber' : 'Kuning Amber', 'css' => '#D97706'],
+                ['key' => 'solid-crimson', 'label' => $isEn ? 'Crimson Red' : 'Merah Crimson', 'css' => '#BE123C'],
+            ],
+            'gradient' => [
+                ['key' => 'grad-sunrise', 'label' => $isEn ? 'Horizon Sunrise' : 'Fajar Horizon', 'css' => 'linear-gradient(118deg, #F59E0B 0%, #FB923C 28%, #FDA4AF 58%, #67E8F9 84%, #38BDF8 100%)'],
+                ['key' => 'grad-cyber', 'label' => $isEn ? 'Cyber Fortress' : 'Benteng Siber', 'css' => 'linear-gradient(125deg, #0F172A 0%, #1E3A8A 52%, #0284C7 100%)'],
+                ['key' => 'grad-matrix', 'label' => $isEn ? 'Emerald Lime' : 'Zamrud Lime', 'css' => 'linear-gradient(125deg, #064E3B 0%, #059669 55%, #C8F34A 100%)'],
+                ['key' => 'grad-sunset', 'label' => $isEn ? 'Solar Flare' : 'Jingga Senja', 'css' => 'linear-gradient(125deg, #9A3412 0%, #EA580C 50%, #FACC15 100%)'],
+                ['key' => 'grad-arctic', 'label' => $isEn ? 'Arctic Sky' : 'Langit Arktik', 'css' => 'linear-gradient(125deg, #0369A1 0%, #0EA5E9 55%, #67E8F9 100%)'],
+                ['key' => 'grad-sentinel', 'label' => $isEn ? 'Sentinel Gold' : 'Emas Sentinel', 'css' => 'linear-gradient(125deg, #1E293B 0%, #334155 55%, #F59E0B 100%)'],
+            ],
+        ];
+    }
+
+    public function getBannerPresetKeyAttribute(): string
+    {
+        $raw = is_array($this->privacy_settings) ? $this->privacy_settings : [];
+        $key = trim((string) ($raw['banner_preset'] ?? 'grad-sunrise'));
+
+        return $key !== '' ? $key : 'grad-sunrise';
+    }
+
+    public function getBannerStyleCssAttribute(): string
+    {
+        $key = $this->banner_preset_key;
+
+        if (preg_match('/^solid-custom:(#[0-9a-fA-F]{6})$/', $key, $m)) {
+            return $m[1];
+        }
+
+        $presets = self::bannerPresets();
+        foreach (array_merge($presets['solid'], $presets['gradient']) as $item) {
+            if ($item['key'] === $key) {
+                return $item['css'];
+            }
+        }
+
+        return 'linear-gradient(118deg, #F59E0B 0%, #FB923C 28%, #FDA4AF 58%, #67E8F9 84%, #38BDF8 100%)';
+    }
+
     public function forums(): HasMany
     {
         return $this->hasMany(Forum::class, 'user_id');

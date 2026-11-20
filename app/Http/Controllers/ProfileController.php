@@ -43,13 +43,15 @@ class ProfileController extends Controller
         SocialSchemaHelper::ensureReady();
         $user = Auth::user();
 
-        // validasi input edit profil termasuk foto avatar dan banner (mendukung gif/foto)
+        // validasi input edit profil termasuk foto avatar, banner (gif/foto), dan preset warna banner default (solid/gradient)
         $validated = $request->validate([
             'nama_lengkap' => ['required', 'string', 'max:100'],
             'specialty_role' => ['nullable', 'string', 'max:60'],
             'bio' => ['nullable', 'string', 'max:350'],
-            'current_password' => ['nullable', 'string'],
-            'password' => ['nullable', 'string', 'min:8'],
+            'banner_preset' => ['nullable', 'string', 'max:64'],
+            'use_default_banner' => ['nullable', 'boolean'],
+            'current_password' => ['nullable', 'string', 'max:128'],
+            'password' => ['nullable', 'string', 'min:8', 'max:128'],
             'avatar' => UploadValidationHelper::imageRules(5120),
             'banner' => UploadValidationHelper::imageRules(6144),
         ]);
@@ -68,18 +70,44 @@ class ProfileController extends Controller
             }
         }
 
+        $existingPrivacy = is_array($user->privacy_settings) ? $user->privacy_settings : [];
+        if (filled($validated['banner_preset'] ?? null)) {
+            $candidatePreset = trim((string) $validated['banner_preset']);
+            $allPresets = User::bannerPresets();
+            $allowedKeys = collect(array_merge($allPresets['solid'], $allPresets['gradient']))->pluck('key')->all();
+            if (in_array($candidatePreset, $allowedKeys, true) || preg_match('/^solid-custom:#[0-9a-fA-F]{6}$/', $candidatePreset)) {
+                $existingPrivacy['banner_preset'] = $candidatePreset;
+            }
+        }
+
         $data = [
             'nama_lengkap' => $validated['nama_lengkap'],
             'specialty_role' => filled($validated['specialty_role'] ?? null) ? trim($validated['specialty_role']) : null,
             'bio' => $validated['bio'] ?? $user->bio,
+            'privacy_settings' => $existingPrivacy,
         ];
 
-        // hash password baru jika diisi & regenerasi session + cabut token API lama bila ada
+        // Jika user memilih menggunakan warna banner default (solid/gradient) dan tidak mengunggah gambar banner baru, hapus gambar banner lama
+        if ($request->boolean('use_default_banner') && ! $request->hasFile('banner') && ! empty($user->banner)) {
+            UploadValidationHelper::deleteOldAsset($user->banner, 'banners');
+            $data['banner'] = null;
+        }
+
+        // hash password baru jika diisi & regenerasi session + cabut token API & sesi perangkat lain
         if (! empty($validated['password'])) {
             $data['password'] = Hash::make($validated['password']);
+            $existingPrivacy['has_local_password'] = true;
+            $data['privacy_settings'] = $existingPrivacy;
             $request->session()->regenerate();
             \App\Models\ApiToken::ensureTable();
             \App\Models\ApiToken::where('user_id', $user->id)->delete();
+            if (\Illuminate\Support\Facades\Schema::hasTable('sessions')) {
+                \Illuminate\Support\Facades\DB::table('sessions')
+                    ->where('user_id', $user->id)
+                    ->where('id', '!=', $request->session()->getId())
+                    ->delete();
+            }
+            \App\Services\SecurityActivityService::record($user, \App\Services\SecurityActivityService::EVENT_PASSWORD_CHANGED, $request);
         }
 
         // upload foto profil ke public/images/avatars dengan ekstensi aman & hapus file lama
@@ -179,14 +207,16 @@ class ProfileController extends Controller
             'theme' => ['required', 'string', 'in:light,dark'],
         ]);
 
-        $privacy = [
+        // Pertahankan flag internal (google_onboarded, has_local_password) saat menyimpan pengaturan privasi
+        $existingPrivacy = is_array($user->privacy_settings) ? $user->privacy_settings : [];
+        $privacy = array_merge($existingPrivacy, [
             'is_private_profile' => $request->boolean('is_private_profile'),
             'hide_location' => $request->boolean('hide_location'),
             'hide_email' => $request->boolean('hide_email'),
             'hide_minigame_stats' => $request->boolean('hide_minigame_stats'),
             'hide_badges' => $request->boolean('hide_badges'),
             'hide_activity' => $request->boolean('hide_activity'),
-        ];
+        ]);
 
         $user->update([
             'locale' => $validated['locale'],
@@ -354,6 +384,10 @@ class ProfileController extends Controller
             : false;
 
         $avatarBorders = AvatarBorderService::evaluateForUser($profileUser);
+        $securityActivities = $isOwnProfile
+            ? \App\Services\SecurityActivityService::recentForUser($profileUser, 8)
+            : [];
+        $dailyStreak = \App\Services\DailyStreakService::getStatusForUser($profileUser);
 
         return view('profile.show', compact(
             'profileUser',
@@ -374,7 +408,9 @@ class ProfileController extends Controller
             'followersCount',
             'followingCount',
             'isFollowingProfile',
-            'avatarBorders'
+            'avatarBorders',
+            'securityActivities',
+            'dailyStreak'
         ));
     }
 }

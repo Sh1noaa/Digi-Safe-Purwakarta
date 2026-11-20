@@ -15,10 +15,30 @@
         x-data="{
             modalOpen: false,
             activeModul: null,
+            fontStep: 1,
+            readingMode: false,
             requestModalOpen: {{ $errors->has('tema') || $errors->has('deskripsi') || $errors->has('kategori') ? 'true' : 'false' }},
             requestTab: 'form',
             unreadDecisionCount: {{ (int) ($unreadDecisionsCount ?? 0) }},
             botDigikaId: {{ $botDigikaId }},
+            init() {
+                try {
+                    const savedStep = parseInt(localStorage.getItem('digisafe_edu_font_step') || '1', 10);
+                    if (!Number.isNaN(savedStep) && savedStep >= 0 && savedStep <= 3) this.fontStep = savedStep;
+                    this.readingMode = localStorage.getItem('digisafe_edu_reading_mode') === '1';
+                } catch (_) {}
+            },
+            setFontStep(step) {
+                this.fontStep = Math.max(0, Math.min(3, step));
+                try { localStorage.setItem('digisafe_edu_font_step', String(this.fontStep)); } catch (_) {}
+            },
+            toggleReadingMode() {
+                this.readingMode = !this.readingMode;
+                try { localStorage.setItem('digisafe_edu_reading_mode', this.readingMode ? '1' : '0'); } catch (_) {}
+            },
+            fontSizePx() {
+                return [13, 15, 18, 21][this.fontStep] || 15;
+            },
             openTeks(card) { this.activeModul = card; this.modalOpen = true; },
             async markDecisionsSeen() {
                 this.unreadDecisionCount = 0;
@@ -37,8 +57,8 @@
                 }
             }
         }"
-        class="edu-section-surface relative min-h-screen pt-28 pb-20 px-4 sm:px-6 lg:px-8 flex flex-col justify-between bg-no-repeat bg-center bg-cover bg-scroll lg:bg-fixed"
-        style="background-color: #FFFFFF; background-image: url('{{ asset('images/edu-bg-gallery.jpg') }}');"
+        class="edu-section-surface relative min-h-screen pt-28 pb-20 px-4 sm:px-6 lg:px-8 flex flex-col justify-between bg-no-repeat bg-center bg-cover bg-scroll lg:bg-fixed transition-colors duration-300"
+        :style="readingMode ? 'background-color: #FBF7EE; background-image: none;' : 'background-color: #FFFFFF; background-image: url(\'{{ asset('images/edu-bg-gallery.jpg') }}\');'"
     >
 
         <div class="relative z-10 max-w-6xl w-full mx-auto">
@@ -60,6 +80,49 @@
                 </div>
 
                 <div class="flex flex-wrap items-center gap-2.5">
+                    <!-- Kontrol Ukuran Teks (A- / A / A+) & Mode Ramah Baca -->
+                    <div
+                        class="inline-flex items-center gap-1 rounded-full border shadow-neutral p-1 text-xs transition-colors"
+                        :class="readingMode ? 'bg-[#F3EBD8] border-[#DFD2B5]' : 'bg-white/95 border-gray-200/80'"
+                        role="group"
+                        aria-label="{{ $isEnEdu ? 'Text size and reading mode' : 'Kontrol ukuran teks dan mode ramah baca' }}"
+                    >
+                        <button
+                            type="button"
+                            @click="setFontStep(fontStep - 1)"
+                            :disabled="fontStep <= 0"
+                            title="{{ $isEnEdu ? 'Decrease text size' : 'Perkecil ukuran teks' }}"
+                            class="w-7 h-7 rounded-full font-heading font-extrabold text-[11px] text-ink hover:bg-black/5 disabled:opacity-35 cursor-pointer disabled:cursor-not-allowed"
+                        >A-</button>
+                        <button
+                            type="button"
+                            @click="setFontStep(1)"
+                            title="{{ $isEnEdu ? 'Reset text size' : 'Ukuran teks normal' }}"
+                            class="px-2 h-7 rounded-full font-heading font-bold text-[10px] text-muted hover:text-ink cursor-pointer"
+                            x-text="fontSizePx() + 'px'"
+                        ></button>
+                        <button
+                            type="button"
+                            @click="setFontStep(fontStep + 1)"
+                            :disabled="fontStep >= 3"
+                            title="{{ $isEnEdu ? 'Increase text size' : 'Perbesar ukuran teks' }}"
+                            class="w-7 h-7 rounded-full font-heading font-extrabold text-[11px] text-ink hover:bg-black/5 disabled:opacity-35 cursor-pointer disabled:cursor-not-allowed"
+                        >A+</button>
+                        <span class="w-px h-4 bg-gray-300/80 mx-0.5"></span>
+                        <button
+                            type="button"
+                            @click="toggleReadingMode()"
+                            :class="readingMode ? 'bg-amber-900 text-[#FBF7EE]' : 'bg-slate-100 text-ink hover:bg-slate-200'"
+                            class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-heading font-bold transition-colors cursor-pointer"
+                        >
+                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+                            </svg>
+                            <span>{{ $isEnEdu ? 'Reading Mode' : 'Ramah Baca' }}</span>
+                        </button>
+                    </div>
+
                     <button
                         type="button"
                         @click="requestModalOpen = true; requestTab = unreadDecisionCount > 0 ? 'history' : 'form';"
@@ -724,35 +787,67 @@
         >
             <div
                 @click.outside="modalOpen = false"
-                class="w-full max-w-2xl max-h-[85vh] rounded-[28px] bg-white border border-gray-100 shadow-neutral flex flex-col overflow-hidden"
+                :class="readingMode ? 'max-w-3xl bg-[#FBF7EE] border-[#E5D8BC]' : 'max-w-2xl bg-white border-gray-100'"
+                class="w-full max-h-[88vh] rounded-[28px] border shadow-neutral flex flex-col overflow-hidden transition-all duration-200"
             >
-                <div class="p-6 border-b border-gray-100 flex items-start justify-between gap-4">
-                    <div>
-                        <div class="flex items-center gap-2 mb-2">
+                <div
+                    :class="readingMode ? 'border-[#E7DBC0]' : 'border-gray-100'"
+                    class="p-5 sm:p-6 border-b flex items-start justify-between gap-4"
+                >
+                    <div class="min-w-0 flex-1">
+                        <div class="flex flex-wrap items-center gap-2 mb-2">
                             <span class="rounded-full bg-lime px-3 py-0.5 text-[10px] font-extrabold text-ink uppercase tracking-wider">
                                 {{ __('ui.edu.read_module') }}
                             </span>
                             <span class="rounded-full bg-sky/10 text-sky px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider" x-text="activeModul ? activeModul.tag : ''"></span>
                         </div>
-                        <h3 class="font-heading font-extrabold text-lg sm:text-xl text-ink leading-snug" x-text="activeModul ? activeModul.title : ''"></h3>
+                        <h3
+                            class="font-heading font-extrabold leading-snug"
+                            :class="readingMode ? 'text-[#2C2216]' : 'text-ink'"
+                            :style="'font-size:' + (fontSizePx() + 5) + 'px'"
+                            x-text="activeModul ? activeModul.title : ''"
+                        ></h3>
                     </div>
 
-                    <button
-                        type="button"
-                        @click="modalOpen = false"
-                        class="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-ink flex items-center justify-center shrink-0 transition-colors cursor-pointer"
-                    >
-                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                            <path d="M18 6L6 18M6 6l12 12" />
-                        </svg>
-                    </button>
+                    <div class="flex items-center gap-1.5 shrink-0">
+                        <div class="inline-flex items-center rounded-full border p-0.5 text-[11px]" :class="readingMode ? 'bg-[#F3EBD8] border-[#DFD2B5]' : 'bg-gray-100 border-gray-200'">
+                            <button type="button" @click="setFontStep(fontStep - 1)" :disabled="fontStep <= 0" class="w-7 h-7 rounded-full font-heading font-extrabold text-ink hover:bg-black/5 disabled:opacity-35 cursor-pointer">A-</button>
+                            <button type="button" @click="setFontStep(fontStep + 1)" :disabled="fontStep >= 3" class="w-7 h-7 rounded-full font-heading font-extrabold text-ink hover:bg-black/5 disabled:opacity-35 cursor-pointer">A+</button>
+                            <button
+                                type="button"
+                                @click="toggleReadingMode()"
+                                :class="readingMode ? 'bg-amber-900 text-[#FBF7EE]' : 'bg-white text-ink'"
+                                class="rounded-full px-2.5 py-1 text-[10px] font-heading font-bold ml-0.5 cursor-pointer"
+                            >{{ $isEnEdu ? 'Sepia' : 'Ramah Baca' }}</button>
+                        </div>
+
+                        <button
+                            type="button"
+                            @click="modalOpen = false"
+                            class="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-ink flex items-center justify-center shrink-0 transition-colors cursor-pointer"
+                        >
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                                <path d="M18 6L6 18M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="p-6 sm:p-7 overflow-y-auto space-y-4">
-                    <div class="rounded-2xl bg-[#F8FAFC] border border-gray-200/80 p-5 text-xs sm:text-sm text-ink leading-relaxed whitespace-pre-line" x-text="activeModul ? activeModul.konten : ''"></div>
+                    <div
+                        :class="readingMode
+                            ? 'bg-[#FFFDF8] border-[#E5D8BC] text-[#2C2216] leading-[1.95] tracking-[0.01em]'
+                            : 'bg-[#F8FAFC] border-gray-200/80 text-ink leading-relaxed'"
+                        :style="'font-size:' + fontSizePx() + 'px'"
+                        class="rounded-2xl border p-5 sm:p-6 whitespace-pre-line transition-all"
+                        x-text="activeModul ? activeModul.konten : ''"
+                    ></div>
                 </div>
 
-                <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
+                <div
+                    :class="readingMode ? 'bg-[#F3EBD8] border-[#E5D8BC]' : 'bg-gray-50 border-gray-100'"
+                    class="px-6 py-4 border-t flex items-center justify-between"
+                >
                     <span class="text-[11px] text-muted font-medium">{{ __('ui.edu.curriculum_footer') }}</span>
                     <button
                         type="button"

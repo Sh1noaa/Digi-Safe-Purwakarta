@@ -120,7 +120,9 @@ class BerandaController extends Controller
             ? UserFollow::where('follower_id', Auth::id())->pluck('following_id')->map(fn ($id) => (int) $id)->all()
             : [];
 
-        return view('beranda', compact('aboutStats', 'services', 'registeredUsers', 'followingIds', 'realReviews', 'featuredReview', 'totalReviewsCount'));
+        $dailyStreak = \App\Services\DailyStreakService::getStatusForUser(Auth::user());
+
+        return view('beranda', compact('aboutStats', 'services', 'registeredUsers', 'followingIds', 'realReviews', 'featuredReview', 'totalReviewsCount', 'dailyStreak'));
     }
 
     public function usersDirectory(Request $request): View

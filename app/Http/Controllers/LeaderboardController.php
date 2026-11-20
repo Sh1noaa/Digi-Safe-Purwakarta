@@ -109,7 +109,7 @@ class LeaderboardController extends Controller
             $myRank = null;
             $myRankCategory = null;
             $fullStandings = LeaderboardService::allCategories(500);
-            $priorityKeys = ['minigame_benar', 'forum', 'badges', 'minigame_salah'];
+            $priorityKeys = ['minigame_benar', 'streak', 'wa_accuracy', 'forum', 'badges'];
             $categoriesByKey = collect($fullStandings['categories'] ?? [])->keyBy('key');
 
             foreach ($priorityKeys as $catKey) {

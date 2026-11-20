@@ -326,10 +326,10 @@
                 <!-- kartu profil utama -->
                 <div class="relative z-10 rounded-[28px] bg-white border border-gray-100 shadow-neutral overflow-hidden">
 
-                    <!-- banner atas (SELALU TAMPIL meski mode privat: foto/gif custom atau gradient default) -->
+                    <!-- banner atas (SELALU TAMPIL meski mode privat: foto/gif custom atau warna solid/gradient pilihan user) -->
                     <div
-                        class="relative h-40 sm:h-48 w-full overflow-hidden"
-                        style="background: linear-gradient(118deg, #F59E0B 0%, #FB923C 28%, #FDA4AF 58%, #67E8F9 84%, #38BDF8 100%);"
+                        class="relative h-40 sm:h-48 w-full overflow-hidden transition-all duration-300"
+                        style="background: {{ $profileUser->banner_style_css }};"
                     >
                         @if ($profileUser->banner_url)
                             <img

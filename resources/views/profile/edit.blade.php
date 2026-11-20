@@ -47,24 +47,129 @@
                 @csrf
                 @method('PUT')
 
-                <!-- upload banner profil (mendukung foto biasa maupun animasi gif + crop) -->
-                <div class="rounded-2xl bg-[#F8FAFC] border border-gray-200/80 p-4 space-y-3">
+                <!-- upload banner profil (mendukung foto/gif + pilihan warna default Solid & Gradient) -->
+                @php
+                    $bannerPresetCatalog = \App\Models\User::bannerPresets($isEnEdit);
+                    $initialPresetKey = $profileUser->banner_preset_key;
+                    $initialCustomHex = str_starts_with($initialPresetKey, 'solid-custom:')
+                        ? substr($initialPresetKey, strlen('solid-custom:'))
+                        : '#1E63E9';
+                @endphp
+                <div
+                    x-data="{
+                        bannerTab: @js(str_starts_with($initialPresetKey, 'solid-') ? 'solid' : 'gradient'),
+                        selectedPreset: @js($initialPresetKey),
+                        customHex: @js($initialCustomHex),
+                        useDefaultBanner: {{ $profileUser->banner_url ? 'false' : 'true' }},
+                        presetsSolid: @js($bannerPresetCatalog['solid']),
+                        presetsGradient: @js($bannerPresetCatalog['gradient']),
+                        activePresetCss() {
+                            if (this.selectedPreset.startsWith('solid-custom:')) {
+                                return this.selectedPreset.replace('solid-custom:', '');
+                            }
+                            const all = [...this.presetsSolid, ...this.presetsGradient];
+                            const found = all.find(p => p.key === this.selectedPreset);
+                            return found ? found.css : 'linear-gradient(118deg, #F59E0B 0%, #FB923C 28%, #FDA4AF 58%, #67E8F9 84%, #38BDF8 100%)';
+                        },
+                        pickPreset(key) {
+                            this.selectedPreset = key;
+                            this.useDefaultBanner = true;
+                            bannerPreviewUrl = null;
+                            if ($refs.bannerInput) $refs.bannerInput.value = '';
+                        }
+                    }"
+                    class="rounded-2xl bg-[#F8FAFC] border border-gray-200/80 p-4 space-y-3.5"
+                >
+                    <input type="hidden" name="banner_preset" :value="selectedPreset">
+                    <input type="hidden" name="use_default_banner" :value="useDefaultBanner ? '1' : '0'">
+
                     <div
-                        class="relative h-28 w-full rounded-xl overflow-hidden border border-gray-200"
-                        style="background: linear-gradient(118deg, #F59E0B 0%, #FB923C 28%, #FDA4AF 58%, #67E8F9 84%, #38BDF8 100%);"
+                        class="relative h-28 w-full rounded-xl overflow-hidden border border-gray-200 transition-all duration-300"
+                        :style="'background: ' + activePresetCss()"
                     >
-                        <template x-if="bannerPreviewUrl">
+                        <template x-if="bannerPreviewUrl && !useDefaultBanner">
                             <img :src="bannerPreviewUrl" alt="Preview Banner" class="w-full h-full object-cover">
                         </template>
-                        <template x-if="!bannerPreviewUrl">
+                        <template x-if="!bannerPreviewUrl && !useDefaultBanner">
                             @if ($profileUser->banner_url)
                                 <img src="{{ $profileUser->banner_url }}" alt="Banner Saat Ini" class="w-full h-full object-cover">
-                            @else
-                                <div class="w-full h-full flex items-center justify-center">
-                                    <span class="rounded-full bg-white/85 px-3 py-1 text-[10px] font-bold text-ink">{{ $isEnEdit ? 'Default Gradient Banner' : 'Banner Default Abstrak' }}</span>
-                                </div>
                             @endif
                         </template>
+                        <template x-if="useDefaultBanner">
+                            <div class="w-full h-full flex items-center justify-center">
+                                <span class="rounded-full bg-white/90 px-3 py-1 text-[10px] font-heading font-bold text-ink shadow-2xs">
+                                    <span x-text="selectedPreset.startsWith('solid-') ? @js($isEnEdit ? 'Solid Color Banner' : 'Banner Warna Solid') : @js($isEnEdit ? 'Gradient Color Banner' : 'Banner Warna Gradient')"></span>
+                                </span>
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- Pemilih Warna Default Banner: Tab Solid vs Gradient -->
+                    <div class="rounded-xl bg-white border border-gray-200/80 p-3 space-y-2.5">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <span class="text-[11px] font-heading font-bold text-ink">
+                                {{ $isEnEdit ? 'Default Banner Color (Solid / Gradient)' : 'Warna Default Banner (Solid / Gradient)' }}
+                            </span>
+                            <div class="inline-flex rounded-lg bg-slate-100 p-0.5 text-[10px] font-heading font-bold">
+                                <button
+                                    type="button"
+                                    @click="bannerTab = 'gradient'"
+                                    :class="bannerTab === 'gradient' ? 'bg-white text-ink shadow-2xs' : 'text-muted hover:text-ink'"
+                                    class="rounded-md px-2.5 py-1 transition-all cursor-pointer"
+                                >Gradient</button>
+                                <button
+                                    type="button"
+                                    @click="bannerTab = 'solid'"
+                                    :class="bannerTab === 'solid' ? 'bg-white text-ink shadow-2xs' : 'text-muted hover:text-ink'"
+                                    class="rounded-md px-2.5 py-1 transition-all cursor-pointer"
+                                >Solid</button>
+                            </div>
+                        </div>
+
+                        <!-- Swatch Gradient -->
+                        <div x-show="bannerTab === 'gradient'" class="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                            <template x-for="g in presetsGradient" :key="g.key">
+                                <button
+                                    type="button"
+                                    @click="pickPreset(g.key)"
+                                    :class="selectedPreset === g.key && useDefaultBanner ? 'ring-2 ring-ink ring-offset-1 scale-[1.02]' : 'opacity-90 hover:opacity-100'"
+                                    class="group rounded-lg p-1 border border-gray-200 bg-white text-center transition-all cursor-pointer"
+                                >
+                                    <span class="block h-7 w-full rounded-md" :style="'background:' + g.css"></span>
+                                    <span class="mt-1 block text-[9.5px] font-semibold text-ink truncate" x-text="g.label"></span>
+                                </button>
+                            </template>
+                        </div>
+
+                        <!-- Swatch Solid + Custom Color Picker -->
+                        <div x-show="bannerTab === 'solid'" style="display: none;" class="space-y-2">
+                            <div class="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                                <template x-for="s in presetsSolid" :key="s.key">
+                                    <button
+                                        type="button"
+                                        @click="pickPreset(s.key)"
+                                        :class="selectedPreset === s.key && useDefaultBanner ? 'ring-2 ring-ink ring-offset-1 scale-[1.02]' : 'opacity-90 hover:opacity-100'"
+                                        class="group rounded-lg p-1 border border-gray-200 bg-white text-center transition-all cursor-pointer"
+                                    >
+                                        <span class="block h-7 w-full rounded-md" :style="'background:' + s.css"></span>
+                                        <span class="mt-1 block text-[9.5px] font-semibold text-ink truncate" x-text="s.label"></span>
+                                    </button>
+                                </template>
+                            </div>
+
+                            <div class="pt-1 flex items-center justify-between gap-2 border-t border-gray-100">
+                                <span class="text-[10.5px] text-muted">{{ $isEnEdit ? 'Or pick custom solid color:' : 'Atau pilih warna solid bebas:' }}</span>
+                                <label class="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-2.5 py-1 bg-slate-50 hover:bg-slate-100 cursor-pointer">
+                                    <input
+                                        type="color"
+                                        x-model="customHex"
+                                        @input="pickPreset('solid-custom:' + customHex)"
+                                        class="w-5 h-5 rounded border-0 p-0 cursor-pointer bg-transparent"
+                                    >
+                                    <span class="font-mono font-bold text-[10.5px] text-ink uppercase" x-text="customHex"></span>
+                                </label>
+                            </div>
+                        </div>
                     </div>
 
                     <div>
@@ -91,6 +196,7 @@
                             @change="
                                 const bFile = $event.target.files[0];
                                 if (bFile) {
+                                    useDefaultBanner = false;
                                     const bReader = new FileReader();
                                     bReader.onload = (e) => { bannerPreviewUrl = e.target.result; };
                                     bReader.readAsDataURL(bFile);

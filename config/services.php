@@ -41,4 +41,10 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URI'),
     ],
 
+    'mail_relay' => [
+        'webhook_url' => env('MAIL_HTTPS_WEBHOOK_URL'),
+        'webhook_secret' => env('MAIL_HTTPS_WEBHOOK_SECRET'),
+        'brevo_api_key' => env('BREVO_API_KEY'),
+    ],
+
 ];

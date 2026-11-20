@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AccountSecurityController;
 use App\Http\Controllers\Admin\EdukasiController as AdminEdukasiController;
 use App\Http\Controllers\Admin\ForumController as AdminForumController;
 use App\Http\Controllers\Admin\MinigameController as AdminMinigameController;
@@ -7,15 +8,18 @@ use App\Http\Controllers\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BerandaController;
+use App\Http\Controllers\DailyStreakController;
 use App\Http\Controllers\EdukasiController;
 use App\Http\Controllers\FollowController;
 use App\Http\Controllers\ForumController;
 use App\Http\Controllers\LeaderboardController;
+use App\Http\Controllers\LinkScannerController;
 use App\Http\Controllers\MinigameController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SocialChatController;
 use App\Http\Controllers\TentangController;
 use App\Http\Controllers\TestimoniController;
+use App\Http\Controllers\WaSimulatorController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [BerandaController::class, 'index'])->name('beranda');
@@ -43,13 +47,23 @@ Route::middleware('auth')->group(function () {
     Route::put('/profile/role', [ProfileController::class, 'updateRole'])->middleware('throttle:20,1')->name('profile.role');
     Route::put('/profile/border', [ProfileController::class, 'updateBorder'])->middleware('throttle:20,1')->name('profile.border');
     Route::put('/profile/settings', [ProfileController::class, 'updateSettings'])->middleware('throttle:20,1')->name('profile.settings');
+    Route::post('/profile/delete-account/send-otp', [AccountSecurityController::class, 'sendDeleteAccountOtp'])->middleware('throttle:20,1')->name('profile.delete.send-otp');
+    Route::delete('/profile/delete-account', [AccountSecurityController::class, 'destroyAccount'])->middleware('throttle:20,1')->name('profile.delete.destroy');
 });
 Route::get('/profile/{user}', [ProfileController::class, 'show'])->name('profile.show');
 
-// halaman hub minigame, leaderboard & password checker publik, sedangkan arena kuis wajib login
+// halaman hub minigame, leaderboard, password checker & WA/APK simulator publik, sedangkan arena kuis wajib login
 Route::get('/leaderboard', [LeaderboardController::class, 'index'])->name('leaderboard.index');
 Route::get('/minigame', [MinigameController::class, 'index'])->name('minigame.index');
 Route::get('/minigame/password-checker', [MinigameController::class, 'passwordChecker'])->name('minigame.password-checker');
+Route::get('/minigame/wa-simulator', [WaSimulatorController::class, 'show'])->name('minigame.wa-simulator');
+Route::post('/minigame/wa-simulator/record', [WaSimulatorController::class, 'recordResult'])->middleware('throttle:30,1')->name('minigame.wa-simulator.record');
+Route::get('/minigame/link-scanner', [LinkScannerController::class, 'show'])->name('minigame.link-scanner');
+Route::post('/minigame/link-scanner/scan', [LinkScannerController::class, 'scan'])->middleware('throttle:30,1')->name('minigame.link-scanner.scan');
+
+// tantangan harian & weekly streak (api + freeze 24 jam + 2x pemulihan)
+Route::get('/streak/status', [DailyStreakController::class, 'status'])->name('streak.status');
+Route::post('/streak/answer', [DailyStreakController::class, 'answer'])->middleware(['auth', 'throttle:20,1'])->name('streak.answer');
 
 Route::middleware('auth')->group(function () {
     Route::post('/minigame/save-score', [MinigameController::class, 'saveScore'])->middleware('throttle:15,1')->name('minigame.save-score');
@@ -94,6 +108,11 @@ Route::middleware('guest')->group(function () {
     Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
     Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:5,1')->name('register.store');
 });
+
+// reset password via OTP Gmail (dapat diakses guest maupun user login)
+Route::get('/lupa-password', [AccountSecurityController::class, 'showForgotPassword'])->name('password.otp.request');
+Route::post('/lupa-password/send-otp', [AccountSecurityController::class, 'sendPasswordResetOtp'])->middleware('throttle:20,1')->name('password.otp.send');
+Route::post('/lupa-password/reset', [AccountSecurityController::class, 'resetPasswordWithOtp'])->middleware('throttle:20,1')->name('password.otp.reset');
 
 // rute OAuth Google di luar guest middleware agar mode=mobile (APK) selalu lancar
 Route::get('/auth/google/redirect', [AuthController::class, 'redirectToGoogle'])->name('auth.google.redirect');

@@ -6,8 +6,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="description" content="Digi-Safe Purwakarta - Platform edukasi keamanan digital masyarakat Purwakarta.">
+    <meta name="theme-color" content="{{ ($currentTheme ?? 'light') === 'dark' ? '#0B1120' : '#1E63E9' }}">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Digi-Safe PWK">
     <title>@yield('title', 'Digi-Safe Purwakarta - Platform Edukasi Keamanan Digital')</title>
+    <link rel="manifest" href="{{ asset('manifest.webmanifest') }}">
     <link rel="icon" type="image/png" href="{{ asset('images/favicon.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('images/pwa-icon-192.png') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
@@ -1222,6 +1228,64 @@
                     window.location.replace(window.location.href);
                 });
             });
+        })();
+    </script>
+
+    <!-- Registrasi PWA Service Worker & Tombol Pasang Aplikasi (Install Prompt) -->
+    <div
+        id="digisafe-pwa-banner"
+        style="display: none;"
+        class="fixed bottom-4 left-4 z-[90] max-w-xs rounded-2xl bg-ink text-white border border-lime/35 shadow-[0_14px_34px_rgba(15,23,42,0.28)] px-4 py-3 flex items-center gap-3"
+    >
+        <img src="{{ asset('images/pwa-icon-192.png') }}" alt="Digi-Safe PWA" class="w-9 h-9 rounded-xl bg-white p-1 shrink-0">
+        <div class="min-w-0 flex-1">
+            <span class="font-heading font-extrabold text-xs block leading-tight">{{ app()->getLocale() === 'en' ? 'Install Digi-Safe App' : 'Pasang Aplikasi Web' }}</span>
+            <span class="text-[10.5px] text-white/75 block leading-snug mt-0.5">{{ app()->getLocale() === 'en' ? 'Faster access & offline reading.' : 'Akses instan & baca edukasi offline.' }}</span>
+        </div>
+        <button id="digisafe-pwa-install-btn" type="button" class="shrink-0 rounded-full bg-lime text-ink font-heading font-extrabold text-[11px] px-3 py-1.5 hover:opacity-90 cursor-pointer">
+            {{ app()->getLocale() === 'en' ? 'Install' : 'Pasang' }}
+        </button>
+        <button id="digisafe-pwa-dismiss-btn" type="button" aria-label="Tutup" class="text-white/60 hover:text-white text-sm leading-none px-1 cursor-pointer">&times;</button>
+    </div>
+
+    <script>
+        (function () {
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('/sw.js').catch(() => {});
+                });
+            }
+
+            let deferredPrompt = null;
+            const banner = document.getElementById('digisafe-pwa-banner');
+            const installBtn = document.getElementById('digisafe-pwa-install-btn');
+            const dismissBtn = document.getElementById('digisafe-pwa-dismiss-btn');
+
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                try {
+                    if (sessionStorage.getItem('digisafe_pwa_dismissed') === '1') return;
+                } catch (_) {}
+                if (banner) banner.style.display = 'flex';
+            });
+
+            if (installBtn) {
+                installBtn.addEventListener('click', async () => {
+                    if (!deferredPrompt) return;
+                    deferredPrompt.prompt();
+                    await deferredPrompt.userChoice.catch(() => null);
+                    deferredPrompt = null;
+                    if (banner) banner.style.display = 'none';
+                });
+            }
+
+            if (dismissBtn) {
+                dismissBtn.addEventListener('click', () => {
+                    if (banner) banner.style.display = 'none';
+                    try { sessionStorage.setItem('digisafe_pwa_dismissed', '1'); } catch (_) {}
+                });
+            }
         })();
     </script>
 

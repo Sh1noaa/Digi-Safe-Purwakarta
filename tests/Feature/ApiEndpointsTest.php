@@ -298,10 +298,10 @@ class ApiEndpointsTest extends TestCase
             ->assertJsonPath('unread_messages', 1)
             ->assertJsonPath('latest_alert.is_bot', true);
 
-        // 4. 4-Category Leaderboard API
+        // 4. 5-Category Leaderboard API (minigame_benar, streak, wa_accuracy, forum, badges)
         $this->getJson('/api/leaderboard')
             ->assertOk()
-            ->assertJsonCount(4, 'categories');
+            ->assertJsonCount(5, 'categories');
 
         // Suppress unused variable
         $this->assertNotNull($admin->id);

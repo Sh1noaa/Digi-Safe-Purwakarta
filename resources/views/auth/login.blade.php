@@ -1,10 +1,13 @@
+@php
+    $isEn = app()->getLocale() === 'en';
+@endphp
 <!DOCTYPE html>
-<html lang="id">
+<html lang="{{ app()->getLocale() }}">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Digi-Safe Purwakarta</title>
+    <title>{{ $isEn ? 'Sign In' : 'Login' }} - Digi-Safe Purwakarta</title>
     <link rel="icon" type="image/png" href="{{ asset('images/favicon.png') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,25 +19,23 @@
 <body
     class="bg-white min-h-screen py-3 sm:py-5 px-2.5 sm:px-5 flex flex-col justify-center antialiased selection:bg-lime selection:text-ink">
 
-    <!-- Container dengan pembatas seperti hero awan di Beranda (tidak full layar tanpa batas) -->
     <section class="w-full max-w-[1420px] mx-auto">
         <div class="relative rounded-[24px] sm:rounded-[32px] border border-sky/25 shadow-neutral overflow-hidden py-8 sm:py-11 px-4 sm:px-8 lg:px-12"
             style="background-image: url('{{ asset('images/auth-bg-2.jpg') }}'); background-size: cover; background-position: center;">
-            <!-- Layer aksen gambar background kedua agar berpadu halus -->
             <div class="absolute inset-0 pointer-events-none opacity-65 mix-blend-multiply"
                 style="background-image: url('{{ asset('images/auth-bg-1.jpg') }}'); background-size: cover; background-position: right center;">
             </div>
 
-            <!-- Pola dot tipis di atas background -->
             <div class="absolute inset-0 pointer-events-none opacity-35"
                 style="background-image: radial-gradient(#93C5FD 1px, transparent 1px); background-size: 22px 22px;">
             </div>
 
             <div x-data="{
                     email: @js(old('email', '')),
-                    showPass: false
+                    showPass: false,
+                    submitting: false
                 }" class="relative z-10 w-full max-w-6xl mx-auto">
-                <!-- Bar navigasi paling atas dengan Logo Digi-Safe resmi -->
+                <!-- Bar navigasi paling atas dengan Logo Digi-Safe resmi + Pilihan Bahasa ID/EN -->
                 <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
                     <a href="{{ route('beranda') }}"
                         class="flow-node rounded-full px-4 py-2 inline-flex items-center gap-3 group">
@@ -47,18 +48,36 @@
                             <span
                                 class="font-heading font-extrabold text-xs sm:text-sm text-ink block leading-none">Digi-Safe
                                 Purwakarta</span>
-                            <span class="text-[10px] font-semibold text-sky tracking-wider uppercase">Portal Keamanan
-                                Siber</span>
+                            <span class="text-[10px] font-semibold text-sky tracking-wider uppercase">{{ $isEn ? 'Cyber Safety Portal' : 'Portal Keamanan Siber' }}</span>
                         </div>
                     </a>
 
                     <div class="flex flex-wrap items-center gap-2.5">
+                        <!-- Pilihan Bahasa ID / EN -->
+                        <div class="inline-flex items-center rounded-full bg-white/95 border border-slate-200 p-1 shadow-2xs" role="group" aria-label="{{ $isEn ? 'Select language' : 'Pilih bahasa' }}">
+                            <form method="POST" action="{{ route('preferences.quick') }}" class="inline-flex">
+                                @csrf
+                                <input type="hidden" name="locale" value="id">
+                                <button type="submit"
+                                    class="rounded-full px-3 py-1.5 text-[11px] font-heading font-extrabold tracking-wide transition-colors cursor-pointer {{ ! $isEn ? 'bg-ink text-white' : 'text-muted hover:text-ink' }}">
+                                    ID
+                                </button>
+                            </form>
+                            <form method="POST" action="{{ route('preferences.quick') }}" class="inline-flex">
+                                @csrf
+                                <input type="hidden" name="locale" value="en">
+                                <button type="submit"
+                                    class="rounded-full px-3 py-1.5 text-[11px] font-heading font-extrabold tracking-wide transition-colors cursor-pointer {{ $isEn ? 'bg-ink text-white' : 'text-muted hover:text-ink' }}">
+                                    EN
+                                </button>
+                            </form>
+                        </div>
+
                         <a href="{{ route('beranda') }}"
                             class="flow-node rounded-full px-4 py-2.5 text-xs font-heading font-bold text-ink hover:text-sky inline-flex items-center gap-1.5 transition-colors">
-                            <span>&larr; Kembali ke Beranda</span>
+                            <span>&larr; {{ $isEn ? 'Back to Home' : 'Kembali ke Beranda' }}</span>
                         </a>
 
-                        <!-- Tombol Daftar terpisah & jelas di bagian atas -->
                         <a href="{{ route('register') }}"
                             class="rounded-full bg-lime hover:bg-sky text-ink hover:text-white font-heading font-extrabold text-xs px-5 py-2.5 shadow-sm inline-flex items-center gap-2 transition-all hover:-translate-y-0.5">
                             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -68,53 +87,50 @@
                                 <line x1="20" y1="8" x2="20" y2="14" />
                                 <line x1="23" y1="11" x2="17" y2="11" />
                             </svg>
-                            <span>Daftar Akun Baru</span>
+                            <span>{{ $isEn ? 'Create Account' : 'Daftar Akun Baru' }}</span>
                         </a>
                     </div>
                 </div>
 
-                <!-- Layout 2 Kolom Desktop: Kiri Robot Besar + Judul Variasi Login, Kanan Flowchart Form Login (di mobile khusus form saja) -->
+                <!-- Layout 2 Kolom Desktop -->
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
 
-                    <!-- Kolom Kiri: Judul Login Variatif di Atas + Gambar Robot Ukuran Besar (hanya desktop agar mobile fokus form) -->
+                    <!-- Kolom Kiri: Maskot Desktop -->
                     <div class="hidden lg:flex lg:col-span-5 lg:order-1 flex-col items-center justify-center relative">
                         <div
                             class="relative w-full max-w-[460px] rounded-[30px] bg-white/95 backdrop-blur-md border border-sky/25 p-6 sm:p-8 shadow-neutral flex flex-col items-center text-center">
-                            <!-- Badge & Logo di atas judul robot -->
                             <div
                                 class="inline-flex items-center gap-2 rounded-full bg-[#DBEAFE]/70 border border-sky/30 px-3.5 py-1 text-[11px] font-heading font-extrabold text-sky mb-3">
                                 <img src="{{ asset('images/logo.png') }}" alt="Logo" class="w-4 h-4 object-contain">
-
                             </div>
 
-                            <!-- Judul besar di atas gambar robot (kalimat bervariasi) -->
                             <h2
                                 class="font-heading font-extrabold text-2xl sm:text-3xl text-ink leading-tight tracking-tight">
-                                Login &amp; Aktifkan <span class="text-sky">Perisai Digitalmu</span>
+                                @if ($isEn)
+                                    Sign In &amp; Activate <span class="text-sky">Your Digital Shield</span>
+                                @else
+                                    Login &amp; Aktifkan <span class="text-sky">Perisai Digitalmu</span>
+                                @endif
                             </h2>
                             <p class="mt-1.5 text-xs text-muted max-w-sm leading-relaxed">
-                                Masuk bersama Robot Penjaga Digi-Safe untuk mengakses arena Minigame, menyimpan skor
-                                kuis, dan berdiskusi.
+                                {{ $isEn
+                                    ? 'Sign in with the Digi-Safe Guardian to access the Minigame arena, save quiz scores, and join discussions.'
+                                    : 'Masuk bersama Robot Penjaga Digi-Safe untuk mengakses arena Minigame, menyimpan skor kuis, dan berdiskusi.' }}
                             </p>
 
-                            <!-- Gambar Robot Ukuran Besar -->
                             <div class="my-4 w-full flex items-center justify-center">
                                 <img src="{{ asset('images/mascot-login.png') }}" alt="Maskot Robot Digi-Safe Login"
-                                    class="w-full max-w-[360px] sm:max-w-[400px] max-h-[370px] object-contain  select-none pointer-events-none">
+                                    class="w-full max-w-[360px] sm:max-w-[400px] max-h-[370px] object-contain select-none pointer-events-none">
                             </div>
 
-                            <!-- Bar info bawah maskot -->
                             <div
                                 class="pt-3.5 border-t border-gray-100 w-full flex items-center justify-between text-xs text-left">
                                 <div>
-                                    <span class="font-heading font-bold text-ink block">Siap Menjelajah Ruang
-                                        Siber?</span>
-                                    <span class="text-[11px] text-muted">Progres modul, level minigame &amp; lencana
-                                        tersimpan otomatis</span>
+                                    <span class="font-heading font-bold text-ink block">{{ $isEn ? 'Ready to Explore Cyberspace?' : 'Siap Menjelajah Ruang Siber?' }}</span>
+                                    <span class="text-[11px] text-muted">{{ $isEn ? 'Module progress, minigame levels & badges saved automatically' : 'Progres modul, level minigame & lencana tersimpan otomatis' }}</span>
                                 </div>
                             </div>
 
-                            <!-- Konektor horizontal dari maskot ke form kanan -->
                             <div class="hidden xl:flex items-center absolute -right-10 top-1/2 -translate-y-1/2">
                                 <span class="w-2.5 h-2.5 rounded-full bg-white border-2 border-[#3B82F6]"></span>
                                 <div class="w-8 h-[1.5px] bg-[#93C5FD] flow-line-dashed"></div>
@@ -123,10 +139,9 @@
                         </div>
                     </div>
 
-                    <!-- Kolom Kanan: Form Login Node Flowchart -->
+                    <!-- Kolom Kanan: Form Login -->
                     <div class="lg:col-span-7 lg:order-2 w-full max-w-xl mx-auto lg:max-w-none">
 
-                        <!-- Node 1 (Top Header): Selamat Datang Kembali + Logo Digi-Safe -->
                         <div class="relative flex justify-center">
                             <div class="flow-node w-full max-w-md p-5 sm:p-6 relative z-10">
                                 <div class="flex items-start justify-between gap-3">
@@ -138,10 +153,9 @@
                                         </span>
                                         <div>
                                             <span
-                                                class="text-[10px] font-bold uppercase tracking-wider text-sky block">Node:
-                                                Autentikasi Akun</span>
+                                                class="text-[10px] font-bold uppercase tracking-wider text-sky block">{{ $isEn ? 'Node: Account Authentication' : 'Node: Autentikasi Akun' }}</span>
                                             <h1 class="font-heading font-extrabold text-lg sm:text-xl text-ink mt-0.5">
-                                                Selamat Datang Kembali!
+                                                {{ $isEn ? 'Welcome Back!' : 'Selamat Datang Kembali!' }}
                                             </h1>
                                         </div>
                                     </div>
@@ -170,6 +184,14 @@
                             </div>
                         </div>
 
+                        @if (session('success'))
+                            <div
+                                role="status"
+                                class="mt-4 max-w-md mx-auto flow-node border-emerald-300 bg-emerald-50/95 px-4 py-3 text-xs font-semibold text-emerald-800 text-center">
+                                {{ session('success') }}
+                            </div>
+                        @endif
+
                         @if (session('error') || session('warning'))
                             <div
                                 class="mt-4 max-w-md mx-auto flow-node border-amber-300 bg-amber-50/95 px-4 py-3 text-xs font-semibold text-amber-800 text-center">
@@ -184,10 +206,9 @@
                             </div>
                         @endif
 
-                        <form method="POST" action="{{ route('login.store') }}">
+                        <form method="POST" action="{{ route('login.store') }}" @submit="submitting = true">
                             @csrf
 
-                            <!-- Garis penghubung bercabang dari Node 1 ke Node 2 & Node 3 -->
                             <div class="hidden md:block relative h-12 max-w-xl mx-auto">
                                 <svg class="w-full h-full overflow-visible" viewBox="0 0 600 48" fill="none">
                                     <circle cx="300" cy="0" r="4" fill="#FFFFFF" stroke="#3B82F6" stroke-width="2" />
@@ -201,7 +222,6 @@
                                 </svg>
                             </div>
 
-                            <!-- Grid Node 2 (Email Kiri) & Node 3 (Password Kanan) -->
                             <div class="mt-4 md:mt-0 grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6 items-start">
 
                                 <!-- Node 2 (Kiri): Input Email -->
@@ -210,12 +230,12 @@
                                         <label for="email"
                                             class="font-heading font-bold text-xs text-ink flex items-center gap-2">
                                             <span class="w-2 h-2 rounded-full bg-sky"></span>
-                                            <span>Input: Alamat Email</span>
+                                            <span>{{ $isEn ? 'Input: Email Address' : 'Input: Alamat Email' }}</span>
                                         </label>
                                         <span class="text-[10px] font-mono text-muted">Node 01</span>
                                     </div>
 
-                                    <p class="text-[11px] text-muted mb-3">Masukkan email akun Digi-Safe Anda</p>
+                                    <p class="text-[11px] text-muted mb-3">{{ $isEn ? 'Enter your Digi-Safe account email' : 'Masukkan email akun Digi-Safe Anda' }}</p>
 
                                     <div class="relative">
                                         <span
@@ -228,11 +248,11 @@
                                             </svg>
                                         </span>
                                         <input id="email" type="email" name="email" x-model="email" required autofocus
-                                            placeholder="nama@email.com"
+                                            placeholder="{{ $isEn ? 'name@gmail.com' : 'nama@email.com' }}"
                                             class="w-full rounded-xl bg-slate-50 border border-slate-200 pl-10 pr-9 py-2.5 text-xs text-ink placeholder:text-gray-400 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15 focus:outline-none transition-all">
                                         <button type="button" x-show="email.length > 0" @click="email = ''"
                                             class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-ink p-1 cursor-pointer"
-                                            aria-label="Bersihkan">
+                                            aria-label="{{ $isEn ? 'Clear' : 'Bersihkan' }}">
                                             <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none"
                                                 stroke="currentColor" stroke-width="2">
                                                 <path d="M18 6L6 18M6 6l12 12" />
@@ -246,7 +266,7 @@
                                     <div class="hidden md:flex flex-col items-center -mt-6 mb-2">
                                         <span
                                             class="rounded-lg bg-white border border-slate-200 px-3 py-0.5 text-[10px] font-semibold text-muted shadow-2xs">
-                                            Verifikasi Sandi
+                                            {{ $isEn ? 'Password Check' : 'Verifikasi Sandi' }}
                                         </span>
                                         <div class="h-2.5 w-[1.5px] bg-[#93C5FD]"></div>
                                         <span
@@ -263,7 +283,7 @@
                                             <span class="text-[10px] font-mono text-muted">Node 02</span>
                                         </div>
 
-                                        <p class="text-[11px] text-muted mb-3">Kata sandi rahasia akun Anda</p>
+                                        <p class="text-[11px] text-muted mb-3">{{ $isEn ? 'Your account secret password' : 'Kata sandi rahasia akun Anda' }}</p>
 
                                         <div class="relative">
                                             <span
@@ -276,11 +296,11 @@
                                                 </svg>
                                             </span>
                                             <input id="password" :type="showPass ? 'text' : 'password'" name="password"
-                                                required placeholder="Masukkan password"
+                                                required maxlength="128" autocomplete="current-password" placeholder="{{ $isEn ? 'Enter password' : 'Masukkan password' }}"
                                                 class="w-full rounded-xl bg-slate-50 border border-slate-200 pl-10 pr-10 py-2.5 text-xs text-ink placeholder:text-gray-400 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15 focus:outline-none transition-all">
                                             <button type="button" @click="showPass = !showPass"
                                                 class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-ink p-1 cursor-pointer"
-                                                aria-label="Tampilkan Password">
+                                                aria-label="{{ $isEn ? 'Toggle password visibility' : 'Tampilkan Password' }}">
                                                 <svg x-show="!showPass" class="w-4 h-4" viewBox="0 0 24 24" fill="none"
                                                     stroke="currentColor" stroke-width="1.8">
                                                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
@@ -295,12 +315,18 @@
                                                 </svg>
                                             </button>
                                         </div>
+
+                                        <div class="mt-2.5 flex justify-end">
+                                            <a href="{{ route('password.otp.request') }}"
+                                                class="text-[11px] font-heading font-bold text-sky hover:text-ink underline underline-offset-2 transition-colors">
+                                                {{ $isEn ? 'Forgot Password? Reset via Gmail OTP' : 'Lupa Password? Reset via OTP Gmail' }}
+                                            </a>
+                                        </div>
                                     </div>
                                 </div>
 
                             </div>
 
-                            <!-- Garis konvergensi ke tombol Masuk -->
                             <div class="hidden md:block relative h-10 max-w-xl mx-auto">
                                 <svg class="w-full h-full overflow-visible" viewBox="0 0 600 40" fill="none">
                                     <circle cx="150" cy="0" r="4" fill="#FFFFFF" stroke="#3B82F6" stroke-width="2" />
@@ -311,13 +337,15 @@
                                 </svg>
                             </div>
 
-                            <!-- Tombol Masuk & Login Google berdampingan -->
+                            <!-- Tombol Masuk & Login Google -->
                             <div class="mt-5 md:mt-0 flex flex-col items-center">
                                 <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
                                     <div class="flow-node p-1.5 rounded-full">
                                         <button type="submit"
-                                            class="min-w-[210px] rounded-full bg-ink hover:bg-sky text-white font-heading font-bold text-xs uppercase tracking-wider px-7 py-3.5 flex items-center justify-center gap-2 transition-colors cursor-pointer">
-                                            <span>Masuk Sekarang</span>
+                                            :disabled="submitting"
+                                            class="min-w-[210px] rounded-full bg-ink hover:bg-sky text-white font-heading font-bold text-xs uppercase tracking-wider px-7 py-3.5 flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
+                                            <span x-show="submitting" style="display: none;" class="w-3.5 h-3.5 border-2 border-lime border-t-transparent rounded-full animate-spin"></span>
+                                            <span>{{ $isEn ? 'Sign In Now' : 'Masuk Sekarang' }}</span>
                                             <svg class="w-4 h-4 text-lime" viewBox="0 0 24 24" fill="none"
                                                 stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
                                                 stroke-linejoin="round">
@@ -340,12 +368,12 @@
                                                 <path fill="#EA4335"
                                                     d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.99 3.14c.95-2.85 3.6-4.96 6.72-4.96z" />
                                             </svg>
-                                            <span>Masuk dengan Google</span>
+                                            <span>{{ $isEn ? 'Continue with Google' : 'Masuk dengan Google' }}</span>
                                         </a>
                                     </div>
                                 </div>
 
-                                <!-- Box Terpisah Khusus Tombol Daftar Akun Baru (Besar & Jelas) -->
+                                <!-- Box Daftar Akun Baru -->
                                 <div
                                     class="mt-5 w-full max-w-md flow-node p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white/95">
                                     <div class="flex items-center gap-3 text-left">
@@ -361,16 +389,14 @@
                                         </span>
                                         <div>
                                             <span
-                                                class="font-heading font-extrabold text-xs sm:text-sm text-ink block">Belum
-                                                Punya Akun Digi-Safe?</span>
-                                            <span class="text-[11px] text-muted">Buat akun gratis untuk bermain Minigame
-                                                &amp; klaim lencana</span>
+                                                class="font-heading font-extrabold text-xs sm:text-sm text-ink block">{{ $isEn ? 'New to Digi-Safe?' : 'Belum Punya Akun Digi-Safe?' }}</span>
+                                            <span class="text-[11px] text-muted">{{ $isEn ? 'Create a free account to play Minigames & earn badges' : 'Buat akun gratis untuk bermain Minigame & klaim lencana' }}</span>
                                         </div>
                                     </div>
 
                                     <a href="{{ route('register') }}"
                                         class="w-full sm:w-auto shrink-0 rounded-full bg-lime hover:bg-sky text-ink hover:text-white font-heading font-extrabold text-xs px-6 py-3 flex items-center justify-center gap-2 shadow-xs transition-all hover:-translate-y-0.5">
-                                        <span>Daftar Sekarang</span>
+                                        <span>{{ $isEn ? 'Register Now' : 'Daftar Sekarang' }}</span>
                                         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                             stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                             <line x1="5" y1="12" x2="19" y2="12" />

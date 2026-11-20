@@ -446,6 +446,9 @@
         </div>
     </section>
 
+    <!-- tantangan harian tingkat lanjut (opsi A-E) & weekly streak (api / freeze 24 jam + 2x pulihkan) -->
+    <x-daily-streak-widget :streak="$dailyStreak ?? null" />
+
     <!-- tentang kami -->
     <section id="tentang-kami" class="py-20 sm:py-28 bg-white overflow-hidden">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">

@@ -91,7 +91,8 @@
                 <div class="relative w-24 h-20 rounded-xl bg-[#272A30] border border-ink p-2 flex flex-col items-center justify-between text-white overflow-hidden">
                     <div class="w-full flex items-center justify-between text-[8px] font-mono text-slate-300 px-1">
                         <button type="button" @click="switchCategory('minigame_benar')" :class="activeKey === 'minigame_benar' ? 'text-lime font-bold' : ''" class="cursor-pointer">B</button>
-                        <button type="button" @click="switchCategory('minigame_salah')" :class="activeKey === 'minigame_salah' ? 'text-lime font-bold' : ''" class="cursor-pointer">S</button>
+                        <button type="button" @click="switchCategory('streak')" :class="activeKey === 'streak' ? 'text-lime font-bold' : ''" class="cursor-pointer">S</button>
+                        <button type="button" @click="switchCategory('wa_accuracy')" :class="activeKey === 'wa_accuracy' ? 'text-lime font-bold' : ''" class="cursor-pointer">W</button>
                         <button type="button" @click="switchCategory('forum')" :class="activeKey === 'forum' ? 'text-lime font-bold' : ''" class="cursor-pointer">F</button>
                         <button type="button" @click="switchCategory('badges')" :class="activeKey === 'badges' ? 'text-lime font-bold' : ''" class="cursor-pointer">L</button>
                     </div>
@@ -215,7 +216,7 @@
         <!-- ======================= TAMPILAN MOBILE (IMAGE 4: PODIUM 1-2-3 + BIRU DIGI-SAFE TANPA UNGU) ======================= -->
         <div class="block md:hidden pt-5 space-y-6">
             <!-- selector pil kategori biru digi-safe -->
-            <div class="rounded-full bg-[#EFF6FF] border border-sky/20 p-1 grid grid-cols-4 gap-1">
+            <div class="rounded-full bg-[#EFF6FF] border border-sky/20 p-1 grid grid-cols-5 gap-1">
                 <template x-for="cat in categories" :key="cat.key">
                     <button
                         type="button"

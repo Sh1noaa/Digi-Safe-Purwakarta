@@ -15,17 +15,38 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class AuthController extends Controller
 {
+    public const RESERVED_USERNAMES = [
+        'admin',
+        'administrator',
+        'owner',
+        'root',
+        'system',
+        'support',
+        'moderator',
+        'staff',
+        'digisafe',
+        'digisafepurwakarta',
+        'bot_digika',
+        'official',
+        'security',
+        'helpdesk',
+    ];
+
     public function showLogin(Request $request): View
     {
+        $isEn = app()->getLocale() === 'en';
         $intended = (string) $request->session()->get('url.intended', '');
         if (str_contains($intended, 'minigame') && ! $request->session()->has('warning')) {
-            $request->session()->flash('warning', 'Minigame hanya dapat diakses oleh pengguna terdaftar. Silakan masuk atau daftar akun baru terlebih dahulu.');
+            $request->session()->flash('warning', $isEn
+                ? 'Minigames are only accessible to registered users. Please sign in or create an account first.'
+                : 'Minigame hanya dapat diakses oleh pengguna terdaftar. Silakan masuk atau daftar akun baru terlebih dahulu.');
         }
 
         return view('auth.login');
@@ -33,19 +54,48 @@ class AuthController extends Controller
 
     public function login(Request $request): RedirectResponse
     {
+        $isEn = app()->getLocale() === 'en';
+
         // validasi form login (tolak format & domain disposable/asal-asalan)
         $credentials = $request->validate([
             'email' => ['required', 'string', 'max:100', new ValidRealEmail(checkDns: false)],
-            'password' => ['required', 'string'],
+            'password' => ['required', 'string', 'max:128'],
         ], [
-            'email.required' => 'Alamat email wajib diisi.',
-            'password.required' => 'Password wajib diisi.',
+            'email.required' => $isEn ? 'Email address is required.' : 'Alamat email wajib diisi.',
+            'password.required' => $isEn ? 'Password is required.' : 'Password wajib diisi.',
+            'password.max' => $isEn ? 'Password must not exceed 128 characters.' : 'Password maksimal 128 karakter.',
         ]);
 
-        $credentials['email'] = Str::lower(trim($credentials['email']));
+        $email = Str::lower(trim($credentials['email']));
+        $credentials['email'] = $email;
+
+        // Kunci brute-force per kombinasi akun + IP (maksimal 5 percobaan gagal per menit)
+        $throttleKey = 'login-web:' . sha1($email . '|' . $request->ip());
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+
+            return back()
+                ->withErrors([
+                    'email' => $isEn
+                        ? "Too many failed sign-in attempts. Please try again in {$seconds} seconds."
+                        : "Terlalu banyak percobaan login gagal. Silakan coba lagi dalam {$seconds} detik.",
+                ])
+                ->onlyInput('email');
+        }
+
+        $targetUser = User::query()->where('email', $email)->first();
+        if ($targetUser && $targetUser->isBot()) {
+            RateLimiter::hit($throttleKey, 60);
+
+            return back()
+                ->withErrors(['email' => $isEn ? 'Invalid email or password.' : 'Email atau password salah.'])
+                ->onlyInput('email');
+        }
 
         if (Auth::attempt($credentials)) {
+            RateLimiter::clear($throttleKey);
             $request->session()->regenerate();
+            \App\Services\SecurityActivityService::record(Auth::user(), \App\Services\SecurityActivityService::EVENT_LOGIN, $request);
             $defaultTarget = Auth::user()->hasAdminAccess()
                 ? route('admin.dashboard')
                 : route('beranda');
@@ -53,8 +103,10 @@ class AuthController extends Controller
             return redirect()->intended($defaultTarget);
         }
 
+        RateLimiter::hit($throttleKey, 60);
+
         return back()
-            ->withErrors(['email' => 'Email atau password salah'])
+            ->withErrors(['email' => $isEn ? 'Invalid email or password.' : 'Email atau password salah.'])
             ->onlyInput('email');
     }
 
@@ -65,31 +117,54 @@ class AuthController extends Controller
 
     public function register(Request $request): RedirectResponse
     {
-        // validasi form registrasi (wajib email aktif & valid dengan cek MX domain)
-        $validated = $request->validate([
-            'nama_lengkap' => ['required', 'string', 'max:100'],
-            'username' => ['required', 'string', 'min:3', 'max:50', 'alpha_dash', 'unique:users,username'],
-            'email' => ['required', 'string', 'max:100', new ValidRealEmail(checkDns: true), 'unique:users,email'],
-            'password' => ['required', 'string', 'min:8'],
-        ], [
-            'nama_lengkap.required' => 'Nickname / Nama lengkap wajib diisi.',
-            'username.required' => 'Username wajib diisi.',
-            'username.min' => 'Username minimal 3 karakter.',
-            'username.unique' => 'Username sudah digunakan.',
-            'username.alpha_dash' => 'Username hanya boleh berisi huruf, angka, strip, dan garis bawah.',
-            'email.required' => 'Alamat email wajib diisi.',
-            'email.unique' => 'Email sudah terdaftar.',
-            'password.required' => 'Password wajib diisi.',
-            'password.min' => 'Password minimal 8 karakter.',
+        $isEn = app()->getLocale() === 'en';
+
+        // Normalisasi username & email sebelum validasi agar tidak ada duplikat huruf besar/kecil
+        $request->merge([
+            'username' => Str::lower(trim((string) $request->input('username', ''))),
+            'email' => Str::lower(trim((string) $request->input('email', ''))),
         ]);
 
-        // simpan user baru dengan role default user
+        // validasi form registrasi (wajib email aktif & valid dengan cek MX domain + cegah username sistem)
+        $validated = $request->validate([
+            'nama_lengkap' => ['required', 'string', 'min:2', 'max:100'],
+            'username' => [
+                'required',
+                'string',
+                'min:3',
+                'max:50',
+                'alpha_dash',
+                Rule::notIn(self::RESERVED_USERNAMES),
+                'unique:users,username',
+            ],
+            'email' => ['required', 'string', 'max:100', new ValidRealEmail(checkDns: true), 'unique:users,email'],
+            'password' => ['required', 'string', 'min:8', 'max:128', 'confirmed'],
+        ], [
+            'nama_lengkap.required' => $isEn ? 'Display name / full name is required.' : 'Nickname / Nama lengkap wajib diisi.',
+            'nama_lengkap.min' => $isEn ? 'Display name must be at least 2 characters.' : 'Nickname / Nama lengkap minimal 2 karakter.',
+            'username.required' => $isEn ? 'Username is required.' : 'Username wajib diisi.',
+            'username.min' => $isEn ? 'Username must be at least 3 characters.' : 'Username minimal 3 karakter.',
+            'username.unique' => $isEn ? 'This username is already taken.' : 'Username sudah digunakan.',
+            'username.not_in' => $isEn ? 'This username is reserved by the system. Please choose another.' : 'Username ini dilindungi sistem. Gunakan username lain.',
+            'username.alpha_dash' => $isEn ? 'Username may only contain letters, numbers, dashes, and underscores.' : 'Username hanya boleh berisi huruf, angka, strip, dan garis bawah.',
+            'email.required' => $isEn ? 'Email address is required.' : 'Alamat email wajib diisi.',
+            'email.unique' => $isEn ? 'This email is already registered.' : 'Email sudah terdaftar.',
+            'password.required' => $isEn ? 'Password is required.' : 'Password wajib diisi.',
+            'password.min' => $isEn ? 'Password must be at least 8 characters.' : 'Password minimal 8 karakter.',
+            'password.max' => $isEn ? 'Password must not exceed 128 characters.' : 'Password maksimal 128 karakter.',
+            'password.confirmed' => $isEn ? 'Password confirmation does not match.' : 'Konfirmasi password tidak cocok.',
+        ]);
+
+        // simpan user baru dengan role default user + preferensi bahasa/tema yang sedang aktif
         $user = User::create([
             'nama_lengkap' => trim($validated['nama_lengkap']),
-            'username' => trim($validated['username']),
-            'email' => Str::lower(trim($validated['email'])),
+            'username' => $validated['username'],
+            'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'role' => 'user',
+            'locale' => in_array(session('locale', 'id'), ['id', 'en'], true) ? session('locale', 'id') : 'id',
+            'theme' => in_array(session('theme', 'light'), ['light', 'dark'], true) ? session('theme', 'light') : 'light',
+            'privacy_settings' => ['has_local_password' => true],
         ]);
 
         Auth::login($user);
@@ -234,6 +309,7 @@ class AuthController extends Controller
 
         Auth::login($user, true);
         $request->session()->regenerate();
+        \App\Services\SecurityActivityService::record($user, \App\Services\SecurityActivityService::EVENT_LOGIN_GOOGLE, $request);
 
         // Khusus login Google: arahkan ke halaman kustomisasi profil jika belum pernah menyelesaikan onboarding Google
         $privacySettings = is_array($user->privacy_settings) ? $user->privacy_settings : [];
@@ -289,6 +365,10 @@ class AuthController extends Controller
             return redirect()->route('beranda');
         }
 
+        $request->merge([
+            'username' => Str::lower(trim((string) $request->input('username', ''))),
+        ]);
+
         $validated = $request->validate([
             'nama_lengkap' => ['required', 'string', 'min:2', 'max:100'],
             'username' => [
@@ -297,6 +377,7 @@ class AuthController extends Controller
                 'min:3',
                 'max:50',
                 'alpha_dash',
+                Rule::notIn(self::RESERVED_USERNAMES),
                 Rule::unique('users', 'username')->ignore($user->id),
             ],
             'avatar' => UploadValidationHelper::imageRules(5120),
@@ -307,6 +388,7 @@ class AuthController extends Controller
             'username.required' => 'Username wajib diisi.',
             'username.min' => 'Username minimal 3 karakter.',
             'username.unique' => 'Username ini sudah dipakai pengguna lain.',
+            'username.not_in' => 'Username ini dilindungi sistem. Gunakan username lain.',
             'username.alpha_dash' => 'Username hanya boleh berisi huruf, angka, strip (-), dan garis bawah (_).',
         ]);
 

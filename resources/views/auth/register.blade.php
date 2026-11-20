@@ -1,10 +1,13 @@
+@php
+    $isEn = app()->getLocale() === 'en';
+@endphp
 <!DOCTYPE html>
-<html lang="id">
+<html lang="{{ app()->getLocale() }}">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daftar Akun - Digi-Safe Purwakarta</title>
+    <title>{{ $isEn ? 'Register Account' : 'Daftar Akun' }} - Digi-Safe Purwakarta</title>
     <link rel="icon" type="image/png" href="{{ asset('images/favicon.png') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,16 +19,13 @@
 <body
     class="bg-white min-h-screen lg:h-screen lg:overflow-hidden py-2.5 sm:py-3 px-2.5 sm:px-5 flex flex-col justify-center antialiased selection:bg-lime selection:text-ink">
 
-    <!-- Container dengan pembatas seperti hero awan di Beranda (tidak full layar tanpa batas) -->
     <section class="w-full max-w-[1420px] mx-auto">
         <div class="relative rounded-[24px] sm:rounded-[32px] border border-sky/25 shadow-neutral overflow-hidden py-4 sm:py-5 lg:py-6 px-4 sm:px-8 lg:px-10"
             style="background-image: url('{{ asset('images/auth-bg-1.jpg') }}'); background-size: cover; background-position: center;">
-            <!-- Layer aksen gambar background kedua agar berpadu halus -->
             <div class="absolute inset-0 pointer-events-none opacity-65 mix-blend-multiply"
                 style="background-image: url('{{ asset('images/auth-bg-2.jpg') }}'); background-size: cover; background-position: center;">
             </div>
 
-            <!-- Pola dot tipis di atas background -->
             <div class="absolute inset-0 pointer-events-none opacity-35"
                 style="background-image: radial-gradient(#93C5FD 1px, transparent 1px); background-size: 22px 22px;">
             </div>
@@ -35,7 +35,10 @@
                     username: @js(old('username', '')),
                     email: @js(old('email', '')),
                     password: '',
+                    password_confirmation: '',
                     showPass: false,
+                    showConfirm: false,
+                    submitting: false,
                     strengthLevel() {
                         const p = this.password || '';
                         if (p.length === 0) return 0;
@@ -46,13 +49,16 @@
                     },
                     strengthLabel() {
                         const lvl = this.strengthLevel();
-                        if (lvl === 0) return 'Min. 8 karakter';
-                        if (lvl === 1) return 'Lemah';
-                        if (lvl === 2) return 'Sedang';
-                        return 'Kuat';
+                        if (lvl === 0) return @js($isEn ? 'Min. 8 chars' : 'Min. 8 karakter');
+                        if (lvl === 1) return @js($isEn ? 'Weak' : 'Lemah');
+                        if (lvl === 2) return @js($isEn ? 'Medium' : 'Sedang');
+                        return @js($isEn ? 'Strong' : 'Kuat');
+                    },
+                    passwordsMatch() {
+                        return this.password_confirmation.length > 0 && this.password === this.password_confirmation;
                     }
                 }" class="relative z-10 w-full max-w-6xl mx-auto">
-                <!-- Bar navigasi paling atas dengan Logo Digi-Safe resmi & Tombol Login -->
+                <!-- Bar navigasi atas dengan Logo + Pilihan Bahasa ID/EN + Tombol Login -->
                 <div class="flex flex-wrap items-center justify-between gap-3 mb-4 lg:mb-5">
                     <a href="{{ route('beranda') }}"
                         class="flow-node rounded-full px-4 py-2 inline-flex items-center gap-3 group">
@@ -65,18 +71,36 @@
                             <span
                                 class="font-heading font-extrabold text-xs sm:text-sm text-ink block leading-none">Digi-Safe
                                 Purwakarta</span>
-                            <span class="text-[10px] font-semibold text-sky tracking-wider uppercase">Onboarding Warga
-                                Siber</span>
+                            <span class="text-[10px] font-semibold text-sky tracking-wider uppercase">{{ $isEn ? 'Cyber Citizen Onboarding' : 'Onboarding Warga Siber' }}</span>
                         </div>
                     </a>
 
                     <div class="flex flex-wrap items-center gap-2.5">
+                        <!-- Pilihan Bahasa ID / EN -->
+                        <div class="inline-flex items-center rounded-full bg-white/95 border border-slate-200 p-1 shadow-2xs" role="group" aria-label="{{ $isEn ? 'Select language' : 'Pilih bahasa' }}">
+                            <form method="POST" action="{{ route('preferences.quick') }}" class="inline-flex">
+                                @csrf
+                                <input type="hidden" name="locale" value="id">
+                                <button type="submit"
+                                    class="rounded-full px-3 py-1.5 text-[11px] font-heading font-extrabold tracking-wide transition-colors cursor-pointer {{ ! $isEn ? 'bg-ink text-white' : 'text-muted hover:text-ink' }}">
+                                    ID
+                                </button>
+                            </form>
+                            <form method="POST" action="{{ route('preferences.quick') }}" class="inline-flex">
+                                @csrf
+                                <input type="hidden" name="locale" value="en">
+                                <button type="submit"
+                                    class="rounded-full px-3 py-1.5 text-[11px] font-heading font-extrabold tracking-wide transition-colors cursor-pointer {{ $isEn ? 'bg-ink text-white' : 'text-muted hover:text-ink' }}">
+                                    EN
+                                </button>
+                            </form>
+                        </div>
+
                         <a href="{{ route('beranda') }}"
                             class="flow-node rounded-full px-4 py-2.5 text-xs font-heading font-bold text-ink hover:text-sky inline-flex items-center gap-1.5 transition-colors">
-                            <span>&larr; Kembali ke Beranda</span>
+                            <span>&larr; {{ $isEn ? 'Back to Home' : 'Kembali ke Beranda' }}</span>
                         </a>
 
-                        <!-- Tombol & Ikon Login terpisah di bagian atas -->
                         <a href="{{ route('login') }}"
                             class="rounded-full bg-ink hover:bg-sky text-white font-heading font-extrabold text-xs px-5 py-2.5 shadow-sm inline-flex items-center gap-2 transition-all hover:-translate-y-0.5">
                             <svg class="w-4 h-4 text-lime" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -85,18 +109,17 @@
                                 <polyline points="10 17 15 12 10 7" />
                                 <line x1="15" y1="12" x2="3" y2="12" />
                             </svg>
-                            <span>Masuk (Login)</span>
+                            <span>{{ $isEn ? 'Sign In' : 'Masuk (Login)' }}</span>
                         </a>
                     </div>
                 </div>
 
-                <!-- Layout 2 Kolom Desktop: Kiri Form Register Flowchart, Kanan Robot Besar (di mobile khusus form saja) -->
+                <!-- Layout 2 Kolom Desktop -->
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
 
-                    <!-- Kolom Kiri: Form Register Node Flowchart -->
+                    <!-- Kolom Kiri: Form Register -->
                     <div class="lg:col-span-7 lg:order-1 w-full max-w-xl mx-auto lg:max-w-none">
 
-                        <!-- Node 1 (Top): Buat Akun Baru + Logo Digi-Safe -->
                         <div class="relative flex justify-center">
                             <div class="flow-node w-full max-w-md p-4 relative z-10">
                                 <div class="flex items-start justify-between gap-3">
@@ -108,10 +131,9 @@
                                         </span>
                                         <div>
                                             <span
-                                                class="text-[10px] font-bold uppercase tracking-wider text-sky block">Node:
-                                                Registrasi Warga Siber</span>
+                                                class="text-[10px] font-bold uppercase tracking-wider text-sky block">{{ $isEn ? 'Node: Cyber Citizen Registration' : 'Node: Registrasi Warga Siber' }}</span>
                                             <h1 class="font-heading font-extrabold text-lg sm:text-xl text-ink mt-0.5">
-                                                Buat Akun Baru Digi-Safe
+                                                {{ $isEn ? 'Create Your Digi-Safe Account' : 'Buat Akun Baru Digi-Safe' }}
                                             </h1>
                                         </div>
                                     </div>
@@ -142,10 +164,9 @@
                             </div>
                         @endif
 
-                        <form method="POST" action="{{ route('register.store') }}">
+                        <form method="POST" action="{{ route('register.store') }}" @submit="submitting = true">
                             @csrf
 
-                            <!-- Garis penghubung dari Node 1 bercabang (split) ke Node 2 & 3 -->
                             <div class="hidden md:block relative h-7 max-w-xl mx-auto">
                                 <svg class="w-full h-full overflow-visible" viewBox="0 0 600 28" fill="none">
                                     <circle cx="300" cy="0" r="3.5" fill="#FFFFFF" stroke="#3B82F6" stroke-width="2" />
@@ -158,21 +179,19 @@
                                 </svg>
                             </div>
 
-                            <!-- Baris Cabang Atas: Node 2 (Nickname) & Node 3 (Username) -->
+                            <!-- Baris Cabang Atas: Nickname & Username -->
                             <div class="mt-4 md:mt-0 grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6 items-start">
 
-                                <!-- Node 2 (Kiri Atas): Nickname -->
                                 <div class="flow-node p-3.5 sm:p-4">
                                     <div class="flex items-center justify-between mb-1.5">
                                         <label for="nama_lengkap"
                                             class="font-heading font-bold text-xs text-ink flex items-center gap-2">
                                             <span class="w-2 h-2 rounded-full bg-sky"></span>
-                                            <span>Nickname / Nama Lengkap</span>
+                                            <span>{{ $isEn ? 'Display Name / Full Name' : 'Nickname / Nama Lengkap' }}</span>
                                         </label>
                                         <span class="text-[10px] font-mono text-muted">Node 01</span>
                                     </div>
-                                    <p class="text-[11px] text-muted mb-3">Nama tampilan di profil, beranda &amp; forum
-                                    </p>
+                                    <p class="text-[11px] text-muted mb-3">{{ $isEn ? 'Shown on your profile, home & forum' : 'Nama tampilan di profil, beranda & forum' }}</p>
 
                                     <div class="relative">
                                         <span
@@ -184,35 +203,33 @@
                                             </svg>
                                         </span>
                                         <input id="nama_lengkap" type="text" name="nama_lengkap" x-model="nama_lengkap"
-                                            required autofocus placeholder="Nama lengkap Anda"
+                                            required autofocus placeholder="{{ $isEn ? 'Your full name' : 'Nama lengkap Anda' }}"
                                             class="w-full rounded-xl bg-slate-50 border border-slate-200 pl-10 pr-4 py-2.5 text-xs text-ink placeholder:text-gray-400 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15 focus:outline-none transition-all">
                                     </div>
                                 </div>
 
-                                <!-- Node 3 (Kanan Atas): Username -->
                                 <div class="flow-node p-3.5 sm:p-4 md:mt-2">
                                     <div class="flex items-center justify-between mb-1.5">
                                         <label for="username"
                                             class="font-heading font-bold text-xs text-ink flex items-center gap-2">
                                             <span class="w-2 h-2 rounded-full bg-purple-deep"></span>
-                                            <span>Username (Unik)</span>
+                                            <span>{{ $isEn ? 'Username (Unique)' : 'Username (Unik)' }}</span>
                                         </label>
                                         <span class="text-[10px] font-mono text-muted">Node 02</span>
                                     </div>
-                                    <p class="text-[11px] text-muted mb-3">Huruf, angka, atau garis bawah</p>
+                                    <p class="text-[11px] text-muted mb-3">{{ $isEn ? 'Letters, numbers, or underscores' : 'Huruf, angka, atau garis bawah' }}</p>
 
                                     <div class="relative">
                                         <span
                                             class="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted font-mono font-bold text-xs pointer-events-none">@</span>
                                         <input id="username" type="text" name="username" x-model="username" required
-                                            placeholder="username_unik"
+                                            placeholder="{{ $isEn ? 'unique_username' : 'username_unik' }}"
                                             class="w-full rounded-xl bg-slate-50 border border-slate-200 pl-9 pr-4 py-2.5 text-xs text-ink placeholder:text-gray-400 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15 focus:outline-none transition-all">
                                     </div>
                                 </div>
 
                             </div>
 
-                            <!-- Garis penghubung vertikal dari Node 2->4 dan Node 3->5 -->
                             <div class="hidden md:grid grid-cols-2 gap-6">
                                 <div class="flex flex-col items-center -mt-2">
                                     <span class="w-2.5 h-2.5 rounded-full bg-white border-2 border-[#3B82F6]"></span>
@@ -226,20 +243,19 @@
                                 </div>
                             </div>
 
-                            <!-- Baris Cabang Bawah: Node 4 (Email) & Node 5 (Password) -->
+                            <!-- Baris Cabang Bawah: Email & Password -->
                             <div class="mt-5 md:mt-0 grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6 items-start">
 
-                                <!-- Node 4 (Kiri Bawah): Email -->
                                 <div class="flow-node p-3.5 sm:p-4">
                                     <div class="flex items-center justify-between mb-1.5">
                                         <label for="email"
                                             class="font-heading font-bold text-xs text-ink flex items-center gap-2">
                                             <span class="w-2 h-2 rounded-full bg-sky"></span>
-                                            <span>Alamat Email</span>
+                                            <span>{{ $isEn ? 'Email Address' : 'Alamat Email' }}</span>
                                         </label>
                                         <span class="text-[10px] font-mono text-muted">Node 03</span>
                                     </div>
-                                    <p class="text-[11px] text-muted mb-3">Digunakan untuk autentikasi masuk</p>
+                                    <p class="text-[11px] text-muted mb-3">{{ $isEn ? 'Used for sign-in & OTP verification' : 'Digunakan untuk autentikasi masuk' }}</p>
 
                                     <div class="relative">
                                         <span
@@ -252,12 +268,11 @@
                                             </svg>
                                         </span>
                                         <input id="email" type="email" name="email" x-model="email" required
-                                            placeholder="nama@email.com"
+                                            placeholder="{{ $isEn ? 'name@gmail.com' : 'nama@email.com' }}"
                                             class="w-full rounded-xl bg-slate-50 border border-slate-200 pl-10 pr-4 py-2.5 text-xs text-ink placeholder:text-gray-400 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15 focus:outline-none transition-all">
                                     </div>
                                 </div>
 
-                                <!-- Node 5 (Kanan Bawah): Password -->
                                 <div class="flow-node p-3.5 sm:p-4 md:mt-2">
                                     <div class="flex items-center justify-between mb-1.5">
                                         <label for="password"
@@ -269,7 +284,7 @@
                                             :class="strengthLevel() === 3 ? 'text-emerald-600' : (strengthLevel() === 2 ? 'text-amber-600' : 'text-muted')"
                                             x-text="strengthLabel()"></span>
                                     </div>
-                                    <p class="text-[11px] text-muted mb-3">Min. 8 karakter huruf &amp; angka</p>
+                                    <p class="text-[11px] text-muted mb-3">{{ $isEn ? 'Min. 8 characters, letters & numbers' : 'Min. 8 karakter huruf & angka' }}</p>
 
                                     <div class="relative">
                                         <span
@@ -281,11 +296,11 @@
                                             </svg>
                                         </span>
                                         <input id="password" :type="showPass ? 'text' : 'password'" name="password"
-                                            x-model="password" required placeholder="Buat password aman"
+                                            x-model="password" required minlength="8" maxlength="128" autocomplete="new-password" placeholder="{{ $isEn ? 'Create a strong password' : 'Buat password aman' }}"
                                             class="w-full rounded-xl bg-slate-50 border border-slate-200 pl-10 pr-10 py-2.5 text-xs text-ink placeholder:text-gray-400 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15 focus:outline-none transition-all">
                                         <button type="button" @click="showPass = !showPass"
                                             class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-ink p-1 cursor-pointer"
-                                            aria-label="Tampilkan Password">
+                                            aria-label="{{ $isEn ? 'Toggle password visibility' : 'Tampilkan Password' }}">
                                             <svg x-show="!showPass" class="w-4 h-4" viewBox="0 0 24 24" fill="none"
                                                 stroke="currentColor" stroke-width="1.8">
                                                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
@@ -301,7 +316,7 @@
                                         </button>
                                     </div>
 
-                                    <div class="mt-2.5 grid grid-cols-3 gap-1.5">
+                                    <div class="mt-2 grid grid-cols-3 gap-1.5">
                                         <div class="h-1 rounded-full transition-colors"
                                             :class="strengthLevel() >= 1 ? 'bg-red-400' : 'bg-slate-200'"></div>
                                         <div class="h-1 rounded-full transition-colors"
@@ -309,11 +324,44 @@
                                         <div class="h-1 rounded-full transition-colors"
                                             :class="strengthLevel() >= 3 ? 'bg-emerald-500' : 'bg-slate-200'"></div>
                                     </div>
+
+                                    <!-- Konfirmasi Password -->
+                                    <div class="mt-2.5">
+                                        <div class="flex items-center justify-between mb-1">
+                                            <label for="password_confirmation" class="text-[11px] font-heading font-bold text-ink">
+                                                {{ $isEn ? 'Confirm Password' : 'Konfirmasi Password' }}
+                                            </label>
+                                            <span
+                                                x-show="password_confirmation.length > 0"
+                                                style="display: none;"
+                                                class="text-[10px] font-bold"
+                                                :class="passwordsMatch() ? 'text-emerald-600' : 'text-red-600'"
+                                                x-text="passwordsMatch() ? @js($isEn ? 'Matched' : 'Cocok') : @js($isEn ? 'Not matching' : 'Belum cocok')"
+                                            ></span>
+                                        </div>
+                                        <div class="relative">
+                                            <input id="password_confirmation" :type="showConfirm ? 'text' : 'password'" name="password_confirmation"
+                                                x-model="password_confirmation" required minlength="8" maxlength="128" autocomplete="new-password"
+                                                placeholder="{{ $isEn ? 'Repeat password' : 'Ulangi password' }}"
+                                                class="w-full rounded-xl bg-slate-50 border border-slate-200 pl-3.5 pr-10 py-2 text-xs text-ink placeholder:text-gray-400 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15 focus:outline-none transition-all">
+                                            <button type="button" @click="showConfirm = !showConfirm"
+                                                class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-ink p-1 cursor-pointer"
+                                                aria-label="{{ $isEn ? 'Toggle confirmation visibility' : 'Tampilkan konfirmasi password' }}">
+                                                <svg x-show="!showConfirm" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                                    <circle cx="12" cy="12" r="3" />
+                                                </svg>
+                                                <svg x-show="showConfirm" style="display: none;" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                                                    <line x1="1" y1="1" x2="23" y2="23" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
 
                             </div>
 
-                            <!-- Garis konvergensi ke tombol Daftar -->
                             <div class="hidden md:block relative h-7 max-w-xl mx-auto">
                                 <svg class="w-full h-full overflow-visible" viewBox="0 0 600 28" fill="none">
                                     <circle cx="150" cy="0" r="3.5" fill="#FFFFFF" stroke="#3B82F6" stroke-width="2" />
@@ -324,13 +372,15 @@
                                 </svg>
                             </div>
 
-                            <!-- Tombol Daftar & Daftar Google berdampingan -->
+                            <!-- Tombol Daftar & Google -->
                             <div class="mt-4 md:mt-0 flex flex-col items-center">
                                 <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
                                     <div class="flow-node p-1.5 rounded-full">
                                         <button type="submit"
-                                            class="min-w-[210px] rounded-full bg-ink hover:bg-sky text-white font-heading font-bold text-xs uppercase tracking-wider px-7 py-3.5 flex items-center justify-center gap-2 transition-colors cursor-pointer">
-                                            <span>Daftar Sekarang</span>
+                                            :disabled="submitting"
+                                            class="min-w-[210px] rounded-full bg-ink hover:bg-sky text-white font-heading font-bold text-xs uppercase tracking-wider px-7 py-3.5 flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
+                                            <span x-show="submitting" style="display: none;" class="w-3.5 h-3.5 border-2 border-lime border-t-transparent rounded-full animate-spin"></span>
+                                            <span>{{ $isEn ? 'Register Now' : 'Daftar Sekarang' }}</span>
                                             <svg class="w-4 h-4 text-lime" viewBox="0 0 24 24" fill="none"
                                                 stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
                                                 stroke-linejoin="round">
@@ -353,7 +403,7 @@
                                                 <path fill="#EA4335"
                                                     d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.99 3.14c.95-2.85 3.6-4.96 6.72-4.96z" />
                                             </svg>
-                                            <span>Daftar dengan Google</span>
+                                            <span>{{ $isEn ? 'Sign Up with Google' : 'Daftar dengan Google' }}</span>
                                         </a>
                                     </div>
                                 </div>
@@ -362,51 +412,47 @@
 
                     </div>
 
-                    <!-- Kolom Kanan: Judul Register Variatif di Atas + Gambar Robot Ukuran Besar (hanya desktop agar mobile fokus form) -->
+                    <!-- Kolom Kanan: Maskot Desktop -->
                     <div class="hidden lg:flex lg:col-span-5 lg:order-2 flex-col items-center justify-center relative">
                         <div
                             class="relative w-full max-w-[440px] rounded-[28px] bg-white/95 backdrop-blur-md border border-sky/25 p-5 sm:p-6 shadow-neutral flex flex-col items-center text-center">
-                            <!-- Konektor horizontal dari form kiri ke maskot kanan -->
                             <div class="hidden xl:flex items-center absolute -left-10 top-1/2 -translate-y-1/2">
                                 <span class="w-2.5 h-2.5 rounded-full bg-[#3B82F6]"></span>
                                 <div class="w-8 h-[1.5px] bg-[#93C5FD] flow-line-dashed"></div>
                                 <span class="w-2.5 h-2.5 rounded-full bg-white border-2 border-[#3B82F6]"></span>
                             </div>
 
-                            <!-- Badge & Logo di atas judul robot -->
                             <div
                                 class="inline-flex items-center gap-2 rounded-full bg-white/40 border border-white px-3.5 py-1 text-[11px] font-heading font-extrabold text-ink mb-3">
                                 <img src="{{ asset('images/logo.png') }}" alt="Logo" class="w-4 h-4 object-contain">
-
                             </div>
 
-                            <!-- Judul besar di atas gambar robot (kalimat bervariasi) -->
                             <h2
                                 class="font-heading font-extrabold text-2xl sm:text-3xl text-ink leading-tight tracking-tight">
-                                Register &amp; Jadilah <span class="text-sky">Agen Siber Cerdas</span>
+                                @if ($isEn)
+                                    Register &amp; Become a <span class="text-sky">Smart Cyber Citizen</span>
+                                @else
+                                    Register &amp; Jadilah <span class="text-sky">Agen Siber Cerdas</span>
+                                @endif
                             </h2>
                             <p class="mt-1.5 text-xs text-muted max-w-sm leading-relaxed">
-                                Bergabung bersama Robot Digi-Safe untuk membuka seluruh level tantangan Minigame,
-                                Lencana Achievement, dan profil komunitas.
+                                {{ $isEn
+                                    ? 'Join the Digi-Safe Robot to unlock every Minigame challenge level, Achievement Badges, and community profile.'
+                                    : 'Bergabung bersama Robot Digi-Safe untuk membuka seluruh level tantangan Minigame, Lencana Achievement, dan profil komunitas.' }}
                             </p>
 
-                            <!-- Gambar Robot Ukuran Besar -->
                             <div class="my-3 w-full flex items-center justify-center">
                                 <img src="{{ asset('images/mascot-register.png') }}"
                                     alt="Maskot Robot Digi-Safe Register"
                                     class="w-full max-w-[280px] sm:max-w-[320px] max-h-[250px] xl:max-h-[285px] object-contain select-none pointer-events-none">
                             </div>
 
-                            <!-- Bar info bawah maskot -->
                             <div
                                 class="pt-3.5 border-t border-gray-100 w-full flex items-center justify-between text-xs text-left">
                                 <div>
-                                    <span class="font-heading font-bold text-ink block">Suarakan Keamanan
-                                        Digital!</span>
-                                    <span class="text-[11px] text-muted">Akses penuh 5+ level minigame, forum &amp;
-                                        direktori warga siber</span>
+                                    <span class="font-heading font-bold text-ink block">{{ $isEn ? 'Champion Digital Safety!' : 'Suarakan Keamanan Digital!' }}</span>
+                                    <span class="text-[11px] text-muted">{{ $isEn ? 'Full access to 5+ minigame levels, forum & cyber citizen directory' : 'Akses penuh 5+ level minigame, forum & direktori warga siber' }}</span>
                                 </div>
-
                             </div>
                         </div>
                     </div>
