@@ -101,15 +101,19 @@
     {{ $attributes->merge(['class' => "group relative h-full rounded-[32px] bg-white p-2.5 border border-gray-100 shadow-[0_18px_45px_rgba(15,23,42,0.07)] hover:shadow-[0_24px_55px_rgba(30,136,229,0.14)] hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between overflow-hidden select-none {$class}"]) }}
 >
     <div>
-        <!-- Banner Awan Atas (atau custom banner user jika ada) -->
+        @php
+            $isDarkCard = ($currentTheme ?? 'light') === 'dark';
+            $defaultCardBanner = $isDarkCard ? asset('images/nightsky.jpg') : asset('images/bluesky.jpeg');
+        @endphp
+        <!-- Banner Awan Atas (atau custom banner user jika ada; otomatis langit malam di Dark Mode) -->
         <div
             class="relative h-36 sm:h-40 w-full rounded-[24px] overflow-hidden shrink-0"
-            style="background-image: url('{{ $user->banner_url ?: asset('images/bluesky.jpeg') }}'); background-size: cover; background-position: center;"
+            style="background-image: url('{{ $user->banner_url ?: $defaultCardBanner }}'); background-size: cover; background-position: center;"
         >
             @if (! $user->banner_url)
                 <div
                     class="absolute inset-0 pointer-events-none"
-                    style="background: linear-gradient(180deg, rgba(186, 230, 253, 0.35) 0%, rgba(255, 255, 255, 0.25) 100%);"
+                    style="background: {{ $isDarkCard ? 'linear-gradient(180deg, rgba(4, 10, 28, 0.22) 0%, rgba(15, 23, 42, 0.45) 100%)' : 'linear-gradient(180deg, rgba(186, 230, 253, 0.35) 0%, rgba(255, 255, 255, 0.25) 100%)' }};"
                 ></div>
             @endif
 
@@ -118,7 +122,7 @@
                     type="button"
                     @click.stop="toggleFollow()"
                     :disabled="busy"
-                    :class="followed ? 'bg-ink text-lime' : 'bg-white/95 text-[#0A0A0A] hover:bg-white'"
+                    :class="followed ? 'bg-ink text-lime border border-lime/35' : 'bg-white/95 text-[#0A0A0A] border border-slate-200/70 hover:bg-white'"
                     class="absolute top-3.5 right-3.5 rounded-full px-4 py-1.5 text-xs font-heading font-bold shadow-sm inline-flex items-center gap-1.5 transition-all cursor-pointer z-20 disabled:opacity-60"
                 >
                     <span x-text="followed ? @js($isEnCard ? 'Following' : 'Mengikuti') : @js($isEnCard ? 'Follow' : 'Ikuti')"></span>

@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\ApiToken;
 use App\Models\User;
 use App\Rules\ValidRealEmail;
+use App\Services\SocialSchemaHelper;
+use App\Services\UploadValidationHelper;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,6 +16,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class AuthController extends Controller
@@ -231,11 +235,146 @@ class AuthController extends Controller
         Auth::login($user, true);
         $request->session()->regenerate();
 
+        // Khusus login Google: arahkan ke halaman kustomisasi profil jika belum pernah menyelesaikan onboarding Google
+        $privacySettings = is_array($user->privacy_settings) ? $user->privacy_settings : [];
+        $hasCompletedGoogleOnboarding = (bool) ($privacySettings['google_onboarded'] ?? false);
+
+        if ($user->wasRecentlyCreated || ! $hasCompletedGoogleOnboarding) {
+            $request->session()->put('google_onboarding_pending', true);
+
+            return redirect()->route('auth.google.customize');
+        }
+
         $defaultTarget = $user->hasAdminAccess()
             ? route('admin.dashboard')
             : route('beranda');
 
         return redirect()->intended($defaultTarget);
+    }
+
+    /**
+     * Halaman kustomisasi profil khusus pengguna yang masuk lewat Google OAuth (tanpa navbar).
+     */
+    public function showGoogleCustomize(Request $request): View|RedirectResponse
+    {
+        $user = Auth::user();
+        if (! $user || $user->oauth_provider !== 'google') {
+            return redirect()->route('beranda');
+        }
+
+        $privacySettings = is_array($user->privacy_settings) ? $user->privacy_settings : [];
+        if ((bool) ($privacySettings['google_onboarded'] ?? false) && ! $request->session()->get('google_onboarding_pending')) {
+            return redirect()->route($user->hasAdminAccess() ? 'admin.dashboard' : 'beranda');
+        }
+
+        return view('auth.google-customize', [
+            'user' => $user,
+            'redirectTarget' => $user->hasAdminAccess() ? route('admin.dashboard') : route('beranda'),
+        ]);
+    }
+
+    /**
+     * Simpan kustomisasi profil awal khusus pengguna Google (nickname & username wajib, avatar & banner opsional).
+     */
+    public function storeGoogleCustomize(Request $request): JsonResponse|RedirectResponse
+    {
+        SocialSchemaHelper::ensureReady();
+        $user = Auth::user();
+
+        if (! $user || $user->oauth_provider !== 'google') {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Halaman ini khusus untuk akun Google.'], 403);
+            }
+
+            return redirect()->route('beranda');
+        }
+
+        $validated = $request->validate([
+            'nama_lengkap' => ['required', 'string', 'min:2', 'max:100'],
+            'username' => [
+                'required',
+                'string',
+                'min:3',
+                'max:50',
+                'alpha_dash',
+                Rule::unique('users', 'username')->ignore($user->id),
+            ],
+            'avatar' => UploadValidationHelper::imageRules(5120),
+            'banner' => UploadValidationHelper::imageRules(6144),
+        ], [
+            'nama_lengkap.required' => 'Nickname / Nama tampilan wajib diisi.',
+            'nama_lengkap.min' => 'Nickname minimal 2 karakter.',
+            'username.required' => 'Username wajib diisi.',
+            'username.min' => 'Username minimal 3 karakter.',
+            'username.unique' => 'Username ini sudah dipakai pengguna lain.',
+            'username.alpha_dash' => 'Username hanya boleh berisi huruf, angka, strip (-), dan garis bawah (_).',
+        ]);
+
+        $privacy = is_array($user->privacy_settings) ? $user->privacy_settings : [];
+        $privacy['google_onboarded'] = true;
+
+        $data = [
+            'nama_lengkap' => trim($validated['nama_lengkap']),
+            'username' => Str::lower(trim($validated['username'])),
+            'privacy_settings' => $privacy,
+        ];
+
+        if ($request->hasFile('avatar')) {
+            $file = $request->file('avatar');
+            $safeExt = UploadValidationHelper::safeExtension($file);
+            $filename = 'avatar_' . $user->id . '_' . time() . '.' . $safeExt;
+
+            $targetDir = public_path('images/avatars');
+            if (! is_dir($targetDir)) {
+                mkdir($targetDir, 0755, true);
+            }
+            $file->move($targetDir, $filename);
+
+            $storageDir = storage_path('app/public/avatars');
+            if (! is_dir($storageDir)) {
+                mkdir($storageDir, 0755, true);
+            }
+            @copy($targetDir . '/' . $filename, $storageDir . '/' . $filename);
+
+            UploadValidationHelper::deleteOldAsset($user->avatar, 'avatars');
+            $data['avatar'] = 'images/avatars/' . $filename;
+        }
+
+        if ($request->hasFile('banner')) {
+            $bannerFile = $request->file('banner');
+            $safeExt = UploadValidationHelper::safeExtension($bannerFile);
+            $bannerName = 'banner_' . $user->id . '_' . time() . '.' . $safeExt;
+
+            $bannerDir = public_path('images/banners');
+            if (! is_dir($bannerDir)) {
+                mkdir($bannerDir, 0755, true);
+            }
+            $bannerFile->move($bannerDir, $bannerName);
+
+            $storageBannerDir = storage_path('app/public/banners');
+            if (! is_dir($storageBannerDir)) {
+                mkdir($storageBannerDir, 0755, true);
+            }
+            @copy($bannerDir . '/' . $bannerName, $storageBannerDir . '/' . $bannerName);
+
+            UploadValidationHelper::deleteOldAsset($user->banner, 'banners');
+            $data['banner'] = 'images/banners/' . $bannerName;
+        }
+
+        $user->update($data);
+        $request->session()->forget('google_onboarding_pending');
+
+        $redirectTarget = $user->hasAdminAccess() ? route('admin.dashboard') : route('beranda');
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'ok' => true,
+                'redirect' => $redirectTarget,
+                'message' => 'Profil berhasil dikustomisasi!',
+            ]);
+        }
+
+        return redirect()->to($redirectTarget)->with('success', 'Profil Google Anda berhasil dikustomisasi! Selamat datang di Digi-Safe Purwakarta.');
     }
 
     /**

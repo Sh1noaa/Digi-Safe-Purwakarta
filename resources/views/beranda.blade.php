@@ -4,15 +4,27 @@
 
 @section('content')
 
-    <!-- hero background langit -->
+    @php
+        $isDarkHome = ($currentTheme ?? 'light') === 'dark';
+    @endphp
+
+    <!-- hero background langit (siang: awan cerah, malam: langit berbintang) -->
     <section id="beranda" class="relative pt-3 sm:pt-4 px-2 sm:px-4">
         <div
-            class="relative rounded-[20px] sm:rounded-[28px] overflow-hidden pt-28 sm:pt-32 pb-14 sm:pb-16 px-4 sm:px-8"
-            style="background-image: url('{{ asset('images/bluesky.jpeg') }}'); background-size: cover; background-position: center;"
+            class="hero-sky-frame relative rounded-[20px] sm:rounded-[28px] overflow-hidden pt-28 sm:pt-32 pb-14 sm:pb-16 px-4 sm:px-8 {{ $isDarkHome ? 'bg-[#040B22] border border-sky/25 shadow-[0_24px_60px_rgba(2,6,23,0.65)]' : 'bg-[#105EB2]' }}"
         >
+            <img
+                src="{{ $isDarkHome ? asset('images/nightsky.jpg') : asset('images/bluesky.jpeg') }}"
+                alt=""
+                aria-hidden="true"
+                width="1600"
+                height="900"
+                fetchpriority="high"
+                decoding="async"
+                class="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none"
+            >
             <div
-                class="absolute inset-0 pointer-events-none"
-                style="background: linear-gradient(180deg, rgba(16, 94, 178, 0.86) 0%, rgba(30, 136, 229, 0.50) 48%, rgba(33, 150, 243, 0.16) 82%, rgba(30, 136, 229, 0.32) 100%);"
+                class="hero-sky-scrim absolute inset-0 pointer-events-none"
             ></div>
 
             <!-- animasi kawanan burung berterbangan di langit beranda -->
@@ -79,7 +91,7 @@
 
             <div class="relative z-10 max-w-6xl mx-auto text-center">
                 @auth
-                    <div class="reveal mb-5 inline-flex items-center gap-2.5 rounded-full bg-white/95 px-4 py-1.5 shadow-sm text-xs text-ink">
+                    <div class="hero-auth-badge reveal mb-5 inline-flex items-center gap-2.5 rounded-full bg-white/95 border border-white/25 px-4 py-1.5 shadow-sm text-xs text-ink">
                         <span class="font-medium text-muted">{{ __('ui.nav.logged_in_as') }}</span>
                         <span class="font-heading font-bold text-ink">{{ Auth::user()->nama_lengkap ?: Auth::user()->username }}</span>
                         @if (Auth::user()->isOwner())
@@ -101,7 +113,7 @@
                     {!! str_replace('Digital', '<span class="inline-block bg-lime text-ink px-2.5 sm:px-3.5 py-0.5 leading-tight rounded-md mx-0.5">Digital</span>', e(__('ui.home.hero_title'))) !!}
                 </h1>
 
-                <p class="reveal reveal-delay-1 mt-5 text-white/90 text-sm sm:text-base max-w-xl mx-auto leading-relaxed font-normal">
+                <p class="reveal reveal-delay-1 mt-5 text-white/95 text-sm sm:text-base max-w-xl mx-auto leading-relaxed font-normal">
                     {{ __('ui.home.hero_subtitle') }}
                 </p>
 
@@ -111,7 +123,7 @@
                             href="https://www.mediafire.com/file/267zvidpwo13p4n/digi-safe-purwakarta.apk/file"
                             target="_blank"
                             rel="noopener noreferrer"
-                            class="inline-flex items-center justify-center gap-2 rounded-full border border-white/35 bg-ink/25 backdrop-blur-xs text-white text-xs font-semibold uppercase tracking-[0.14em] px-6 py-3.5 hover:bg-ink/40 hover:-translate-y-0.5 transition-all duration-300"
+                            class="hero-secondary-cta inline-flex items-center justify-center gap-2 rounded-full border border-white/35 bg-ink/25 backdrop-blur-xs text-white text-xs font-semibold uppercase tracking-[0.14em] px-6 py-3.5 hover:bg-ink/40 hover:-translate-y-0.5 transition-all duration-300"
                         >
                             <svg class="w-4 h-4 text-lime" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -151,17 +163,26 @@
                     </div>
                 </div>
 
-                <!-- kartu 3d melengkung di atas awan (khusus layar desktop agar mobile tetap bersih) -->
-                <div class="hidden lg:block reveal reveal-delay-3 mt-12 sm:mt-14 hero-carousel-stage overflow-visible">
-                    <div class="flex items-center justify-center gap-4 max-w-6xl mx-auto py-3">
+                <!-- 9 kartu 3d melingkar (diam saat tidak di-drag, berputar melingkar 360° saat di-drag kanan/kiri, khusus desktop) -->
+                <div
+                    x-data="heroRingCarousel()"
+                    @pointerdown="handlePointerDown($event)"
+                    @dragstart.prevent
+                    :class="isDragging ? 'cursor-grabbing' : 'cursor-grab'"
+                    style="touch-action: pan-y;"
+                    class="hidden lg:block reveal reveal-delay-3 mt-10 sm:mt-12 hero-carousel-stage select-none"
+                >
+                    <div x-ref="stage" class="relative w-full max-w-6xl mx-auto h-[290px] overflow-visible">
 
-                        <div class="hero-slot-1 hidden lg:block shrink-0">
-                            <div class="hero-glass-edge w-[112px] h-[200px] rounded-[16px] p-3 flex flex-col justify-center gap-7 shadow-lg">
+                        @for ($heroLoop = 0; $heroLoop < 1; $heroLoop++)
+                        <!-- Kartu 1: Privasi & Sandi -->
+                        <div data-hero-ring-card class="hero-ring-card" @if ($heroLoop === 1) aria-hidden="true" @endif>
+                            <div class="hero-glass-edge w-[158px] h-[214px] rounded-[16px] p-3.5 flex flex-col justify-center gap-6 shadow-lg">
                                 <div class="inline-flex items-center justify-between rounded-full bg-white px-2.5 py-1.5 shadow-xs">
                                     <span class="w-3.5 h-3.5 rounded-full bg-sky flex items-center justify-center text-white">
                                         <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
                                     </span>
-                                    <span class="text-[9px] font-bold text-ink">{{ __('ui.home.card_privacy') }}</span>
+                                    <span class="text-[9.5px] font-bold text-ink">{{ __('ui.home.card_privacy') }}</span>
                                     <span class="w-1.5 h-1.5 rounded-full bg-lime"></span>
                                 </div>
 
@@ -169,20 +190,21 @@
                                     <span class="w-3.5 h-3.5 rounded-full bg-sky flex items-center justify-center text-white">
                                         <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
                                     </span>
-                                    <span class="text-[9px] font-bold text-ink">{{ __('ui.home.card_password') }}</span>
+                                    <span class="text-[9.5px] font-bold text-ink">{{ __('ui.home.card_password') }}</span>
                                     <span class="w-1.5 h-1.5 rounded-full bg-lime"></span>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="hero-slot-2 shrink-0">
-                            <div class="bg-white w-[172px] sm:w-[178px] h-[220px] rounded-[18px] p-3 text-left text-ink shadow-neutral border border-white flex flex-col justify-between">
+                        <!-- Kartu 2: Skor Kuis 89% +12% -->
+                        <div data-hero-ring-card class="hero-ring-card" @if ($heroLoop === 1) aria-hidden="true" @endif>
+                            <div class="hero-surface-card bg-white w-[178px] h-[220px] rounded-[18px] p-3 text-left text-ink shadow-neutral border border-white flex flex-col justify-between">
                                 <div class="rounded-[11px] bg-ink text-white px-3 py-2.5 flex items-center justify-between">
                                     <div>
                                         <span class="text-[11px] font-semibold block leading-none">{{ __('ui.home.card_quiz_score') }}</span>
-                                        <span class="text-[8px] text-white/55 block mt-1">{{ __('ui.home.card_citizen_avg') }}</span>
+                                        <span class="text-[8px] text-white/75 block mt-1">{{ __('ui.home.card_citizen_avg') }}</span>
                                     </div>
-                                    <svg class="w-3.5 h-3.5 text-white/80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <svg class="w-3.5 h-3.5 text-white/85" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
                                         <polyline points="17 6 23 6 23 12" />
                                     </svg>
@@ -198,29 +220,30 @@
 
                                 <div class="space-y-1.5 overflow-hidden">
                                     <div class="flex items-center gap-1 -mx-1">
-                                        <span class="text-[8px] font-medium text-muted border border-gray-200 rounded-full px-2 py-0.5 whitespace-nowrap">{{ __('ui.home.card_tag_alert') }}</span>
-                                        <span class="text-[8px] font-semibold text-ink border border-gray-200 rounded-full px-2 py-0.5 whitespace-nowrap">{{ __('ui.home.card_tag_strategy') }}</span>
-                                        <span class="text-[8px] font-semibold text-ink border border-gray-200 rounded-full px-2 py-0.5 whitespace-nowrap">{{ __('ui.home.card_tag_focus') }}</span>
+                                        <span class="hero-tag-chip text-[8px] font-medium text-muted border border-gray-200 rounded-full px-2 py-0.5 whitespace-nowrap">{{ __('ui.home.card_tag_alert') }}</span>
+                                        <span class="hero-tag-chip text-[8px] font-semibold text-ink border border-gray-200 rounded-full px-2 py-0.5 whitespace-nowrap">{{ __('ui.home.card_tag_strategy') }}</span>
+                                        <span class="hero-tag-chip text-[8px] font-semibold text-ink border border-gray-200 rounded-full px-2 py-0.5 whitespace-nowrap">{{ __('ui.home.card_tag_focus') }}</span>
                                     </div>
                                     <div class="flex items-center gap-1">
-                                        <span class="text-[8px] font-semibold text-ink border border-gray-200 rounded-full px-2 py-0.5 whitespace-nowrap">{{ __('ui.home.card_tag_privacy') }}</span>
-                                        <span class="text-[8px] font-semibold text-ink border border-gray-200 rounded-full px-2 py-0.5 whitespace-nowrap">{{ __('ui.home.card_tag_antihoax') }}</span>
+                                        <span class="hero-tag-chip text-[8px] font-semibold text-ink border border-gray-200 rounded-full px-2 py-0.5 whitespace-nowrap">{{ __('ui.home.card_tag_privacy') }}</span>
+                                        <span class="hero-tag-chip text-[8px] font-semibold text-ink border border-gray-200 rounded-full px-2 py-0.5 whitespace-nowrap">{{ __('ui.home.card_tag_antihoax') }}</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="hero-slot-3 shrink-0">
-                            <div class="bg-[#F3F4F6] w-[188px] sm:w-[196px] h-[226px] rounded-[18px] p-4 text-left text-ink shadow-neutral border border-white flex flex-col justify-between overflow-hidden">
+                        <!-- Kartu 3: Modul Phishing 520k+ -->
+                        <div data-hero-ring-card class="hero-ring-card" @if ($heroLoop === 1) aria-hidden="true" @endif>
+                            <div class="hero-surface-soft bg-[#F3F4F6] w-[184px] h-[222px] rounded-[18px] p-4 text-left text-ink shadow-neutral border border-white flex flex-col justify-between overflow-hidden">
                                 <div class="space-y-2 -mx-3 pt-1">
                                     <div class="flex items-center justify-center gap-1.5">
-                                        <span class="text-[10px] font-semibold text-ink bg-white rounded-full px-3 py-1 shadow-2xs whitespace-nowrap">{{ __('ui.home.card_tag_edu') }}</span>
-                                        <span class="text-[10px] font-semibold text-ink bg-white rounded-full px-3 py-1 shadow-2xs whitespace-nowrap">{{ __('ui.home.card_tag_strategic') }}</span>
-                                        <span class="text-[10px] font-semibold text-muted bg-white rounded-full px-3 py-1 shadow-2xs whitespace-nowrap">{{ __('ui.home.card_tag_cyber') }}</span>
+                                        <span class="hero-soft-pill text-[10px] font-semibold text-ink bg-white rounded-full px-3 py-1 shadow-2xs whitespace-nowrap">{{ __('ui.home.card_tag_edu') }}</span>
+                                        <span class="hero-soft-pill text-[10px] font-semibold text-ink bg-white rounded-full px-3 py-1 shadow-2xs whitespace-nowrap">{{ __('ui.home.card_tag_strategic') }}</span>
+                                        <span class="hero-soft-pill text-[10px] font-semibold text-muted bg-white rounded-full px-3 py-1 shadow-2xs whitespace-nowrap">{{ __('ui.home.card_tag_cyber') }}</span>
                                     </div>
                                     <div class="flex items-center justify-center gap-1.5">
-                                        <span class="text-[10px] font-semibold text-ink bg-white rounded-full px-3 py-1 shadow-2xs whitespace-nowrap">{{ __('ui.home.card_tag_aware') }}</span>
-                                        <span class="text-[10px] font-semibold text-ink bg-white rounded-full px-3 py-1 shadow-2xs whitespace-nowrap">{{ __('ui.home.card_tag_safe_factor') }}</span>
+                                        <span class="hero-soft-pill text-[10px] font-semibold text-ink bg-white rounded-full px-3 py-1 shadow-2xs whitespace-nowrap">{{ __('ui.home.card_tag_aware') }}</span>
+                                        <span class="hero-soft-pill text-[10px] font-semibold text-ink bg-white rounded-full px-3 py-1 shadow-2xs whitespace-nowrap">{{ __('ui.home.card_tag_safe_factor') }}</span>
                                     </div>
                                 </div>
 
@@ -233,9 +256,10 @@
                             </div>
                         </div>
 
-                        <div class="hero-slot-4 shrink-0">
-                            <div class="hero-glass-blue w-[188px] sm:w-[196px] h-[226px] rounded-[18px] p-5 text-center text-white flex flex-col items-center justify-center">
-                                <div class="w-9 h-9 rounded-full bg-white text-sky flex items-center justify-center shadow-sm mb-3">
+                        <!-- Kartu 4 (posisi tengah awal): Data Latihan -->
+                        <div data-hero-ring-card class="hero-ring-card" @if ($heroLoop === 1) aria-hidden="true" @endif>
+                            <div class="hero-glass-blue w-[186px] h-[224px] rounded-[18px] p-5 text-center text-white flex flex-col items-center justify-center">
+                                <div class="hero-glass-plus w-9 h-9 rounded-full bg-white text-sky flex items-center justify-center shadow-sm mb-3">
                                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
                                         <line x1="12" y1="5" x2="12" y2="19" />
                                         <line x1="5" y1="12" x2="19" y2="12" />
@@ -244,14 +268,15 @@
                                 <h3 class="font-heading font-bold text-[19px] text-white tracking-tight leading-tight">
                                     {{ __('ui.home.card_training_data') }}
                                 </h3>
-                                <p class="text-[10px] text-white/80 mt-1 font-medium">
+                                <p class="text-[10px] text-white/90 mt-1 font-medium">
                                     {{ __('ui.home.card_real_sim') }}
                                 </p>
                             </div>
                         </div>
 
-                        <div class="hero-slot-5 shrink-0">
-                            <div class="bg-[#0A0A0A] text-white w-[174px] sm:w-[180px] h-[220px] rounded-[18px] p-4 text-left shadow-neutral border-[1.5px] border-white/85 flex items-center">
+                        <!-- Kartu 5: Slogan Literasi -->
+                        <div data-hero-ring-card class="hero-ring-card" @if ($heroLoop === 1) aria-hidden="true" @endif>
+                            <div class="hero-slogan-card bg-[#0A0A0A] text-white w-[180px] h-[220px] rounded-[18px] p-4 text-left shadow-neutral border-[1.5px] border-white/85 flex items-center">
                                 <p class="font-heading font-semibold text-[15px] leading-[1.35] tracking-tight">
                                     <span class="text-white">{{ __('ui.home.card_slogan_1') }}</span>
                                     <span class="inline-flex items-center justify-center align-middle w-4 h-4 rounded-full bg-lime text-ink mx-0.5">
@@ -259,16 +284,17 @@
                                             <circle cx="12" cy="12" r="4" />
                                         </svg>
                                     </span>
-                                    <span class="text-white/45">{{ __('ui.home.card_slogan_2') }}</span>
+                                    <span class="text-slate-300">{{ __('ui.home.card_slogan_2') }}</span>
                                     <span class="text-white">{{ __('ui.home.card_slogan_3') }}</span>
-                                    <span class="text-white/45">{{ __('ui.home.card_slogan_4') }}</span>
+                                    <span class="text-slate-300">{{ __('ui.home.card_slogan_4') }}</span>
                                     <span class="text-white">{{ __('ui.home.card_slogan_5') }}</span>
                                 </p>
                             </div>
                         </div>
 
-                        <div class="hero-slot-6 hidden md:block shrink-0">
-                            <div class="bg-white w-[144px] h-[212px] rounded-[18px] p-3.5 text-left text-ink shadow-neutral border border-white flex flex-col justify-between overflow-hidden">
+                        <!-- Kartu 6: Indeks Literasi Siber -->
+                        <div data-hero-ring-card class="hero-ring-card" @if ($heroLoop === 1) aria-hidden="true" @endif>
+                            <div class="hero-surface-card bg-white w-[170px] h-[216px] rounded-[18px] p-3.5 text-left text-ink shadow-neutral border border-white flex flex-col justify-between overflow-hidden">
                                 <div>
                                     <span class="font-heading font-bold text-[11px] text-ink block leading-tight">
                                         {!! nl2br(e(__('ui.home.card_index_title'))) !!}
@@ -278,18 +304,18 @@
                                 <div class="mt-auto">
                                     <svg class="w-full h-24" viewBox="0 0 120 80" fill="none">
                                         <defs>
-                                            <linearGradient id="skyChartGrad" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="0%" stop-color="#2196F3" stop-opacity="0.55" />
-                                                <stop offset="100%" stop-color="#2196F3" stop-opacity="0.08" />
+                                            <linearGradient id="skyChartGrad-{{ $heroLoop }}" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="0%" stop-color="#38BDF8" stop-opacity="0.55" />
+                                                <stop offset="100%" stop-color="#38BDF8" stop-opacity="0.08" />
                                             </linearGradient>
                                         </defs>
-                                        <line x1="20" y1="10" x2="20" y2="68" stroke="#E5E7EB" stroke-width="1" stroke-dasharray="2 2" />
-                                        <line x1="45" y1="10" x2="45" y2="68" stroke="#E5E7EB" stroke-width="1" stroke-dasharray="2 2" />
-                                        <line x1="70" y1="10" x2="70" y2="68" stroke="#E5E7EB" stroke-width="1" stroke-dasharray="2 2" />
-                                        <line x1="95" y1="10" x2="95" y2="68" stroke="#E5E7EB" stroke-width="1" stroke-dasharray="2 2" />
+                                        <line class="hero-chart-grid" x1="20" y1="10" x2="20" y2="68" stroke="#E5E7EB" stroke-width="1" stroke-dasharray="2 2" />
+                                        <line class="hero-chart-grid" x1="45" y1="10" x2="45" y2="68" stroke="#E5E7EB" stroke-width="1" stroke-dasharray="2 2" />
+                                        <line class="hero-chart-grid" x1="70" y1="10" x2="70" y2="68" stroke="#E5E7EB" stroke-width="1" stroke-dasharray="2 2" />
+                                        <line class="hero-chart-grid" x1="95" y1="10" x2="95" y2="68" stroke="#E5E7EB" stroke-width="1" stroke-dasharray="2 2" />
 
-                                        <path d="M4 60 L24 44 L44 50 L68 30 L90 36 L116 18 L116 68 L4 68 Z" fill="url(#skyChartGrad)" />
-                                        <path d="M4 60 L24 44 L44 50 L68 30 L90 36 L116 18" stroke="#1E88E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                        <path d="M4 60 L24 44 L44 50 L68 30 L90 36 L116 18 L116 68 L4 68 Z" fill="url(#skyChartGrad-{{ $heroLoop }})" />
+                                        <path class="hero-chart-line" d="M4 60 L24 44 L44 50 L68 30 L90 36 L116 18" stroke="#1E88E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                                     </svg>
 
                                     <div class="flex items-center justify-between text-[7px] text-gray-400 font-semibold pt-1 border-t border-gray-100">
@@ -301,19 +327,111 @@
                             </div>
                         </div>
 
-                        <div class="hero-slot-7 hidden xl:block shrink-0">
-                            <div class="w-[38px] h-[190px] rounded-[14px] overflow-hidden border border-white/45 bg-sky/40 backdrop-blur-xs shadow-lg flex flex-col justify-between p-2">
-                                <div class="w-full h-16 rounded-lg bg-ink/50"></div>
-                                <div class="w-full h-12 rounded-lg bg-white/30"></div>
+                        <!-- Kartu 7 (Variasi Baru): Proteksi Akun & Checklist Harian -->
+                        <div data-hero-ring-card class="hero-ring-card" @if ($heroLoop === 1) aria-hidden="true" @endif>
+                            <div class="hero-surface-card bg-white w-[180px] h-[220px] rounded-[18px] p-3.5 text-left text-ink shadow-neutral border border-white flex flex-col justify-between">
+                                <div class="rounded-[11px] bg-sky text-white px-3 py-2 flex items-center justify-between">
+                                    <div>
+                                        <span class="text-[11px] font-heading font-bold block leading-none">{{ __('ui.home.card_shield_title') }}</span>
+                                        <span class="text-[8px] text-white/85 block mt-1">{{ __('ui.home.card_shield_sub') }}</span>
+                                    </div>
+                                    <svg class="w-4 h-4 text-lime shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                        <polyline points="9 12 11 14 15 10" />
+                                    </svg>
+                                </div>
+
+                                <div class="space-y-1.5 my-1">
+                                    <div class="flex items-center gap-2 text-[9.5px] font-semibold text-ink">
+                                        <span class="w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0">
+                                            <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12" /></svg>
+                                        </span>
+                                        <span class="truncate">{{ __('ui.home.card_shield_item_1') }}</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 text-[9.5px] font-semibold text-ink">
+                                        <span class="w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0">
+                                            <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12" /></svg>
+                                        </span>
+                                        <span class="truncate">{{ __('ui.home.card_shield_item_2') }}</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 text-[9.5px] font-semibold text-ink">
+                                        <span class="w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0">
+                                            <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12" /></svg>
+                                        </span>
+                                        <span class="truncate">{{ __('ui.home.card_shield_item_3') }}</span>
+                                    </div>
+                                </div>
+
+                                <div class="pt-2 border-t border-gray-100 flex items-center justify-between text-[9px] font-bold text-ink">
+                                    <span>{{ __('ui.home.card_shield_status') }}</span>
+                                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                </div>
                             </div>
                         </div>
+
+                        <!-- Kartu 8 (Variasi Baru): Arena Minigame Neon Lime -->
+                        <div data-hero-ring-card class="hero-ring-card" @if ($heroLoop === 1) aria-hidden="true" @endif>
+                            <div class="hero-lime-card bg-lime text-ink w-[182px] h-[222px] rounded-[18px] p-4 text-left shadow-neutral border border-white/80 flex flex-col justify-between">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-[9px] font-heading font-extrabold uppercase tracking-wider text-ink/80">{{ __('ui.home.card_arena_badge') }}</span>
+                                    <span class="w-7 h-7 rounded-lg bg-ink text-lime flex items-center justify-center">
+                                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                            <polygon points="5 3 19 12 5 21 5 3" />
+                                        </svg>
+                                    </span>
+                                </div>
+
+                                <div>
+                                    <span class="font-heading font-extrabold text-[30px] text-ink leading-none tracking-tight block">
+                                        {{ __('ui.home.card_arena_title') }}
+                                    </span>
+                                    <span class="text-[10px] font-bold text-ink/75 block mt-1">
+                                        {{ __('ui.home.card_arena_sub') }}
+                                    </span>
+                                </div>
+
+                                <div class="flex flex-wrap items-center gap-1">
+                                    <span class="rounded-full bg-ink text-white text-[8.5px] font-bold px-2.5 py-0.5">Phishing</span>
+                                    <span class="rounded-full bg-ink text-white text-[8.5px] font-bold px-2.5 py-0.5">Defender</span>
+                                    <span class="rounded-full bg-white text-ink text-[8.5px] font-bold px-2.5 py-0.5">Link Trap</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Kartu 9 (Variasi Baru): Forum Warga Siber -->
+                        <div data-hero-ring-card class="hero-ring-card" @if ($heroLoop === 1) aria-hidden="true" @endif>
+                            <div class="hero-surface-soft bg-[#F3F4F6] w-[182px] h-[220px] rounded-[18px] p-4 text-left text-ink shadow-neutral border border-white flex flex-col justify-between">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center -space-x-1.5">
+                                        <span class="w-6 h-6 rounded-full bg-sky text-white text-[9px] font-extrabold flex items-center justify-center ring-2 ring-white">R</span>
+                                        <span class="w-6 h-6 rounded-full bg-ink text-lime text-[9px] font-extrabold flex items-center justify-center ring-2 ring-white">A</span>
+                                        <span class="w-6 h-6 rounded-full bg-emerald-500 text-white text-[9px] font-extrabold flex items-center justify-center ring-2 ring-white">S</span>
+                                    </div>
+                                    <span class="hero-soft-pill text-[9px] font-bold bg-white text-ink rounded-full px-2.5 py-0.5 shadow-2xs">
+                                        {{ __('ui.home.card_forum_title') }}
+                                    </span>
+                                </div>
+
+                                <p class="font-heading font-bold text-[12px] text-ink leading-snug">
+                                    {{ __('ui.home.card_forum_quote') }}
+                                </p>
+
+                                <div class="flex items-center justify-between pt-2 border-t border-gray-200/80">
+                                    <span class="rounded-full bg-sky/15 text-sky text-[8.5px] font-extrabold px-2 py-0.5">
+                                        {{ __('ui.home.card_forum_helpful') }}
+                                    </span>
+                                    <span class="text-[10px] font-heading font-extrabold text-emerald-600">+48</span>
+                                </div>
+                            </div>
+                        </div>
+                        @endfor
 
                     </div>
                 </div>
 
                 <!-- rating pengguna -->
                 <div class="reveal mt-8 flex flex-col items-center justify-center gap-1.5">
-                    <p class="text-xs font-medium text-white/90 tracking-wide">
+                    <p class="text-xs font-medium text-white/95 tracking-wide">
                         {{ __('ui.home.trusted_users') }}
                     </p>
                     <div class="flex items-center gap-1" aria-label="Rating 5 dari 5 bintang">
@@ -598,7 +716,7 @@
                         <!-- header grid halus di balik bahu folder kanan -->
                         <div class="service-white-grid service-folder-grid relative h-24 px-5 pt-4 flex justify-end items-start">
                             <span class="service-folder-grid-label text-[11px] font-heading font-bold text-ink text-right leading-tight">
-                                Digi-Safe<br><span class="text-sky text-[10px]">Edukasi Siber</span>
+                                Digi-Safe<br><span class="text-sky text-[10px]">{{ __('ui.home.folder_1_sub') }}</span>
                             </span>
                         </div>
 
@@ -632,10 +750,10 @@
                                 <div class="mt-6 pt-4 border-t service-folder-footer flex items-end justify-between">
                                     <div class="leading-none">
                                         <span class="font-heading font-extrabold text-2xl service-folder-num">01</span>
-                                        <span class="text-[11px] font-medium service-folder-unit ml-1">Modul</span>
+                                        <span class="text-[11px] font-medium service-folder-unit ml-1">{{ __('ui.home.folder_1_unit') }}</span>
                                     </div>
                                     <span class="text-xs font-semibold service-folder-link group-hover:text-lime transition-colors inline-flex items-center gap-1">
-                                        <span>Buka</span>
+                                        <span>{{ __('ui.home.folder_1_cta') }}</span>
                                         <span>&rarr;</span>
                                     </span>
                                 </div>
@@ -649,7 +767,7 @@
                     <div class="relative rounded-[20px] service-folder-fill overflow-hidden flex-1 flex flex-col justify-between min-h-[296px]">
                         <div class="service-white-grid service-folder-grid relative h-24 px-5 pt-4 flex justify-end items-start">
                             <span class="service-folder-grid-label text-[11px] font-heading font-bold text-ink text-right leading-tight">
-                                Digi-Safe<br><span class="text-sky text-[10px]">Arena Kuis</span>
+                                Digi-Safe<br><span class="text-sky text-[10px]">{{ __('ui.home.folder_2_sub') }}</span>
                             </span>
                         </div>
 
@@ -682,10 +800,10 @@
                                 <div class="mt-6 pt-4 border-t service-folder-footer flex items-end justify-between">
                                     <div class="leading-none">
                                         <span class="font-heading font-extrabold text-2xl service-folder-num">02</span>
-                                        <span class="text-[11px] font-medium service-folder-unit ml-1">Simulasi</span>
+                                        <span class="text-[11px] font-medium service-folder-unit ml-1">{{ __('ui.home.folder_2_unit') }}</span>
                                     </div>
                                     <span class="text-xs font-semibold service-folder-link group-hover:text-lime transition-colors inline-flex items-center gap-1">
-                                        <span>Mainkan</span>
+                                        <span>{{ __('ui.home.folder_2_cta') }}</span>
                                         <span>&rarr;</span>
                                     </span>
                                 </div>
@@ -699,7 +817,7 @@
                     <div class="relative rounded-[20px] service-folder-fill overflow-hidden flex-1 flex flex-col justify-between min-h-[296px]">
                         <div class="service-white-grid service-folder-grid relative h-24 px-6 pt-4 flex justify-end items-start">
                             <span class="service-folder-grid-label text-[11px] font-heading font-bold text-ink text-right leading-tight">
-                                Digi-Safe Hub<br><span class="text-sky text-[10px]">Diskusi &amp; Solusi Siber</span>
+                                Digi-Safe Hub<br><span class="text-sky text-[10px]">{{ __('ui.home.folder_3_sub') }}</span>
                             </span>
                         </div>
 
@@ -735,10 +853,10 @@
                                     <div class="mt-6 pt-4 border-t service-folder-footer flex items-end justify-between">
                                         <div class="leading-none">
                                             <span class="font-heading font-extrabold text-2xl service-folder-num">03</span>
-                                            <span class="text-[11px] font-medium service-folder-unit ml-1">Forum</span>
+                                            <span class="text-[11px] font-medium service-folder-unit ml-1">{{ __('ui.home.folder_3_unit') }}</span>
                                         </div>
                                         <span class="text-xs font-semibold service-folder-link group-hover:text-lime transition-colors inline-flex items-center gap-1">
-                                            <span>Diskusi</span>
+                                            <span>{{ __('ui.home.folder_3_cta') }}</span>
                                             <span>&rarr;</span>
                                         </span>
                                     </div>

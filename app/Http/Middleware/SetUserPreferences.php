@@ -39,6 +39,18 @@ class SetUserPreferences
         View::share('currentLocale', $locale);
         View::share('currentTheme', $theme);
 
+        // Pastikan pengguna baru Google OAuth menyelesaikan kustomisasi profil sebelum berpindah halaman
+        if (
+            Auth::check()
+            && session('google_onboarding_pending') === true
+            && Auth::user()->oauth_provider === 'google'
+            && $request->isMethod('GET')
+            && ! $request->expectsJson()
+            && ! $request->routeIs('auth.google.customize', 'auth.google.customize.store', 'logout', 'storage.fallback')
+        ) {
+            return redirect()->route('auth.google.customize');
+        }
+
         return $next($request);
     }
 }

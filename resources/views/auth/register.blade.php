@@ -90,11 +90,11 @@
                     </div>
                 </div>
 
-                <!-- Layout 2 Kolom: Kiri Form Register Flowchart, Kanan Robot Besar + Judul Variasi Register -->
+                <!-- Layout 2 Kolom Desktop: Kiri Form Register Flowchart, Kanan Robot Besar (di mobile khusus form saja) -->
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
 
-                    <!-- Kolom Kiri: Form Register Node Flowchart (muncul duluan di mobile) -->
-                    <div class="lg:col-span-7 order-1 lg:order-1">
+                    <!-- Kolom Kiri: Form Register Node Flowchart -->
+                    <div class="lg:col-span-7 lg:order-1 w-full max-w-xl mx-auto lg:max-w-none">
 
                         <!-- Node 1 (Top): Buat Akun Baru + Logo Digi-Safe -->
                         <div class="relative flex justify-center">
@@ -362,8 +362,8 @@
 
                     </div>
 
-                    <!-- Kolom Kanan: Judul Register Variatif di Atas + Gambar Robot Ukuran Besar (tampil di bawah form pada mobile) -->
-                    <div class="lg:col-span-5 order-2 lg:order-2 flex flex-col items-center justify-center relative">
+                    <!-- Kolom Kanan: Judul Register Variatif di Atas + Gambar Robot Ukuran Besar (hanya desktop agar mobile fokus form) -->
+                    <div class="hidden lg:flex lg:col-span-5 lg:order-2 flex-col items-center justify-center relative">
                         <div
                             class="relative w-full max-w-[440px] rounded-[28px] bg-white/95 backdrop-blur-md border border-sky/25 p-5 sm:p-6 shadow-neutral flex flex-col items-center text-center">
                             <!-- Konektor horizontal dari form kiri ke maskot kanan -->

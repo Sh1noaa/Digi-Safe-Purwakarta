@@ -162,7 +162,7 @@
 
                         <span class="mt-5 inline-flex items-center gap-1.5 rounded-full bg-white px-3.5 py-1 text-[11px] font-bold text-ink shadow-2xs">
                             <span class="w-2 h-2 rounded-full bg-sky"></span>
-                            <span>Creator & Lead Developer</span>
+                            <span>{{ app()->getLocale() === 'en' ? 'Creator & Lead Developer' : 'Kreator & Pengembang Utama' }}</span>
                         </span>
 
                         <p class="mt-3 font-heading font-bold text-base text-ink">

@@ -99,6 +99,12 @@ Route::middleware('guest')->group(function () {
 Route::get('/auth/google/redirect', [AuthController::class, 'redirectToGoogle'])->name('auth.google.redirect');
 Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback'])->name('auth.google.callback');
 
+// halaman kustomisasi profil khusus akun yang masuk melalui Google (tanpa navbar)
+Route::middleware('auth')->group(function () {
+    Route::get('/auth/google/customize', [AuthController::class, 'showGoogleCustomize'])->name('auth.google.customize');
+    Route::post('/auth/google/customize', [AuthController::class, 'storeGoogleCustomize'])->middleware('throttle:15,1')->name('auth.google.customize.store');
+});
+
 Route::post('/logout', [AuthController::class, 'logout'])
     ->middleware('auth')
     ->name('logout');

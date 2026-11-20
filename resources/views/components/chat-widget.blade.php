@@ -142,10 +142,10 @@
                                     <template x-if="!activeUser.is_bot">
                                         <a :href="activeUser.profile_url" class="font-heading font-bold text-xs text-ink hover:text-[#1E63E9] truncate" x-text="activeUser.nama"></a>
                                     </template>
-                                    <span x-show="activeUser.is_bot" class="shrink-0 rounded-full bg-sky/15 text-sky px-1.5 py-0.5 text-[9px] font-extrabold uppercase">Sistem Otomatis</span>
-                                    <span x-show="!activeUser.is_bot && activeRelation === 'accepted'" class="shrink-0 rounded-full bg-emerald-100 text-emerald-700 px-1.5 py-0.5 text-[9px] font-bold">Teman</span>
+                                    <span x-show="activeUser.is_bot" class="shrink-0 rounded-full bg-sky/15 text-sky px-1.5 py-0.5 text-[9px] font-extrabold uppercase">{{ $isEnChat ? 'Automated' : 'Sistem Otomatis' }}</span>
+                                    <span x-show="!activeUser.is_bot && activeRelation === 'accepted'" class="shrink-0 rounded-full bg-emerald-100 text-emerald-700 px-1.5 py-0.5 text-[9px] font-bold">{{ $isEnChat ? 'Friend' : 'Teman' }}</span>
                                 </div>
-                                <span class="text-[10px] text-muted block truncate" x-text="activeUser.is_bot ? 'Notifikasi Resmi Digi-Safe Purwakarta' : (activeUser.specialty_role || ('@' + activeUser.username))"></span>
+                                <span class="text-[10px] text-muted block truncate" x-text="activeUser.is_bot ? @js($isEnChat ? 'Official Digi-Safe Purwakarta Alerts' : 'Notifikasi Resmi Digi-Safe Purwakarta') : (activeUser.specialty_role || ('@' + activeUser.username))"></span>
                             </div>
                         </div>
                     </template>

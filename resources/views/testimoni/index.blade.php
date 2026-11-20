@@ -216,7 +216,7 @@
                                     <span class="w-6 h-6 rounded-full bg-sky text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-white">D</span>
                                 @endforelse
                             </div>
-                            <span class="text-ink font-bold" x-text="'Lihat ' + items.length + ' Ulasan Pengguna Lainnya di Bawah'"></span>
+                            <span class="text-ink font-bold" x-text="@js(__('ui.testi.more_reviews_prefix')) + ' ' + items.length + ' ' + @js(__('ui.testi.more_reviews_suffix'))"></span>
                         </div>
 
                         <span class="w-9 h-9 rounded-full bg-sky/10 text-sky flex items-center justify-center group-hover:translate-y-0.5 transition-transform mt-1">
@@ -274,7 +274,8 @@
                             type="button"
                             @click="userPaused = !userPaused"
                             :aria-pressed="userPaused"
-                            :title="userPaused ? 'Putar otomatis' : 'Jeda otomatis'"
+                            :title="userPaused ? @js(__('ui.testi.play_auto')) : @js(__('ui.testi.pause_auto'))"
+                            :aria-label="userPaused ? @js(__('ui.testi.play_auto')) : @js(__('ui.testi.pause_auto'))"
                             class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white border border-gray-200 hover:border-sky text-ink text-xs font-bold shadow-2xs transition-colors cursor-pointer"
                         >
                             <svg x-show="!userPaused" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>

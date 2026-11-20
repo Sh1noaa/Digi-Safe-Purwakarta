@@ -353,4 +353,126 @@ class AvatarBorderAndUiPolishTest extends TestCase
             ->assertOk()
             ->assertSee('testi-pill-glass');
     }
+
+    public function test_dark_mode_switches_hero_to_nightsky_with_birds_and_mobile_auth_hides_mascots(): void
+    {
+        $user = User::create([
+            'username' => 'langit_malam',
+            'email' => 'malam@purwakarta.id',
+            'password' => Hash::make('password123'),
+            'role' => 'user',
+            'nama_lengkap' => 'Pengamat Langit',
+            'theme' => 'light',
+        ]);
+
+        // Mode Terang: pakai bluesky.jpeg + kawanan burung
+        $this->actingAs($user)->get('/')
+            ->assertOk()
+            ->assertSee('images/bluesky.jpeg')
+            ->assertDontSee('images/nightsky.jpg')
+            ->assertSee('bird-flock')
+            ->assertSee('hero-sky-scrim');
+
+        // Beralih ke Mode Gelap via tombol mode switch: ganti ke nightsky.jpg, burung tetap ada, dan kartu default pakai nightsky.jpg
+        $this->actingAs($user)
+            ->postJson('/preferences/quick', ['theme' => 'dark'])
+            ->assertOk()
+            ->assertJsonPath('theme', 'dark');
+
+        $this->actingAs($user->fresh())->get('/')
+            ->assertOk()
+            ->assertSee('images/nightsky.jpg')
+            ->assertDontSee('images/bluesky.jpeg')
+            ->assertSee('bird-flock')
+            ->assertSee('hero-sky-scrim')
+            ->assertSee('hero-surface-card');
+
+        // Halaman Login & Register (sebagai guest): kolom maskot disembunyikan di mobile (hidden lg:flex)
+        auth()->logout();
+
+        $this->get('/login')
+            ->assertOk()
+            ->assertSee('hidden lg:flex lg:col-span-5 lg:order-1', false)
+            ->assertSee('mascot-login.png');
+
+        $this->get('/register')
+            ->assertOk()
+            ->assertSee('hidden lg:flex lg:col-span-5 lg:order-2', false)
+            ->assertSee('mascot-register.png');
+    }
+
+    public function test_google_only_customize_onboarding_page_and_submission(): void
+    {
+        $regularUser = User::create([
+            'username' => 'user_biasa',
+            'email' => 'biasa@purwakarta.id',
+            'password' => Hash::make('password123'),
+            'role' => 'user',
+            'nama_lengkap' => 'User Biasa',
+        ]);
+
+        // User non-Google tidak boleh mengakses halaman kustomisasi Google
+        $this->actingAs($regularUser)
+            ->get('/auth/google/customize')
+            ->assertRedirect(route('beranda'));
+
+        $googleUser = User::create([
+            'username' => 'google_temp',
+            'email' => 'warga.google@gmail.com',
+            'password' => Hash::make('password123'),
+            'role' => 'user',
+            'nama_lengkap' => 'Warga Google',
+            'oauth_provider' => 'google',
+            'oauth_uid' => 'google-sub-12345',
+        ]);
+
+        // User Google yang belum selesai onboarding melihat halaman tanpa navbar + logo + maskot loading
+        $this->actingAs($googleUser)
+            ->withSession(['google_onboarding_pending' => true])
+            ->get('/auth/google/customize')
+            ->assertOk()
+            ->assertDontSee('<nav', false)
+            ->assertSee('images/logo.png')
+            ->assertSee('images/mascot-loading.png')
+            ->assertSee('nama_lengkap')
+            ->assertSee('username')
+            ->assertSee('avatar')
+            ->assertSee('banner');
+
+        // Jika mencoba lompat ke beranda sebelum selesai kustomisasi, tetap diarahkan ke halaman customize
+        $this->actingAs($googleUser)
+            ->withSession(['google_onboarding_pending' => true])
+            ->get('/')
+            ->assertRedirect(route('auth.google.customize'));
+
+        // Nickname & Username wajib; username duplikat ditolak
+        $this->actingAs($googleUser)
+            ->postJson('/auth/google/customize', [
+                'nama_lengkap' => '',
+                'username' => 'user_biasa',
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['nama_lengkap', 'username']);
+
+        // Submit valid tanpa avatar/banner (opsional) berhasil, menyimpan nickname & username dan menandai selesai
+        $this->actingAs($googleUser)
+            ->withSession(['google_onboarding_pending' => true])
+            ->postJson('/auth/google/customize', [
+                'nama_lengkap' => 'Bintang Siber',
+                'username' => 'bintang_pwk',
+            ])
+            ->assertOk()
+            ->assertJsonPath('ok', true)
+            ->assertJsonPath('redirect', route('beranda'));
+
+        $googleUser->refresh();
+        $this->assertSame('Bintang Siber', $googleUser->nama_lengkap);
+        $this->assertSame('bintang_pwk', $googleUser->username);
+        $this->assertTrue((bool) ($googleUser->privacy_settings['google_onboarded'] ?? false));
+
+        // Setelah selesai onboarding, mengakses /auth/google/customize langsung diarahkan ke Beranda
+        $this->actingAs($googleUser)
+            ->get('/auth/google/customize')
+            ->assertRedirect(route('beranda'));
+    }
 }

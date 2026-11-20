@@ -205,6 +205,185 @@ document.addEventListener('alpine:init', () => {
     }));
 
     /**
+     * Carousel lingkaran 3D penuh untuk 9 kartu hero Beranda:
+     * - POV sedikit menghadap ke atas (rotateX + lengkung vertikal) seperti referensi gambar 1
+     * - Seluruh 9 kartu membentuk lingkaran 360° utuh sehingga kartu di sisi belakang juga terlihat
+     * - Diam tenang saat tidak di-drag (0% GPU idle), berputar mulus 360° dengan inersia saat di-drag
+     */
+    Alpine.data('heroRingCarousel', () => ({
+        angle: 0,
+        angularVelocity: 0,
+        radiusX: 430,
+        radiusZ: 245,
+        cards: [],
+        isDragging: false,
+        hasDragged: false,
+        startX: 0,
+        startY: 0,
+        lastX: 0,
+        lastTime: 0,
+        lastFrameTime: 0,
+        rafId: null,
+
+        init() {
+            this.$nextTick(() => {
+                this.measure();
+                // Posisikan kartu ke-4 ("Data Latihan", index 3) tepat di depan tengah (0°)
+                if (this.cards.length > 3) {
+                    const step = (Math.PI * 2) / this.cards.length;
+                    this.angle = -(3 * step);
+                }
+                this.renderCards();
+            });
+
+            this._onResize = () => {
+                this.measure();
+                this.renderCards();
+            };
+            window.addEventListener('resize', this._onResize, { passive: true });
+
+            this._onPointerMove = (e) => this.handlePointerMove(e);
+            this._onPointerUp = () => this.handlePointerUp();
+            window.addEventListener('pointermove', this._onPointerMove, { passive: true });
+            window.addEventListener('pointerup', this._onPointerUp);
+            window.addEventListener('pointercancel', this._onPointerUp);
+        },
+
+        startInertiaLoop() {
+            if (this.rafId) return;
+            this.lastFrameTime = performance.now();
+            const loop = (now) => {
+                if (this.isDragging || Math.abs(this.angularVelocity) <= 0.0006) {
+                    this.angularVelocity = 0;
+                    this.rafId = null;
+                    return;
+                }
+                const dtSec = Math.min(0.05, Math.max(0.001, (now - this.lastFrameTime) / 1000));
+                this.lastFrameTime = now;
+                this.angle += this.angularVelocity * (dtSec * 60);
+                this.angularVelocity *= Math.pow(0.92, dtSec * 60);
+                this.renderCards();
+                this.rafId = requestAnimationFrame(loop);
+            };
+            this.rafId = requestAnimationFrame(loop);
+        },
+
+        stopLoop() {
+            if (this.rafId) {
+                cancelAnimationFrame(this.rafId);
+                this.rafId = null;
+            }
+        },
+
+        destroy() {
+            this.stopLoop();
+            window.removeEventListener('resize', this._onResize);
+            window.removeEventListener('pointermove', this._onPointerMove);
+            window.removeEventListener('pointerup', this._onPointerUp);
+            window.removeEventListener('pointercancel', this._onPointerUp);
+        },
+
+        measure() {
+            const stage = this.$refs.stage;
+            if (!stage) return;
+            this.cards = Array.from(stage.querySelectorAll('[data-hero-ring-card]'));
+            const w = stage.clientWidth || 1120;
+            this.radiusX = Math.min(460, Math.max(330, w * 0.41));
+            this.radiusZ = Math.round(this.radiusX * 0.58);
+        },
+
+        normalizeAngle(rad) {
+            const twoPi = Math.PI * 2;
+            let a = ((rad % twoPi) + twoPi) % twoPi;
+            if (a > Math.PI) a -= twoPi;
+            return a;
+        },
+
+        renderCards() {
+            const count = this.cards.length;
+            if (count === 0) return;
+            const step = (Math.PI * 2) / count;
+
+            for (let i = 0; i < count; i++) {
+                const el = this.cards[i];
+                const theta = this.normalizeAngle(this.angle + i * step);
+                const sinT = Math.sin(theta);
+                const cosT = Math.cos(theta);
+                // depth: 0 di sisi belakang lingkaran, 1 di sisi depan tengah
+                const depth = (cosT + 1) * 0.5;
+
+                const x = (sinT * this.radiusX).toFixed(2);
+                // Kartu depan sedikit lebih rendah dan kartu belakang naik melengkung agar bentuk lingkaran terlihat jelas
+                const y = (cosT * 22).toFixed(2);
+                const z = (cosT * this.radiusZ).toFixed(2);
+                // Orientasi lengkung 3D cembung persis referensi (kiri -deg, tengah 0°, kanan +deg) + sedikit menengadah (rotateX 8deg)
+                const rotY = (sinT * 42).toFixed(2);
+                const rotX = (5 + depth * 4).toFixed(2);
+                const scale = (0.66 + depth * 0.38).toFixed(3);
+                const opacity = (0.36 + depth * 0.64).toFixed(3);
+
+                el.style.visibility = 'visible';
+                el.style.transform = `translate3d(calc(-50% + ${x}px), calc(-50% + ${y}px), ${z}px) rotateX(${rotX}deg) rotateY(${rotY}deg) scale(${scale})`;
+                el.style.opacity = opacity;
+                el.style.zIndex = String(Math.round(10 + depth * 90));
+                el.style.pointerEvents = depth > 0.35 ? 'auto' : 'none';
+            }
+        },
+
+        handlePointerDown(e) {
+            if (e.button !== undefined && e.button !== 0) return;
+            this.stopLoop();
+            this.measure();
+            this.isDragging = true;
+            this.hasDragged = false;
+            this.angularVelocity = 0;
+            this.startX = e.clientX;
+            this.startY = e.clientY;
+            this.lastX = e.clientX;
+            this.lastTime = performance.now();
+        },
+
+        handlePointerMove(e) {
+            if (!this.isDragging) return;
+            const dxTotal = e.clientX - this.startX;
+            const dyTotal = e.clientY - this.startY;
+
+            if (!this.hasDragged) {
+                if (Math.abs(dyTotal) > 12 && Math.abs(dyTotal) > Math.abs(dxTotal) * 1.15) {
+                    this.isDragging = false;
+                    return;
+                }
+                if (Math.abs(dxTotal) > 4) {
+                    this.hasDragged = true;
+                }
+            }
+
+            if (this.hasDragged) {
+                const now = performance.now();
+                const dx = e.clientX - this.lastX;
+                const dt = Math.max(1, now - this.lastTime);
+                const dAngle = dx / Math.max(300, this.radiusX * 0.85);
+                this.angle += dAngle;
+                this.angularVelocity = Math.max(-0.14, Math.min(0.14, (dAngle / dt) * 16.67));
+                this.renderCards();
+            }
+
+            this.lastX = e.clientX;
+            this.lastTime = performance.now();
+        },
+
+        handlePointerUp() {
+            if (!this.isDragging) return;
+            this.isDragging = false;
+            const shouldCoast = this.hasDragged && Math.abs(this.angularVelocity) > 0.0015;
+            this.hasDragged = false;
+            if (shouldCoast) {
+                this.startInertiaLoop();
+            }
+        },
+    }));
+
+    /**
      * Editor Crop Interaktif untuk Foto Profil (1:1) & Banner (16:5), mendukung JPG/PNG/WebP & GIF Animasi.
      */
     Alpine.data('profileImageCropper', () => ({

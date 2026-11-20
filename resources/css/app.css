@@ -42,50 +42,44 @@
     animation: floatCard 8s ease-in-out 2.2s infinite;
 }
 
-/* perspektif 3d kartu hero beranda */
+/* perspektif 3d orbit melingkar kartu hero beranda */
 .hero-carousel-stage {
-    perspective: 1100px;
+    perspective: 1200px;
     transform-style: preserve-3d;
 }
 
-@media (min-width: 1024px) {
-    .hero-slot-1 {
-        transform: perspective(900px) rotateY(-34deg) scale(0.88);
-        transform-origin: center center;
-        filter: blur(0.6px);
-        opacity: 0.9;
-    }
+.hero-ring-card {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform-origin: center center;
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+}
 
-    .hero-slot-2 {
-        transform: perspective(900px) rotateY(-20deg) scale(0.95);
-        transform-origin: center center;
-    }
+.hero-sky-scrim {
+    background: linear-gradient(180deg, rgba(16, 94, 178, 0.86) 0%, rgba(30, 136, 229, 0.50) 48%, rgba(33, 150, 243, 0.16) 82%, rgba(30, 136, 229, 0.32) 100%);
+}
 
-    .hero-slot-3 {
-        transform: perspective(900px) rotateY(-8deg) scale(0.99);
-        transform-origin: center center;
-    }
+html.dark .hero-sky-scrim {
+    background: linear-gradient(180deg, rgba(3, 8, 24, 0.72) 0%, rgba(6, 16, 42, 0.34) 45%, rgba(6, 15, 38, 0.24) 76%, rgba(4, 10, 28, 0.62) 100%);
+}
 
-    .hero-slot-4 {
-        transform: perspective(900px) rotateY(0deg) scale(1.02);
-        transform-origin: center center;
-    }
+html.dark .bird-flock svg path,
+html.dark .bird-flock-2 svg path,
+html.dark .bird-flock-3 svg path,
+html.dark .bird-flock-4 svg path,
+html.dark .bird-flock-5 svg path {
+    stroke: rgba(224, 242, 254, 0.92);
+}
 
-    .hero-slot-5 {
-        transform: perspective(900px) rotateY(14deg) scale(0.98);
-        transform-origin: center center;
-    }
-
-    .hero-slot-6 {
-        transform: perspective(900px) rotateY(24deg) scale(0.93);
-        transform-origin: center center;
-    }
-
-    .hero-slot-7 {
-        transform: perspective(900px) rotateY(36deg) scale(0.86);
-        transform-origin: center center;
-        filter: blur(0.6px);
-        opacity: 0.88;
+@media (min-width: 768px) {
+    html.dark .bird-flock svg path,
+    html.dark .bird-flock-2 svg path,
+    html.dark .bird-flock-3 svg path,
+    html.dark .bird-flock-4 svg path,
+    html.dark .bird-flock-5 svg path {
+        filter: drop-shadow(0 0 4px rgba(147, 197, 253, 0.52));
     }
 }
 
@@ -833,6 +827,22 @@ html.dark .bg-ink .text-lime {
     color: #C6F432 !important;
 }
 
+/* Pertahankan kontras ikon lingkaran gelap di dalam tombol lime, dan lingkaran lime di dalam tombol gelap */
+html.dark .bg-lime .bg-ink,
+html.dark .bg-lime .bg-ink * {
+    color: #FFFFFF !important;
+}
+
+html.dark .bg-lime .bg-ink.text-lime,
+html.dark .bg-lime .bg-ink.text-lime * {
+    color: #C6F432 !important;
+}
+
+html.dark .bg-ink.text-white .bg-lime,
+html.dark .bg-ink.text-white .bg-lime * {
+    color: #0A0A0A !important;
+}
+
 html.dark .habit-bad-pill {
     background-color: rgba(30, 41, 59, 0.72) !important;
     border-color: rgba(51, 65, 85, 0.75) !important;
@@ -1106,4 +1116,187 @@ html.dark .admin-grid-canvas {
     background-image:
         linear-gradient(to right, rgba(51, 65, 85, 0.28) 1px, transparent 1px),
         linear-gradient(to bottom, rgba(51, 65, 85, 0.28) 1px, transparent 1px) !important;
+}
+
+html.dark .bg-\[\#FDECEC\] {
+    background-color: rgba(239, 68, 68, 0.22) !important;
+}
+
+html.dark .text-\[\#991B1B\] {
+    color: #FCA5A5 !important;
+}
+
+html.dark .bg-amber-400.text-ink {
+    color: #0A0A0A !important;
+}
+
+/* ============================================================================
+   Hero Beranda di Mode Gelap (ditempatkan paling bawah agar tidak tertimpa
+   override global html.dark .bg-white / .text-ink):
+   7 kartu 3D dibuat TERANG / CERAH agar kontras maksimal di atas nightsky.jpg
+   ============================================================================ */
+html.dark .hero-auth-badge {
+    background-color: rgba(15, 23, 42, 0.90) !important;
+    border-color: rgba(148, 163, 184, 0.45) !important;
+    color: #F8FAFC !important;
+}
+
+html.dark .hero-secondary-cta {
+    background-color: rgba(15, 23, 42, 0.62) !important;
+    border-color: rgba(186, 230, 253, 0.58) !important;
+    color: #FFFFFF !important;
+}
+
+html.dark .hero-secondary-cta:hover {
+    background-color: rgba(30, 58, 138, 0.78) !important;
+    border-color: rgba(198, 244, 50, 0.85) !important;
+}
+
+/* Kartu 1 (kiri luar): kaca terang + pil putih solid dengan teks gelap */
+html.dark .hero-carousel-stage .hero-glass-edge {
+    background: linear-gradient(180deg, rgba(224, 242, 254, 0.48) 0%, rgba(255, 255, 255, 0.74) 55%, rgba(198, 244, 50, 0.44) 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.75) !important;
+    box-shadow: 0 18px 38px rgba(2, 6, 23, 0.48) !important;
+}
+
+html.dark .hero-carousel-stage .hero-glass-edge .bg-white {
+    background-color: #FFFFFF !important;
+    color: #0A0A0A !important;
+}
+
+html.dark .hero-carousel-stage .hero-glass-edge .text-ink {
+    color: #0A0A0A !important;
+}
+
+/* Kartu 2 & 6 (Skor Kuis & Indeks Literasi Siber): permukaan putih cerah */
+html.dark .hero-carousel-stage .hero-surface-card {
+    background-color: #FFFFFF !important;
+    border-color: rgba(255, 255, 255, 0.95) !important;
+    color: #0A0A0A !important;
+    box-shadow: 0 20px 44px rgba(2, 6, 23, 0.52) !important;
+}
+
+html.dark .hero-carousel-stage .hero-surface-card .text-ink {
+    color: #0A0A0A !important;
+}
+
+html.dark .hero-carousel-stage .hero-surface-card .text-muted,
+html.dark .hero-carousel-stage .hero-surface-card .text-gray-400 {
+    color: #475569 !important;
+}
+
+html.dark .hero-carousel-stage .hero-surface-card .bg-ink {
+    background-color: #0F172A !important;
+    color: #FFFFFF !important;
+}
+
+html.dark .hero-carousel-stage .hero-surface-card .text-emerald-500 {
+    color: #059669 !important;
+}
+
+html.dark .hero-carousel-stage .hero-surface-card .hero-tag-chip {
+    border-color: #CBD5E1 !important;
+    color: #0F172A !important;
+}
+
+html.dark .hero-carousel-stage .hero-surface-card .border-gray-100 {
+    border-color: #E2E8F0 !important;
+}
+
+html.dark .hero-carousel-stage .hero-chart-grid {
+    stroke: #E2E8F0 !important;
+}
+
+html.dark .hero-carousel-stage .hero-chart-line {
+    stroke: #1E88E5 !important;
+}
+
+/* Kartu 3 (Modul Phishing 520k+): abu-putih terang + pil putih solid */
+html.dark .hero-carousel-stage .hero-surface-soft {
+    background-color: #F1F5F9 !important;
+    border-color: rgba(255, 255, 255, 0.95) !important;
+    color: #0A0A0A !important;
+    box-shadow: 0 20px 44px rgba(2, 6, 23, 0.52) !important;
+}
+
+html.dark .hero-carousel-stage .hero-surface-soft .text-ink {
+    color: #0A0A0A !important;
+}
+
+html.dark .hero-carousel-stage .hero-surface-soft .text-ink\/75 {
+    color: #334155 !important;
+}
+
+html.dark .hero-carousel-stage .hero-surface-soft .hero-soft-pill {
+    background-color: #FFFFFF !important;
+    color: #0A0A0A !important;
+    border: 1px solid #E2E8F0 !important;
+}
+
+html.dark .hero-carousel-stage .hero-surface-soft .hero-soft-pill.text-muted {
+    color: #475569 !important;
+}
+
+/* Kartu 4 (tengah: Data Latihan): kaca biru cerah bercahaya + lingkaran + putih solid */
+html.dark .hero-carousel-stage .hero-glass-blue {
+    background: linear-gradient(145deg, rgba(186, 230, 253, 0.48) 0%, rgba(56, 189, 248, 0.44) 52%, rgba(224, 242, 254, 0.56) 100%) !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.78) !important;
+    box-shadow: 0 20px 46px rgba(2, 6, 23, 0.5), inset 0 1px 2px rgba(255, 255, 255, 0.65) !important;
+}
+
+html.dark .hero-carousel-stage .hero-glass-blue .hero-glass-plus {
+    background-color: #FFFFFF !important;
+    color: #0284C7 !important;
+}
+
+html.dark .hero-carousel-stage .hero-glass-blue h3,
+html.dark .hero-carousel-stage .hero-glass-blue p {
+    color: #FFFFFF !important;
+    text-shadow: 0 1px 10px rgba(7, 25, 66, 0.55);
+}
+
+/* Kartu 5 (Slogan Literasi): dibalik jadi putih-silver terang agar menonjol di atas langit malam */
+html.dark .hero-carousel-stage .hero-slogan-card {
+    background-color: #F8FAFC !important;
+    border-color: #FFFFFF !important;
+    color: #0A0A0A !important;
+    box-shadow: 0 20px 44px rgba(2, 6, 23, 0.52) !important;
+}
+
+html.dark .hero-carousel-stage .hero-slogan-card .text-white {
+    color: #0A0A0A !important;
+}
+
+html.dark .hero-carousel-stage .hero-slogan-card .text-slate-300 {
+    color: #475569 !important;
+}
+
+/* Kartu 7 (kanan luar / variasi lime): tetap cerah dan kontras di Mode Gelap */
+html.dark .hero-carousel-stage .hero-lime-card {
+    background-color: #C6F432 !important;
+    border-color: rgba(255, 255, 255, 0.9) !important;
+    color: #0A0A0A !important;
+    box-shadow: 0 20px 44px rgba(2, 6, 23, 0.52) !important;
+}
+
+html.dark .hero-carousel-stage .hero-lime-card .bg-white {
+    background-color: #FFFFFF !important;
+    color: #0A0A0A !important;
+}
+
+html.dark .hero-carousel-stage .hero-surface-soft .text-emerald-600 {
+    color: #059669 !important;
+}
+
+html.dark .hero-carousel-stage .hero-surface-soft .border-gray-200\/80 {
+    border-color: #CBD5E1 !important;
+}
+
+html.dark .hero-carousel-stage .hero-edge-rail {
+    background-color: rgba(224, 242, 254, 0.36) !important;
+    border-color: rgba(255, 255, 255, 0.68) !important;
+}
+
+html.dark .hero-carousel-stage .hero-edge-rail .bg-white\/30 {
+    background-color: rgba(255, 255, 255, 0.55) !important;
 }
