@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\DailyStreakQuestion;
 use App\Models\SkorGame;
 use App\Models\User;
 use Illuminate\Database\Schema\Blueprint;
@@ -47,6 +48,7 @@ class DailyStreakService
                     $table->index(['user_id', 'challenge_date']);
                 });
             }
+            DailyStreakQuestion::ensureInitialized();
         } catch (\Throwable) {
             // Abaikan jika DB belum siap
         }
@@ -362,9 +364,36 @@ class DailyStreakService
     }
 
     /**
-     * Bank 15 Pertanyaan Keamanan Siber Tingkat Lanjut (Opsi A, B, C, D, E) — BUKAN level dasar.
+     * Ambil bank soal Daily Streak aktif dari database (yang bisa dikelola Admin),
+     * dengan fallback aman ke bank bawaan jika database belum siap / kosong.
      */
     public static function advancedQuestionsBank(bool $isEn = false): array
+    {
+        try {
+            DailyStreakQuestion::ensureInitialized();
+
+            $rows = DailyStreakQuestion::query()
+                ->where('is_active', true)
+                ->orderBy('id')
+                ->get();
+
+            if ($rows->isNotEmpty()) {
+                return $rows
+                    ->map(fn (DailyStreakQuestion $q) => $q->toBankItem($isEn))
+                    ->values()
+                    ->all();
+            }
+        } catch (\Throwable) {
+            // Fallback ke bank bawaan jika tabel tidak tersedia
+        }
+
+        return self::defaultQuestionsBank($isEn);
+    }
+
+    /**
+     * Bank bawaan pertanyaan keamanan siber tingkat lanjut (Opsi A-E) untuk seed awal & fallback.
+     */
+    public static function defaultQuestionsBank(bool $isEn = false): array
     {
         if ($isEn) {
             return [

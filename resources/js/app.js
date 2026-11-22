@@ -104,6 +104,7 @@ document.addEventListener('alpine:init', () => {
             window.removeEventListener('pointercancel', this._onPointerUp);
         },
 
+        // trik looping biar ga abis abis muternya
         measure() {
             const track = this.$refs.track;
             if (!track) return;
@@ -147,6 +148,7 @@ document.addEventListener('alpine:init', () => {
             }
         },
 
+        // Drag mouse nya
         handlePointerDown(e) {
             if (e.button !== undefined && e.button !== 0) return;
             this.measure();
@@ -330,6 +332,7 @@ document.addEventListener('alpine:init', () => {
             }
         },
 
+        // mekanisme drag dan lemparannn
         handlePointerDown(e) {
             if (e.button !== undefined && e.button !== 0) return;
             this.stopLoop();

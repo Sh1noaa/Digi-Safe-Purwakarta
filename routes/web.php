@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\EdukasiController as AdminEdukasiController;
 use App\Http\Controllers\Admin\ForumController as AdminForumController;
 use App\Http\Controllers\Admin\MinigameController as AdminMinigameController;
 use App\Http\Controllers\Admin\ReportController as AdminReportController;
+use App\Http\Controllers\Admin\StreakQuestionController as AdminStreakQuestionController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BerandaController;
@@ -153,6 +154,13 @@ Route::middleware(['auth', 'admin'])
         Route::post('/minigame/levels', [AdminMinigameController::class, 'storeLevel'])->name('minigame.level.store');
         Route::put('/minigame/levels/{level}', [AdminMinigameController::class, 'updateLevel'])->name('minigame.level.update');
         Route::delete('/minigame/levels/{level}', [AdminMinigameController::class, 'destroyLevel'])->name('minigame.level.destroy');
+
+        // tab 3: bank soal tantangan harian (daily streak)
+        Route::get('/streak', [AdminStreakQuestionController::class, 'index'])->name('streak.index');
+        Route::post('/streak', [AdminStreakQuestionController::class, 'store'])->name('streak.store');
+        Route::put('/streak/{streakQuestion}', [AdminStreakQuestionController::class, 'update'])->name('streak.update');
+        Route::patch('/streak/{streakQuestion}/toggle', [AdminStreakQuestionController::class, 'toggleActive'])->name('streak.toggle');
+        Route::delete('/streak/{streakQuestion}', [AdminStreakQuestionController::class, 'destroy'])->name('streak.destroy');
 
         // tab 3: moderasi forum
         Route::get('/forum', [AdminForumController::class, 'index'])->name('forum.index');
