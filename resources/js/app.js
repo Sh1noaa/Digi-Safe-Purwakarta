@@ -8,6 +8,7 @@ document.addEventListener('alpine:init', () => {
     /**
      * Marquee daftar member di Beranda: bergerak terus-menerus, dapat di-drag kanan/kiri,
      * dan tetap mendukung klik/tap ke kartu anggota maupun tombol Follow.
+     * Jejaring anggota digi-safeee
      */
     Alpine.data('memberMarquee', () => ({
         offset: 0,

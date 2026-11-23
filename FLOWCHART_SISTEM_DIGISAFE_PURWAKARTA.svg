@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1800 1320" width="1800" height="1320" font-family="Inter, 'Segoe UI', Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#475569"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#0284C7"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#059669"/>
+    </marker>
+    <marker id="arrow-amber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#D97706"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#DC2626"/>
+    </marker>
+  </defs>
+
+  <!-- Canvas Background -->
+  <rect id="bg-canvas" x="0" y="0" width="1800" height="1320" fill="#F8FAFC"/>
+
+  <!-- Header Banner -->
+  <g id="header-title">
+    <rect x="40" y="24" width="1720" height="84" rx="18" fill="#0F172A"/>
+    <text x="900" y="62" text-anchor="middle" fill="#FFFFFF" font-size="24" font-weight="800">RANCANGAN FLOWCHART ALUR SISTEM KESELURUHAN — DIGI-SAFE PURWAKARTA</text>
+    <text x="900" y="90" text-anchor="middle" fill="#C6F432" font-size="14" font-weight="600">Arsitektur End-to-End: Client Request • Security Middleware • Autentikasi &amp; OTP • Fitur Publik &amp; Member • Admin RBAC • Database</text>
+  </g>
+
+  <!-- Step 1: Entry & Middleware -->
+  <g id="node-start">
+    <rect x="740" y="136" width="320" height="54" rx="27" fill="#E0F2FE" stroke="#0284C7" stroke-width="2.5"/>
+    <text x="900" y="168" text-anchor="middle" fill="#0C4A6E" font-size="15" font-weight="700">1. Pengguna Mengakses Website</text>
+  </g>
+
+  <g id="node-middleware">
+    <rect x="665" y="218" width="470" height="62" rx="12" fill="#FFFFFF" stroke="#64748B" stroke-width="2"/>
+    <text x="900" y="244" text-anchor="middle" fill="#0F172A" font-size="14" font-weight="700">SecurityHeaders &amp; SetUserPreferences Middleware</text>
+    <text x="900" y="266" text-anchor="middle" fill="#475569" font-size="12">Injeksi CSP/Anti-Clickjacking + Anti-FOUC Tema (Light/Dark) + Bahasa (ID/EN)</text>
+  </g>
+
+  <!-- Step 2: Decision Auth -->
+  <g id="decision-auth">
+    <polygon points="900,308 1030,362 900,416 770,362" fill="#FEF3C7" stroke="#D97706" stroke-width="2.5"/>
+    <text x="900" y="358" text-anchor="middle" fill="#78350F" font-size="13" font-weight="800">Cek Status Sesi</text>
+    <text x="900" y="376" text-anchor="middle" fill="#78350F" font-size="12" font-weight="600">(Sudah Login?)</text>
+  </g>
+
+  <!-- Connector Start -> Middleware -> Decision -->
+  <line x1="900" y1="190" x2="900" y2="215" stroke="#475569" stroke-width="2.2" marker-end="url(#arrow)"/>
+  <line x1="900" y1="280" x2="900" y2="305" stroke="#475569" stroke-width="2.2" marker-end="url(#arrow)"/>
+
+  <!-- ================= GROUP 1: AREA PUBLIK (KIRI) ================= -->
+  <g id="group-public">
+    <rect x="40" y="450" width="390" height="580" rx="20" fill="#EFF6FF" stroke="#38BDF8" stroke-width="2"/>
+    <rect x="40" y="450" width="390" height="44" rx="20" fill="#0284C7"/>
+    <text x="235" y="478" text-anchor="middle" fill="#FFFFFF" font-size="15" font-weight="800">A. AREA PUBLIK (GUEST / TANPA LOGIN)</text>
+
+    <rect x="65" y="514" width="340" height="68" rx="12" fill="#FFFFFF" stroke="#7DD3FC" stroke-width="1.8"/>
+    <text x="235" y="541" text-anchor="middle" fill="#0F172A" font-size="13.5" font-weight="700">Beranda Utama (Home)</text>
+    <text x="235" y="562" text-anchor="middle" fill="#475569" font-size="11.5">Hero 3D Ring Carousel, Marquee Anggota, Widget Streak</text>
+
+    <rect x="65" y="600" width="340" height="68" rx="12" fill="#FFFFFF" stroke="#7DD3FC" stroke-width="1.8"/>
+    <text x="235" y="627" text-anchor="middle" fill="#0F172A" font-size="13.5" font-weight="700">Pusat Edukasi &amp; Mode Baca</text>
+    <text x="235" y="648" text-anchor="middle" fill="#475569" font-size="11.5">Bento Grid Matrix Hover &amp; Pengatur Ukuran Font (14-22px)</text>
+
+    <rect x="65" y="686" width="340" height="84" rx="12" fill="#FFFFFF" stroke="#7DD3FC" stroke-width="1.8"/>
+    <text x="235" y="712" text-anchor="middle" fill="#0F172A" font-size="13.5" font-weight="700">Laboratorium Siber Interaktif (Gratis)</text>
+    <text x="235" y="732" text-anchor="middle" fill="#475569" font-size="11.5">• Simulator Chat WA Penipuan .APK (15 Kontak)</text>
+    <text x="235" y="750" text-anchor="middle" fill="#475569" font-size="11.5">• Android Panic Simulator, Link Scanner &amp; Password Lab</text>
+
+    <rect x="65" y="788" width="340" height="68" rx="12" fill="#FFFFFF" stroke="#7DD3FC" stroke-width="1.8"/>
+    <text x="235" y="815" text-anchor="middle" fill="#0F172A" font-size="13.5" font-weight="700">Baca Forum &amp; Testimoni Warga</text>
+    <text x="235" y="836" text-anchor="middle" fill="#475569" font-size="11.5">Diskusi Terbuka Real-time &amp; Ulasan Bintang 1-5</text>
+
+    <rect x="65" y="874" width="340" height="68" rx="12" fill="#FFFFFF" stroke="#7DD3FC" stroke-width="1.8"/>
+    <text x="235" y="901" text-anchor="middle" fill="#0F172A" font-size="13.5" font-weight="700">Leaderboard &amp; Halaman Tentang</text>
+    <text x="235" y="922" text-anchor="middle" fill="#475569" font-size="11.5">5 Kategori Dial, Fakta Siber, Peta &amp; Download APK</text>
+
+    <rect x="65" y="958" width="340" height="52" rx="10" fill="#DBEAFE" stroke="#0284C7" stroke-width="1.5"/>
+    <text x="235" y="989" text-anchor="middle" fill="#1E3A8A" font-size="12" font-weight="700">Klik Fitur Member (Kuis/Post/Chat) → Arahkan ke Login</text>
+  </g>
+
+  <!-- ================= GROUP 2: AUTENTIKASI (TENGAH KIRI) ================= -->
+  <g id="group-auth">
+    <rect x="465" y="450" width="405" height="580" rx="20" fill="#FFFBEB" stroke="#F59E0B" stroke-width="2"/>
+    <rect x="465" y="450" width="405" height="44" rx="20" fill="#D97706"/>
+    <text x="667" y="478" text-anchor="middle" fill="#FFFFFF" font-size="15" font-weight="800">B. GERBANG AUTENTIKASI &amp; KEAMANAN</text>
+
+    <rect x="490" y="514" width="355" height="68" rx="12" fill="#FFFFFF" stroke="#FCD34D" stroke-width="1.8"/>
+    <text x="667" y="541" text-anchor="middle" fill="#0F172A" font-size="13.5" font-weight="700">Login Email &amp; Password</text>
+    <text x="667" y="562" text-anchor="middle" fill="#475569" font-size="11.5">RateLimiter IP+Email (5x/menit) + Bot Shield</text>
+
+    <rect x="490" y="598" width="355" height="68" rx="12" fill="#FFFFFF" stroke="#FCD34D" stroke-width="1.8"/>
+    <text x="667" y="625" text-anchor="middle" fill="#0F172A" font-size="13.5" font-weight="700">Register Akun Baru</text>
+    <text x="667" y="646" text-anchor="middle" fill="#475569" font-size="11.5">Blokir 14 Reserved Username &amp; ValidRealEmail (Cek MX)</text>
+
+    <rect x="490" y="682" width="355" height="72" rx="12" fill="#FFFFFF" stroke="#FCD34D" stroke-width="1.8"/>
+    <text x="667" y="709" text-anchor="middle" fill="#0F172A" font-size="13.5" font-weight="700">Lupa Password (OTP 6-Digit Gmail)</text>
+    <text x="667" y="730" text-anchor="middle" fill="#475569" font-size="11.5">Hash OTP di DB • Pengiriman Port 443 HTTPS Relay</text>
+
+    <rect x="490" y="770" width="355" height="72" rx="12" fill="#FFFFFF" stroke="#FCD34D" stroke-width="1.8"/>
+    <text x="667" y="797" text-anchor="middle" fill="#0F172A" font-size="13.5" font-weight="700">Login Google OAuth 2.0</text>
+    <text x="667" y="818" text-anchor="middle" fill="#475569" font-size="11.5">Web Session / Deep-Link Mobile Flutter + Customize Onboarding</text>
+
+    <polygon points="667,862 775,906 667,950 559,906" fill="#FEF3C7" stroke="#D97706" stroke-width="2"/>
+    <text x="667" y="910" text-anchor="middle" fill="#78350F" font-size="12.5" font-weight="800">Valid &amp; Terverifikasi?</text>
+
+    <rect x="490" y="968" width="355" height="44" rx="10" fill="#D1FAE5" stroke="#059669" stroke-width="1.8"/>
+    <text x="667" y="995" text-anchor="middle" fill="#065F46" font-size="12" font-weight="700">Regenerasi Session (Anti-Fixation) &amp; Catat Security Log</text>
+  </g>
+
+  <!-- ================= GROUP 3: AREA MEMBER (TENGAH KANAN) ================= -->
+  <g id="group-member">
+    <rect x="905" y="450" width="420" height="580" rx="20" fill="#ECFDF5" stroke="#10B981" stroke-width="2"/>
+    <rect x="905" y="450" width="420" height="44" rx="20" fill="#059669"/>
+    <text x="1115" y="478" text-anchor="middle" fill="#FFFFFF" font-size="15" font-weight="800">C. AREA MEMBER (MIDDLEWARE: AUTH)</text>
+
+    <rect x="930" y="514" width="370" height="74" rx="12" fill="#FFFFFF" stroke="#6EE7B7" stroke-width="1.8"/>
+    <text x="1115" y="542" text-anchor="middle" fill="#0F172A" font-size="13.5" font-weight="700">3 Arena Kuis Minigame &amp; Ranking</text>
+    <text x="1115" y="563" text-anchor="middle" fill="#475569" font-size="11.5">Phishing Hunter, Cyber Defender, Link or Trap</text>
+    <text x="1115" y="579" text-anchor="middle" fill="#059669" font-size="11" font-weight="600">(Validasi Kunci &amp; Skor 100% Anti-Cheat di Server)</text>
+
+    <rect x="930" y="604" width="370" height="74" rx="12" fill="#FFFFFF" stroke="#6EE7B7" stroke-width="1.8"/>
+    <text x="1115" y="632" text-anchor="middle" fill="#0F172A" font-size="13.5" font-weight="700">Daily Streak A-E &amp; Freeze Recovery</text>
+    <text x="1115" y="653" text-anchor="middle" fill="#475569" font-size="11.5">Hash crc32 Harian • Anti-Tebak ($wrongToday)</text>
+    <text x="1115" y="669" text-anchor="middle" fill="#059669" font-size="11" font-weight="600">(Api 24 Jam, Beku 2x Kesempatan Pulih +60 Poin)</text>
+
+    <rect x="930" y="694" width="370" height="74" rx="12" fill="#FFFFFF" stroke="#6EE7B7" stroke-width="1.8"/>
+    <text x="1115" y="722" text-anchor="middle" fill="#0F172A" font-size="13.5" font-weight="700">Diskusi Forum, Voting &amp; Request Edukasi</text>
+    <text x="1115" y="743" text-anchor="middle" fill="#475569" font-size="11.5">AJAX Live Polling 5 Detik • Upvote/Downvote Toggle</text>
+    <text x="1115" y="759" text-anchor="middle" fill="#059669" font-size="11" font-weight="600">(Algoritma Most Helpful + Kirim Ulasan Testimoni)</text>
+
+    <rect x="930" y="784" width="370" height="74" rx="12" fill="#FFFFFF" stroke="#6EE7B7" stroke-width="1.8"/>
+    <text x="1115" y="812" text-anchor="middle" fill="#0F172A" font-size="13.5" font-weight="700">My Profile, 5 Border &amp; Hapus Akun OTP</text>
+    <text x="1115" y="833" text-anchor="middle" fill="#475569" font-size="11.5">Avatar/Banner GIF • Validasi Syarat Border di Server</text>
+    <text x="1115" y="849" text-anchor="middle" fill="#059669" font-size="11" font-weight="600">(Kontrol Privasi JSON &amp; Revokasi Sesi Perangkat Lain)</text>
+
+    <rect x="930" y="874" width="370" height="74" rx="12" fill="#FFFFFF" stroke="#6EE7B7" stroke-width="1.8"/>
+    <text x="1115" y="902" text-anchor="middle" fill="#0F172A" font-size="13.5" font-weight="700">Jaringan Sosial: Pertemanan, Follow &amp; Chat</text>
+    <text x="1115" y="923" text-anchor="middle" fill="#475569" font-size="11.5">Find New People (Debounce), Request Teman &amp; DM Real-time</text>
+    <text x="1115" y="939" text-anchor="middle" fill="#059669" font-size="11" font-weight="600">(Sinkronisasi Notifikasi Bot Digika)</text>
+
+    <rect x="930" y="964" width="370" height="48" rx="10" fill="#D1FAE5" stroke="#059669" stroke-width="1.5"/>
+    <text x="1115" y="993" text-anchor="middle" fill="#065F46" font-size="12" font-weight="700">Dukung Aplikasi Mobile Flutter via API Bearer Token</text>
+  </g>
+
+  <!-- ================= GROUP 4: PANEL ADMIN & OWNER (KANAN) ================= -->
+  <g id="group-admin">
+    <rect x="1360" y="450" width="400" height="580" rx="20" fill="#FEF2F2" stroke="#EF4444" stroke-width="2"/>
+    <rect x="1360" y="450" width="400" height="44" rx="20" fill="#DC2626"/>
+    <text x="1560" y="478" text-anchor="middle" fill="#FFFFFF" font-size="15" font-weight="800">D. ADMIN PANEL (AUTH + ADMIN RBAC)</text>
+
+    <polygon points="1560,510 1690,548 1560,586 1430,548" fill="#FEE2E2" stroke="#DC2626" stroke-width="2"/>
+    <text x="1560" y="544" text-anchor="middle" fill="#7F1D1D" font-size="12" font-weight="800">Role == admin/owner?</text>
+    <text x="1560" y="560" text-anchor="middle" fill="#991B1B" font-size="10.5">(Tidak → HTTP 403 Forbidden)</text>
+
+    <rect x="1385" y="604" width="350" height="66" rx="12" fill="#FFFFFF" stroke="#FCA5A5" stroke-width="1.8"/>
+    <text x="1560" y="630" text-anchor="middle" fill="#0F172A" font-size="13" font-weight="700">Tab 1: Edukasi &amp; Evaluasi Request</text>
+    <text x="1560" y="651" text-anchor="middle" fill="#475569" font-size="11">Approve/Reject → Bot Digika Auto-DM ke User</text>
+
+    <rect x="1385" y="682" width="350" height="66" rx="12" fill="#FFFFFF" stroke="#FCA5A5" stroke-width="1.8"/>
+    <text x="1560" y="708" text-anchor="middle" fill="#0F172A" font-size="13" font-weight="700">Tab 2 &amp; 3: Bank Soal Minigame &amp; Streak</text>
+    <text x="1560" y="729" text-anchor="middle" fill="#475569" font-size="11">CRUD Soal JSON, Level Dinamis &amp; Toggle Aktif A-E</text>
+
+    <rect x="1385" y="760" width="350" height="66" rx="12" fill="#FFFFFF" stroke="#FCA5A5" stroke-width="1.8"/>
+    <text x="1560" y="786" text-anchor="middle" fill="#0F172A" font-size="13" font-weight="700">Tab 4: Moderasi Forum Komunitas</text>
+    <text x="1560" y="807" text-anchor="middle" fill="#475569" font-size="11">Pin Bintang ke Atas &amp; Cascade Delete Spam</text>
+
+    <rect x="1385" y="838" width="350" height="66" rx="12" fill="#FFFFFF" stroke="#FCA5A5" stroke-width="1.8"/>
+    <text x="1560" y="864" text-anchor="middle" fill="#0F172A" font-size="13" font-weight="700">Tab 5: Manajemen Hak Akses (RBAC)</text>
+    <text x="1560" y="885" text-anchor="middle" fill="#475569" font-size="11">Permanent Owner Protection &amp; Anti-Lateral Demotion</text>
+
+    <rect x="1385" y="920" width="350" height="90" rx="12" fill="#FFE4E6" stroke="#E11D48" stroke-width="1.8"/>
+    <text x="1560" y="950" text-anchor="middle" fill="#881337" font-size="13.5" font-weight="800">Analitik &amp; Export Laporan Excel</text>
+    <text x="1560" y="972" text-anchor="middle" fill="#9F1239" font-size="11.5">• Grafik Kurva Tren SVG Matematis Native</text>
+    <text x="1560" y="991" text-anchor="middle" fill="#9F1239" font-size="11.5">• Download Multi-Sheet .XLSX (SimpleXlsxExporter)</text>
+  </g>
+
+  <!-- ================= DATABASE LAYER (BAWAH) ================= -->
+  <g id="group-database">
+    <rect x="40" y="1090" width="1720" height="190" rx="22" fill="#0F172A" stroke="#334155" stroke-width="2.5"/>
+    <text x="900" y="1126" text-anchor="middle" fill="#38BDF8" font-size="18" font-weight="800">LAPISAN BASIS DATA RELASIONAL (digi_safe_db — MySQL / SQLite • 30 Tabel • 13 Foreign Key)</text>
+
+    <rect x="75" y="1148" width="380" height="106" rx="12" fill="#1E293B" stroke="#475569" stroke-width="1.5"/>
+    <text x="265" y="1175" text-anchor="middle" fill="#F8FAFC" font-size="13" font-weight="700">Tabel Identitas &amp; Keamanan</text>
+    <text x="265" y="1198" text-anchor="middle" fill="#CBD5E1" font-size="11.5">users • account_otps • api_tokens</text>
+    <text x="265" y="1218" text-anchor="middle" fill="#CBD5E1" font-size="11.5">sessions • security_activity_logs</text>
+    <text x="265" y="1238" text-anchor="middle" fill="#94A3B8" font-size="11">log_aktivitas • privacy_settings (JSON)</text>
+
+    <rect x="490" y="1148" width="380" height="106" rx="12" fill="#1E293B" stroke="#475569" stroke-width="1.5"/>
+    <text x="680" y="1175" text-anchor="middle" fill="#F8FAFC" font-size="13" font-weight="700">Tabel Literasi &amp; Gamifikasi</text>
+    <text x="680" y="1198" text-anchor="middle" fill="#CBD5E1" font-size="11.5">modul_edukasi • edukasi_requests • progres_baca</text>
+    <text x="680" y="1218" text-anchor="middle" fill="#CBD5E1" font-size="11.5">minigame_levels • soal_minigame • skor_game</text>
+    <text x="680" y="1238" text-anchor="middle" fill="#94A3B8" font-size="11">badges • user_badges</text>
+
+    <rect x="905" y="1148" width="395" height="106" rx="12" fill="#1E293B" stroke="#475569" stroke-width="1.5"/>
+    <text x="1102" y="1175" text-anchor="middle" fill="#F8FAFC" font-size="13" font-weight="700">Tabel Streak Harian</text>
+    <text x="1102" y="1198" text-anchor="middle" fill="#CBD5E1" font-size="11.5">daily_streak_questions (Bank Soal A-E)</text>
+    <text x="1102" y="1218" text-anchor="middle" fill="#CBD5E1" font-size="11.5">user_daily_streaks (Api, Freeze, Weekly JSON)</text>
+    <text x="1102" y="1238" text-anchor="middle" fill="#94A3B8" font-size="11">user_daily_streak_logs (Audit $wrongToday)</text>
+
+    <rect x="1335" y="1148" width="390" height="106" rx="12" fill="#1E293B" stroke="#475569" stroke-width="1.5"/>
+    <text x="1530" y="1175" text-anchor="middle" fill="#F8FAFC" font-size="13" font-weight="700">Tabel Komunitas &amp; Sosial</text>
+    <text x="1530" y="1198" text-anchor="middle" fill="#CBD5E1" font-size="11.5">forum • jawaban_forum • jawaban_forum_votes</text>
+    <text x="1530" y="1218" text-anchor="middle" fill="#CBD5E1" font-size="11.5">testimoni • testimoni_reactions</text>
+    <text x="1530" y="1238" text-anchor="middle" fill="#94A3B8" font-size="11">friendships • user_follows • chat_messages</text>
+  </g>
+
+  <!-- ================= ARROWS & ROUTING LINES ================= -->
+  <!-- Decision Auth to Public (Left) -->
+  <path d="M 770,362 L 235,362 L 235,447" fill="none" stroke="#0284C7" stroke-width="2.4" marker-end="url(#arrow-blue)"/>
+  <rect x="440" y="348" width="140" height="26" rx="13" fill="#E0F2FE" stroke="#0284C7" stroke-width="1.2"/>
+  <text x="510" y="365" text-anchor="middle" fill="#0369A1" font-size="11.5" font-weight="700">Akses Publik (Guest)</text>
+
+  <!-- Decision Auth to Login/Auth (Middle Left) -->
+  <path d="M 835,390 L 667,390 L 667,447" fill="none" stroke="#D97706" stroke-width="2.4" marker-end="url(#arrow-amber)"/>
+  <rect x="690" y="376" width="110" height="24" rx="12" fill="#FEF3C7" stroke="#D97706" stroke-width="1.2"/>
+  <text x="745" y="392" text-anchor="middle" fill="#92400E" font-size="11" font-weight="700">Belum Login</text>
+
+  <!-- Decision Auth to Member (Middle Right) -->
+  <path d="M 965,390 L 1115,390 L 1115,447" fill="none" stroke="#059669" stroke-width="2.4" marker-end="url(#arrow-green)"/>
+  <rect x="1000" y="376" width="128" height="24" rx="12" fill="#D1FAE5" stroke="#059669" stroke-width="1.2"/>
+  <text x="1064" y="392" text-anchor="middle" fill="#065F46" font-size="11" font-weight="700">Login (Role User)</text>
+
+  <!-- Decision Auth to Admin (Right) -->
+  <path d="M 1030,362 L 1560,362 L 1560,447" fill="none" stroke="#DC2626" stroke-width="2.4" marker-end="url(#arrow-red)"/>
+  <rect x="1235" y="348" width="166" height="26" rx="13" fill="#FEE2E2" stroke="#DC2626" stroke-width="1.2"/>
+  <text x="1318" y="365" text-anchor="middle" fill="#991B1B" font-size="11.5" font-weight="700">Akses /admin (Admin/Owner)</text>
+
+  <!-- Public -> Login Redirect -->
+  <path d="M 430,984 L 462,984" fill="none" stroke="#D97706" stroke-width="2" stroke-dasharray="5,4" marker-end="url(#arrow-amber)"/>
+
+  <!-- Auth Success -> Member Area -->
+  <path d="M 845,990 L 885,990 L 885,432 L 1115,432 L 1115,447" fill="none" stroke="#059669" stroke-width="2.2" marker-end="url(#arrow-green)"/>
+
+  <!-- Columns to Database Connections -->
+  <line x1="235" y1="1030" x2="235" y2="1086" stroke="#38BDF8" stroke-width="2.5" marker-end="url(#arrow-blue)"/>
+  <line x1="667" y1="1030" x2="667" y2="1086" stroke="#F59E0B" stroke-width="2.5" marker-end="url(#arrow-amber)"/>
+  <line x1="1115" y1="1030" x2="1115" y2="1086" stroke="#10B981" stroke-width="2.5" marker-end="url(#arrow-green)"/>
+  <line x1="1560" y1="1030" x2="1560" y2="1086" stroke="#EF4444" stroke-width="2.5" marker-end="url(#arrow-red)"/>
+</svg>

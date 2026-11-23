@@ -97,6 +97,7 @@ class EdukasiController extends Controller
             ->with('success', 'Modul edukasi telah dihapus.');
     }
 
+    // bot digikaaa
     public function approveRequest(Request $request, EdukasiRequest $edukasiRequest): RedirectResponse
     {
         return $this->evaluateRequest($request, $edukasiRequest, 'approved');

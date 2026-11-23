@@ -471,6 +471,8 @@ class AuthController extends Controller
             ->where('oauth_uid', $googleId)
             ->first();
 
+            // mengatasi OR1=1 
+            // menggunakan Eloquent Prepared Statements (Parameter Binding)
         if (! $user) {
             $user = User::query()->where('email', $email)->first();
 

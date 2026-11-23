@@ -76,6 +76,7 @@ class EdukasiController extends Controller
         return view('edukasi', compact('cards', 'myRequests', 'unreadDecisionsCount'));
     }
 
+    // request edukasi
     public function storeRequest(Request $request): RedirectResponse
     {
         SocialSchemaHelper::ensureReady();

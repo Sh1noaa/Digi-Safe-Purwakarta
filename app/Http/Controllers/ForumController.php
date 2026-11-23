@@ -226,6 +226,7 @@ class ForumController extends Controller
             ->first();
 
         $action = 'added';
+        // vote jawaban
         if ($existing) {
             if ($existing->vote_type === $voteType) {
                 $existing->delete();

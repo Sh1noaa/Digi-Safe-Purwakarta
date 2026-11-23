@@ -9,23 +9,20 @@
         $isDark = ($currentTheme ?? 'light') === 'dark';
     @endphp
 
-    <section
-        x-data="passwordCheckerLab(@js($isEn))"
-        class="min-h-screen {{ $isDark ? 'bg-[#0B1120]' : 'bg-[#F8FAFC]' }} pt-24 sm:pt-28 pb-24 px-4 sm:px-6 lg:px-8 transition-colors duration-300"
-    >
+    <section x-data="passwordCheckerLab(@js($isEn))"
+        class="min-h-screen {{ $isDark ? 'bg-[#0B1120]' : 'bg-[#F8FAFC]' }} pt-24 sm:pt-28 pb-24 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
         <div class="max-w-4xl mx-auto space-y-6">
 
             <!-- bar kembali -->
             <div class="flex flex-wrap items-center justify-between gap-3">
-                <a
-                    href="{{ route('minigame.index') }}"
-                    class="inline-flex items-center gap-2 rounded-full bg-white border border-gray-200 px-4 py-2 text-xs font-heading font-bold text-ink hover:border-sky hover:text-sky shadow-2xs transition-colors"
-                >
+                <a href="{{ route('minigame.index') }}"
+                    class="inline-flex items-center gap-2 rounded-full bg-white border border-gray-200 px-4 py-2 text-xs font-heading font-bold text-ink hover:border-sky hover:text-sky shadow-2xs transition-colors">
                     <span>&larr;</span>
                     <span>{{ $isEn ? 'Back to Minigame Hub' : 'Kembali ke Hub Minigame' }}</span>
                 </a>
 
-                <span class="inline-flex items-center gap-2 rounded-full bg-emerald-50 border border-emerald-200 px-3.5 py-1.5 text-[11px] font-bold text-emerald-700">
+                <span
+                    class="inline-flex items-center gap-2 rounded-full bg-emerald-50 border border-emerald-200 px-3.5 py-1.5 text-[11px] font-bold text-emerald-700">
                     <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
                     <span>{{ $isEn ? 'Processed 100% locally in your browser' : 'Diproses 100% di browser, tidak disimpan ke server' }}</span>
                 </span>
@@ -33,13 +30,13 @@
 
             <!-- kartu utama input & meter kekuatan bergaya thumbnail minigame dengan tema teal-langit & awan pop-out -->
             <div class="group rounded-[28px] bg-white border border-gray-200/80 shadow-neutral overflow-visible">
-                <div
-                    class="relative h-44 sm:h-48 rounded-t-[28px] overflow-visible"
-                    style="background: linear-gradient(135deg, #0F766E 0%, #0284C7 100%);"
-                >
+                <div class="relative h-44 sm:h-48 rounded-t-[28px] overflow-visible"
+                    style="background: linear-gradient(135deg, #0F766E 0%, #0284C7 100%);">
                     <!-- pola aura perisai di balik awan -->
-                    <svg class="absolute inset-0 w-full h-full rounded-t-[28px] overflow-hidden pointer-events-none" viewBox="0 0 600 190" preserveAspectRatio="none">
-                        <circle cx="485" cy="48" r="78" stroke="rgba(198,244,50,0.38)" stroke-width="1.5" stroke-dasharray="6 6" fill="none" />
+                    <svg class="absolute inset-0 w-full h-full rounded-t-[28px] overflow-hidden pointer-events-none"
+                        viewBox="0 0 600 190" preserveAspectRatio="none">
+                        <circle cx="485" cy="48" r="78" stroke="rgba(198,244,50,0.38)" stroke-width="1.5"
+                            stroke-dasharray="6 6" fill="none" />
                         <circle cx="485" cy="48" r="44" fill="rgba(255,255,255,0.12)" />
                         <circle cx="90" cy="42" r="2.5" fill="rgba(255,255,255,0.65)" />
                         <circle cx="155" cy="24" r="2" fill="#C6F432" />
@@ -47,35 +44,46 @@
                     </svg>
 
                     <!-- awan putih mengalir di bagian bawah thumbnail -->
-                    <svg class="absolute inset-x-0 -bottom-1 w-full h-28 sm:h-32 pointer-events-none" viewBox="0 0 600 125" preserveAspectRatio="none">
-                        <path d="M0,45 Q45,25 85,55 Q135,38 175,68 Q230,48 275,78 Q335,55 385,84 Q445,62 505,86 Q555,70 600,88 L600,125 L0,125 Z" fill="#FFFFFF" />
-                        <path d="M55,75 Q95,62 125,84 M225,88 Q265,74 295,94 M415,92 Q455,78 485,98" stroke="#0EA5E9" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.45" />
+                    <svg class="absolute inset-x-0 -bottom-1 w-full h-28 sm:h-32 pointer-events-none" viewBox="0 0 600 125"
+                        preserveAspectRatio="none">
+                        <path
+                            d="M0,45 Q45,25 85,55 Q135,38 175,68 Q230,48 275,78 Q335,55 385,84 Q445,62 505,86 Q555,70 600,88 L600,125 L0,125 Z"
+                            fill="#FFFFFF" />
+                        <path d="M55,75 Q95,62 125,84 M225,88 Q265,74 295,94 M415,92 Q455,78 485,98" stroke="#0EA5E9"
+                            stroke-width="2" stroke-linecap="round" fill="none" opacity="0.45" />
                     </svg>
 
                     <!-- teks judul di kiri thumbnail (di atas awan) -->
                     <div class="relative z-10 h-full px-6 sm:px-8 pt-6 flex flex-col justify-start max-w-xl">
-                        <h1 class="font-heading font-extrabold text-2xl sm:text-3xl text-white tracking-tight drop-shadow-xs">
+                        <h1
+                            class="font-heading font-extrabold text-2xl sm:text-3xl text-white tracking-tight drop-shadow-xs">
                             Password Strength Checker
                         </h1>
                         <p class="mt-1.5 text-xs sm:text-sm text-white/90 leading-relaxed max-w-md">
                             {{ $isEn
-                                ? 'Type your own password to inspect its real strength, spot weak patterns, and generate stronger memorable variations.'
-                                : 'Ketik kata sandi pilihanmu sendiri untuk memeriksa kekuatannya secara langsung dan mendapatkan variasi sandi yang jauh lebih kuat.' }}
+        ? 'Type your own password to inspect its real strength, spot weak patterns, and generate stronger memorable variations.'
+        : 'Ketik kata sandi pilihanmu sendiri untuk memeriksa kekuatannya secara langsung dan mendapatkan variasi sandi yang jauh lebih kuat.' }}
                         </p>
                     </div>
 
                     <!-- ilustrasi gembok & kunci siber pop-out menembus batas kanan-atas kartu -->
-                    <div class="hidden sm:block absolute -top-10 right-6 w-32 h-32 pointer-events-none group-hover:rotate-6 group-hover:scale-105 transition-transform duration-300 z-20">
+                    <div
+                        class="hidden sm:block absolute -top-10 right-6 w-32 h-32 pointer-events-none group-hover:rotate-6 group-hover:scale-105 transition-transform duration-300 z-20">
                         <svg viewBox="0 0 130 125" class="w-full h-full drop-shadow-lg">
                             <g transform="rotate(10 65 62)">
-                                <path d="M40 50 V33 C40 16, 90 16, 90 33 V50" fill="none" stroke="#F8FAFC" stroke-width="11" stroke-linecap="round" />
-                                <path d="M40 50 V33 C40 16, 90 16, 90 33 V50" fill="none" stroke="#0F766E" stroke-width="2" stroke-linecap="round" />
-                                <rect x="27" y="47" width="76" height="58" rx="16" fill="#38BDF8" stroke="#0F172A" stroke-width="2.5" />
+                                <path d="M40 50 V33 C40 16, 90 16, 90 33 V50" fill="none" stroke="#F8FAFC" stroke-width="11"
+                                    stroke-linecap="round" />
+                                <path d="M40 50 V33 C40 16, 90 16, 90 33 V50" fill="none" stroke="#0F766E" stroke-width="2"
+                                    stroke-linecap="round" />
+                                <rect x="27" y="47" width="76" height="58" rx="16" fill="#38BDF8" stroke="#0F172A"
+                                    stroke-width="2.5" />
                                 <rect x="35" y="55" width="60" height="42" rx="10" fill="#0F766E" />
                                 <circle cx="65" cy="72" r="9" fill="#C6F432" stroke="#0F172A" stroke-width="2" />
-                                <path d="M62 78 L59 90 H71 L68 78 Z" fill="#C6F432" stroke="#0F172A" stroke-width="1.6" stroke-linejoin="round" />
+                                <path d="M62 78 L59 90 H71 L68 78 Z" fill="#C6F432" stroke="#0F172A" stroke-width="1.6"
+                                    stroke-linejoin="round" />
                                 <circle cx="105" cy="30" r="7" fill="#C6F432" stroke="#0F172A" stroke-width="2" />
-                                <path d="M105 26 V34 M101 30 H109" stroke="#0F172A" stroke-width="1.8" stroke-linecap="round" />
+                                <path d="M105 26 V34 M101 30 H109" stroke="#0F172A" stroke-width="1.8"
+                                    stroke-linecap="round" />
                             </g>
                         </svg>
                     </div>
@@ -88,30 +96,21 @@
                             {{ $isEn ? 'Enter a password to test & strengthen' : 'Masukkan kata sandi yang ingin diuji & diperkuat' }}
                         </label>
                         <div class="relative">
-                            <input
-                                id="pw-checker-input"
-                                :type="show ? 'text' : 'password'"
-                                x-model="password"
+                            <input id="pw-checker-input" :type="show ? 'text' : 'password'" x-model="password"
                                 placeholder="{{ $isEn ? 'Type your password here...' : 'Ketik kata sandi kamu di sini...' }}"
                                 autocomplete="off"
-                                class="w-full rounded-2xl bg-[#F8FAFC] border border-gray-200 focus:border-sky focus:bg-white pl-4 pr-32 py-3.5 text-sm sm:text-base font-mono text-ink placeholder:font-sans placeholder:text-gray-400 focus:outline-none transition-colors"
-                            >
+                                class="w-full rounded-2xl bg-[#F8FAFC] border border-gray-200 focus:border-sky focus:bg-white pl-4 pr-32 py-3.5 text-sm sm:text-base font-mono text-ink placeholder:font-sans placeholder:text-gray-400 focus:outline-none transition-colors">
                             <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
-                                <button
-                                    type="button"
-                                    x-show="password.length > 0"
-                                    style="display: none;"
-                                    @click="password = ''"
-                                    aria-label="{{ $isEn ? 'Clear password' : 'Hapus kata sandi' }}"
-                                    class="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 text-muted hover:text-ink flex items-center justify-center text-xs font-bold transition-colors cursor-pointer"
-                                >
-                                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                                <button type="button" x-show="password.length > 0" style="display: none;"
+                                    @click="password = ''" aria-label="{{ $isEn ? 'Clear password' : 'Hapus kata sandi' }}"
+                                    class="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 text-muted hover:text-ink flex items-center justify-center text-xs font-bold transition-colors cursor-pointer">
+                                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2.2" stroke-linecap="round">
+                                        <path d="M18 6L6 18M6 6l12 12" />
+                                    </svg>
                                 </button>
-                                <button
-                                    type="button"
-                                    @click="show = !show"
-                                    class="rounded-full bg-white border border-gray-200 px-3 py-1.5 text-[11px] font-bold text-ink hover:border-sky cursor-pointer"
-                                >
+                                <button type="button" @click="show = !show"
+                                    class="rounded-full bg-white border border-gray-200 px-3 py-1.5 text-[11px] font-bold text-ink hover:border-sky cursor-pointer">
                                     <span x-text="show ? (isEn ? 'Hide' : 'Sembunyi') : (isEn ? 'Show' : 'Lihat')"></span>
                                 </button>
                             </div>
@@ -119,8 +118,8 @@
 
                         <p class="mt-2 text-[11px] text-muted">
                             {{ $isEn
-                                ? 'Start typing above to see real-time strength checks and upgraded password recommendations.'
-                                : 'Mulai ketik kata sandi di kolom atas untuk melihat hasil analisis keamanan dan rekomendasi sandi secara langsung.' }}
+        ? 'Start typing above to see real-time strength checks and upgraded password recommendations.'
+        : 'Mulai ketik kata sandi di kolom atas untuk melihat hasil analisis keamanan dan rekomendasi sandi secara langsung.' }}
                         </p>
                     </div>
 
@@ -131,11 +130,9 @@
                                 <span class="text-xs font-bold text-muted uppercase tracking-wider">
                                     {{ $isEn ? 'Strength Status:' : 'Tingkat Kekuatan:' }}
                                 </span>
-                                <span
-                                    :class="analysis.badgeClass"
+                                <span :class="analysis.badgeClass"
                                     class="rounded-full px-3 py-1 text-xs font-heading font-extrabold"
-                                    x-text="analysis.label"
-                                ></span>
+                                    x-text="analysis.label"></span>
                             </div>
                             <span class="text-xs font-semibold text-ink">
                                 {{ $isEn ? 'Est. crack time:' : 'Estimasi retas:' }}
@@ -144,38 +141,37 @@
                         </div>
 
                         <div class="w-full h-3 rounded-full bg-gray-200 overflow-hidden">
-                            <div
-                                :class="analysis.barClass"
-                                :style="'width: ' + analysis.score + '%'"
-                                class="h-full rounded-full transition-all duration-300"
-                            ></div>
+                            <div :class="analysis.barClass" :style="'width: ' + analysis.score + '%'"
+                                class="h-full rounded-full transition-all duration-300"></div>
                         </div>
 
                         <!-- checklist kriteria -->
                         <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-1 text-[11px]">
                             <template x-for="rule in analysis.checks" :key="rule.key">
-                                <div
-                                    :class="rule.ok ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-white border-gray-200 text-muted'"
-                                    class="rounded-xl border px-3 py-2 flex items-center gap-2 font-semibold"
-                                >
-                                    <span x-text="rule.ok ? '✓' : '○'" :class="rule.ok ? 'text-emerald-600 font-bold' : ''"></span>
+                                <div :class="rule.ok ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-white border-gray-200 text-muted'"
+                                    class="rounded-xl border px-3 py-2 flex items-center gap-2 font-semibold">
+                                    <span x-text="rule.ok ? '✓' : '○'"
+                                        :class="rule.ok ? 'text-emerald-600 font-bold' : ''"></span>
                                     <span x-text="rule.label" class="truncate"></span>
                                 </div>
                             </template>
                         </div>
 
                         <template x-if="analysis.warning">
-                            <p class="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3.5 py-2" x-text="analysis.warning"></p>
+                            <p class="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3.5 py-2"
+                                x-text="analysis.warning"></p>
                         </template>
                     </div>
                 </div>
             </div>
 
             <!-- panel saran upgrade password cerdas berbasis kata yang diketik user -->
-            <div x-show="password.trim().length > 0" x-transition class="rounded-[28px] bg-white border border-gray-200/80 shadow-neutral p-6 sm:p-8 space-y-5">
+            <div x-show="password.trim().length > 0" x-transition
+                class="rounded-[28px] bg-white border border-gray-200/80 shadow-neutral p-6 sm:p-8 space-y-5">
                 <div class="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                        <span class="inline-block rounded-full bg-[#DBEAFE] text-sky px-3 py-0.5 text-[10px] font-extrabold uppercase tracking-wider mb-1.5">
+                        <span
+                            class="inline-block rounded-full bg-[#DBEAFE] text-sky px-3 py-0.5 text-[10px] font-extrabold uppercase tracking-wider mb-1.5">
                             {{ $isEn ? 'SMART UPGRADE SUGGESTIONS' : 'SARAN PENINGKATAN SANDI' }}
                         </span>
                         <h2 class="font-heading font-extrabold text-lg sm:text-xl text-ink">
@@ -183,16 +179,13 @@
                         </h2>
                         <p class="text-xs text-muted mt-0.5">
                             {{ $isEn
-                                ? 'Still easy to remember, transformed with mixed case, smart numbers, and strong symbols.'
-                                : 'Tetap mudah kamu ingat karena berasal dari kata dasarmu, namun sudah diperkuat dengan huruf kapital, substitusi angka, dan simbol.' }}
+        ? 'Still easy to remember, transformed with mixed case, smart numbers, and strong symbols.'
+        : 'Tetap mudah kamu ingat karena berasal dari kata dasarmu, namun sudah diperkuat dengan huruf kapital, substitusi angka, dan simbol.' }}
                         </p>
                     </div>
 
-                    <button
-                        type="button"
-                        @click="seed++"
-                        class="inline-flex items-center gap-2 rounded-full bg-ink hover:bg-sky text-white text-xs font-heading font-bold px-4 py-2.5 transition-colors cursor-pointer"
-                    >
+                    <button type="button" @click="seed++"
+                        class="inline-flex items-center gap-2 rounded-full bg-ink hover:bg-sky text-white text-xs font-heading font-bold px-4 py-2.5 transition-colors cursor-pointer">
                         <span>↻</span>
                         <span>{{ $isEn ? 'Shuffle Variations' : 'Acak Variasi Baru' }}</span>
                     </button>
@@ -200,29 +193,28 @@
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                     <template x-for="(item, idx) in suggestions" :key="idx">
-                        <div class="rounded-2xl bg-[#F8FAFC] border border-gray-200/80 hover:border-sky/50 p-4 flex flex-col justify-between gap-3 transition-colors">
+                        <div
+                            class="rounded-2xl bg-[#F8FAFC] border border-gray-200/80 hover:border-sky/50 p-4 flex flex-col justify-between gap-3 transition-colors">
                             <div class="flex items-center justify-between gap-2">
-                                <span class="text-[10px] font-extrabold uppercase tracking-wider text-sky" x-text="item.tag"></span>
-                                <span class="rounded-full bg-emerald-100 text-emerald-800 px-2.5 py-0.5 text-[10px] font-bold" x-text="item.strength"></span>
+                                <span class="text-[10px] font-extrabold uppercase tracking-wider text-sky"
+                                    x-text="item.tag"></span>
+                                <span
+                                    class="rounded-full bg-emerald-100 text-emerald-800 px-2.5 py-0.5 text-[10px] font-bold"
+                                    x-text="item.strength"></span>
                             </div>
 
-                            <div class="font-mono font-bold text-base sm:text-lg text-ink break-all bg-white border border-gray-200/70 rounded-xl px-3.5 py-2.5 select-all" x-text="item.value"></div>
+                            <div class="font-mono font-bold text-base sm:text-lg text-ink break-all bg-white border border-gray-200/70 rounded-xl px-3.5 py-2.5 select-all"
+                                x-text="item.value"></div>
 
                             <div class="flex items-center justify-between gap-2">
-                                <button
-                                    type="button"
-                                    @click="password = item.value"
-                                    class="text-[11px] font-bold text-sky hover:underline cursor-pointer"
-                                >
+                                <button type="button" @click="password = item.value"
+                                    class="text-[11px] font-bold text-sky hover:underline cursor-pointer">
                                     {{ $isEn ? 'Test in checker' : 'Uji saran ini' }}
                                 </button>
-                                <button
-                                    type="button"
-                                    @click="copySuggestion(item.value, idx)"
+                                <button type="button" @click="copySuggestion(item.value, idx)"
                                     :class="copiedIdx === idx ? 'bg-lime text-ink' : 'bg-ink text-white hover:bg-sky'"
                                     class="rounded-full px-3.5 py-1.5 text-[11px] font-heading font-bold transition-colors cursor-pointer"
-                                    x-text="copiedIdx === idx ? (isEn ? 'Copied ✓' : 'Tersalin ✓') : (isEn ? 'Copy' : 'Salin')"
-                                ></button>
+                                    x-text="copiedIdx === idx ? (isEn ? 'Copied ✓' : 'Tersalin ✓') : (isEn ? 'Copy' : 'Salin')"></button>
                             </div>
                         </div>
                     </template>
@@ -241,6 +233,7 @@
                 seed: 0,
                 copiedIdx: null,
 
+                // logika password strength checker digisafe mantap
                 get analysis() {
                     const p = this.password || '';
                     const hasLen = p.length >= 12;
@@ -397,4 +390,3 @@
     </script>
 
 @endsection
-
