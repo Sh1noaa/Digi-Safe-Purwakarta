@@ -325,16 +325,11 @@ class AvatarBorderAndUiPolishTest extends TestCase
 
         $resp = $this->actingAs($admin)->get('/admin/users');
         $resp->assertOk()
-            ->assertSee('Diagram Tren Pertumbuhan User & Rating Testimoni')
-            ->assertSee('Apakah Pendaftar User Menaik atau Menurun?')
-            ->assertSee('Tren Menaik (+1 user)')
-            ->assertSee('Tren Rating Bintang 5, 4, 3, 2, 1')
-            ->assertSee('Bintang 5 (+2) & Bintang 4 (+1) naik pada bulan ini')
-            ->assertSee('Bintang 5')
-            ->assertSee('Bintang 4')
-            ->assertSee('Bintang 3')
-            ->assertSee('Bintang 2')
-            ->assertSee('Bintang 1');
+            ->assertSee('Analitik &amp; Diagram', false)
+            ->assertSee('Analitik Interaktif &amp; Diagram Tren', false)
+            ->assertSee('ANALISA PERTUMBUHAN PENGGUNA')
+            ->assertSee('Tren Pendaftar User')
+            ->assertSee('Distribusi &amp; Tren Rating', false);
 
         // Verifikasi Dark Mode pada halaman Tentang, Forum, dan Testimoni
         $admin->update(['theme' => 'dark']);

@@ -1300,3 +1300,364 @@ html.dark .hero-carousel-stage .hero-edge-rail {
 html.dark .hero-carousel-stage .hero-edge-rail .bg-white\/30 {
     background-color: rgba(255, 255, 255, 0.55) !important;
 }
+
+/* ============================================================================
+   Halaman Tentang: Section Fakta & Data Siber (Light & Dark Mode WCAG AA)
+   ============================================================================ */
+.about-intel-section {
+    background-color: #FFFFFF;
+    color: #0A0A0A;
+}
+
+.about-intel-heading {
+    color: #0A0A0A;
+}
+
+.about-intel-body {
+    color: #334155;
+}
+
+.about-intel-muted {
+    color: #475569;
+}
+
+.about-intel-blue-word {
+    color: #1E63E9;
+}
+
+.about-intel-ink-dot {
+    background-color: #0A0A0A;
+}
+
+.about-intel-lime-dot {
+    background-color: #C6F432;
+    color: #0A0A0A;
+    border: 2px solid #FFFFFF;
+}
+
+.about-intel-source-tag {
+    color: #0A0A0A;
+    padding: 0.15rem 0.55rem;
+    border-radius: 6px;
+    background-color: #F1F5F9;
+    border: 1px solid #E2E8F0;
+}
+
+.about-intel-frame {
+    background-color: #FFFFFF;
+    border-color: #E2E8F0;
+    box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
+}
+
+.about-intel-subcard {
+    background-color: #F8FAFC;
+    border-color: #E2E8F0;
+}
+
+.about-intel-divider {
+    border-color: #E2E8F0;
+}
+
+.about-intel-icon-box {
+    background-color: #EFF6FF;
+    color: #1E63E9;
+}
+
+.about-intel-blue-card {
+    background-color: #1E63E9;
+    color: #FFFFFF;
+}
+
+.about-intel-tab {
+    background-color: #F1F5F9;
+    color: #334155;
+    border: 1px solid #E2E8F0;
+}
+
+.about-intel-tab:hover {
+    background-color: #E2E8F0;
+    color: #0A0A0A;
+}
+
+.about-intel-tab-active {
+    background-color: #0A0A0A;
+    color: #C6F432;
+    border: 1px solid #0A0A0A;
+}
+
+.about-intel-bar {
+    background-color: #E2E8F0;
+}
+
+.about-intel-bar-active {
+    background-color: #1E63E9;
+}
+
+.about-intel-bar-accent {
+    background: linear-gradient(180deg, #1E63E9 0%, #C6F432 100%);
+}
+
+.about-intel-pill-active {
+    background-color: #0A0A0A;
+    color: #FFFFFF;
+}
+
+.about-intel-strip {
+    background-color: #F8FAFC;
+    border-color: #E2E8F0;
+}
+
+.about-intel-panel {
+    background-color: #F5F7FA;
+    border-color: #E2E8F0;
+}
+
+.about-intel-lime-card {
+    background-color: #C6F432;
+    color: #0A0A0A;
+    border: 1px solid rgba(10, 10, 10, 0.08);
+}
+
+.about-intel-lime-action {
+    background-color: #FFFFFF;
+    color: #0A0A0A;
+    border: 1px solid rgba(10, 10, 10, 0.12);
+}
+
+.about-intel-check {
+    background-color: #0A0A0A;
+    color: #FFFFFF;
+}
+
+/* Dark Mode Overrides untuk Section Fakta & Data Siber */
+html.dark .about-intel-section {
+    background-color: #0B1120 !important;
+    border-color: #1E293B !important;
+    color: #F8FAFC !important;
+}
+
+html.dark .about-intel-heading {
+    color: #F8FAFC !important;
+}
+
+html.dark .about-intel-body {
+    color: #CBD5E1 !important;
+}
+
+html.dark .about-intel-muted {
+    color: #94A3B8 !important;
+}
+
+html.dark .about-intel-blue-word {
+    color: #60A5FA !important;
+}
+
+html.dark .about-intel-ink-dot {
+    background-color: #1E293B !important;
+    border: 1px solid #475569 !important;
+}
+
+html.dark .about-intel-lime-dot {
+    background-color: #C6F432 !important;
+    color: #0A0A0A !important;
+    border-color: #0B1120 !important;
+}
+
+html.dark .about-intel-source-tag {
+    color: #E2E8F0 !important;
+    background-color: #162032 !important;
+    border-color: #334155 !important;
+}
+
+html.dark .about-intel-frame {
+    background-color: #0F172A !important;
+    border-color: #1E293B !important;
+    box-shadow: 0 24px 54px rgba(2, 6, 23, 0.55) !important;
+}
+
+html.dark .about-intel-subcard {
+    background-color: #162032 !important;
+    border-color: #26354D !important;
+}
+
+html.dark .about-intel-divider {
+    border-color: #1E293B !important;
+}
+
+html.dark .about-intel-icon-box {
+    background-color: rgba(30, 99, 233, 0.22) !important;
+    color: #93C5FD !important;
+}
+
+html.dark .about-intel-blue-card {
+    background-color: #1E63E9 !important;
+    color: #FFFFFF !important;
+}
+
+html.dark .about-intel-blue-card span {
+    color: #FFFFFF !important;
+}
+
+html.dark .about-intel-blue-card .text-blue-100 {
+    color: #DBEAFE !important;
+}
+
+html.dark .about-intel-tab {
+    background-color: #162032 !important;
+    color: #CBD5E1 !important;
+    border-color: #334155 !important;
+}
+
+html.dark .about-intel-tab:hover {
+    background-color: #1E293B !important;
+    color: #FFFFFF !important;
+}
+
+html.dark .about-intel-tab-active {
+    background-color: #C6F432 !important;
+    color: #0A0A0A !important;
+    border-color: #C6F432 !important;
+}
+
+html.dark .about-intel-bar {
+    background-color: #243247 !important;
+}
+
+html.dark .about-intel-bar-active {
+    background-color: #3B82F6 !important;
+}
+
+html.dark .about-intel-pill-active {
+    background-color: #C6F432 !important;
+    color: #0A0A0A !important;
+}
+
+html.dark .about-intel-strip {
+    background-color: #0F172A !important;
+    border-color: #1E293B !important;
+}
+
+html.dark .about-intel-panel {
+    background-color: #0F172A !important;
+    border-color: #1E293B !important;
+}
+
+html.dark .about-intel-lime-card {
+    background-color: #C6F432 !important;
+    color: #0A0A0A !important;
+    border-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+html.dark .about-intel-lime-card span,
+html.dark .about-intel-lime-card p {
+    color: #0A0A0A !important;
+}
+
+html.dark .about-intel-lime-action {
+    background-color: #FFFFFF !important;
+    color: #0A0A0A !important;
+    border-color: rgba(10, 10, 10, 0.16) !important;
+}
+
+html.dark .about-intel-check {
+    background-color: #C6F432 !important;
+    color: #0A0A0A !important;
+}
+
+/* ============================================================================
+   Judul Stiker 3D Bergaya Editor Vektor ("Mengapa kami membuat website ini")
+   ============================================================================ */
+.about-sticker-bbox {
+    background-color: #0F172A;
+    color: #FFFFFF;
+    border: 1.5px solid #94A3B8;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.16);
+}
+
+.about-sticker-handle {
+    position: absolute;
+    width: 7px;
+    height: 7px;
+    background-color: #FFFFFF;
+    border: 1.5px solid #0F172A;
+}
+
+.about-sticker-tag {
+    background-color: #C6F432;
+    color: #0A0A0A;
+    border: 1.5px solid #0A0A0A;
+}
+
+.about-sticker-word {
+    position: relative;
+    display: inline-block;
+    color: #FFFFFF;
+    padding: 0 0.08em;
+    -webkit-text-stroke: 11px #1E63E9;
+    paint-order: stroke fill;
+    filter:
+        drop-shadow(0 2px 0 #1549B8)
+        drop-shadow(0 4px 0 #103A94)
+        drop-shadow(0 7px 0 #0B286B)
+        drop-shadow(0 12px 18px rgba(15, 23, 42, 0.22));
+}
+
+@media (max-width: 639px) {
+    .about-sticker-word {
+        -webkit-text-stroke: 7px #1E63E9;
+        filter:
+            drop-shadow(0 2px 0 #1549B8)
+            drop-shadow(0 4px 0 #0B286B)
+            drop-shadow(0 8px 12px rgba(15, 23, 42, 0.18));
+    }
+}
+
+.about-sticker-bezier {
+    color: #0F172A;
+}
+
+.about-sticker-chip {
+    background-color: #E0F2FE;
+    color: #0C4A6E;
+    border: 1px solid #BAE6FD;
+}
+
+html.dark .about-sticker-bbox {
+    background-color: #162032 !important;
+    color: #FFFFFF !important;
+    border-color: #CBD5E1 !important;
+}
+
+html.dark .about-sticker-handle {
+    background-color: #FFFFFF !important;
+    border-color: #0F172A !important;
+}
+
+html.dark .about-sticker-tag {
+    background-color: #C6F432 !important;
+    color: #0A0A0A !important;
+    border-color: #0A0A0A !important;
+}
+
+html.dark .about-sticker-word {
+    color: #FFFFFF !important;
+}
+
+html.dark .about-sticker-bezier {
+    color: #94A3B8 !important;
+}
+
+html.dark .about-sticker-chip {
+    background-color: #132238 !important;
+    color: #BAE6FD !important;
+    border-color: #1E3A5F !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .about-intel-blue-card,
+    .about-intel-lime-card,
+    .about-intel-lime-action {
+        transition: none !important;
+        transform: none !important;
+    }
+}

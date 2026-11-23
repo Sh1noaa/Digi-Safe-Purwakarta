@@ -16,6 +16,7 @@ use App\Http\Controllers\ForumController;
 use App\Http\Controllers\LeaderboardController;
 use App\Http\Controllers\LinkScannerController;
 use App\Http\Controllers\MinigameController;
+use App\Http\Controllers\PanicSimulatorController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SocialChatController;
 use App\Http\Controllers\TentangController;
@@ -61,6 +62,8 @@ Route::get('/minigame/wa-simulator', [WaSimulatorController::class, 'show'])->na
 Route::post('/minigame/wa-simulator/record', [WaSimulatorController::class, 'recordResult'])->middleware('throttle:30,1')->name('minigame.wa-simulator.record');
 Route::get('/minigame/link-scanner', [LinkScannerController::class, 'show'])->name('minigame.link-scanner');
 Route::post('/minigame/link-scanner/scan', [LinkScannerController::class, 'scan'])->middleware('throttle:30,1')->name('minigame.link-scanner.scan');
+Route::get('/minigame/panic-simulator', [PanicSimulatorController::class, 'show'])->name('minigame.panic-simulator');
+Route::post('/minigame/panic-simulator/record', [PanicSimulatorController::class, 'recordResult'])->middleware('throttle:30,1')->name('minigame.panic-simulator.record');
 
 // tantangan harian & weekly streak (api + freeze 24 jam + 2x pemulihan)
 Route::get('/streak/status', [DailyStreakController::class, 'status'])->name('streak.status');

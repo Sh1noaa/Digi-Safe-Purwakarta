@@ -27,7 +27,7 @@
                 class="hero-sky-scrim absolute inset-0 pointer-events-none"
             ></div>
 
-            <!-- animasi kawanan burung berterbangan di langit beranda -->
+            <!-- burung burung melintas animasiiii mantap -->
             <div class="bird-flock" aria-hidden="true">
                 <svg width="170" height="60" viewBox="0 0 170 60" fill="none">
                     <g class="bird-wing-1">

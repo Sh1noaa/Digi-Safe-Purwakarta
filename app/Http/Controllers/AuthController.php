@@ -70,7 +70,7 @@ class AuthController extends Controller
         $credentials['email'] = $email;
 
         // Kunci brute-force per kombinasi akun + IP (maksimal 5 percobaan gagal per menit)
-        $throttleKey = 'login-web:' . sha1($email . '|' . $request->ip());
+        $throttleKey = '`login`-web:' . sha1($email . '|' . $request->ip());
         if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
             $seconds = RateLimiter::availableIn($throttleKey);
 

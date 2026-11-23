@@ -484,5 +484,7 @@
                 </div>
             </div>
         </div>
+
+        <x-admin-analytics-modal :analytics="$analytics" />
     </section>
 @endsection

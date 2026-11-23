@@ -74,11 +74,11 @@ class StreakQuestionController extends Controller
         DailyStreakQuestion::create([
             'question_key' => $questionKey,
             'category_id' => $validated['category_id'],
-            'category_en' => $validated['category_en'] ?: null,
+            'category_en' => ! empty($validated['category_en']) ? $validated['category_en'] : null,
             'difficulty_id' => $validated['difficulty_id'],
-            'difficulty_en' => $validated['difficulty_en'] ?: 'Advanced',
+            'difficulty_en' => ! empty($validated['difficulty_en']) ? $validated['difficulty_en'] : 'Advanced',
             'prompt_id' => $validated['prompt_id'],
-            'prompt_en' => $validated['prompt_en'] ?: null,
+            'prompt_en' => ! empty($validated['prompt_en']) ? $validated['prompt_en'] : null,
             'options_id_json' => [
                 'A' => $validated['option_a'],
                 'B' => $validated['option_b'],
@@ -89,7 +89,7 @@ class StreakQuestionController extends Controller
             'options_en_json' => $this->extractEnglishOptions($validated),
             'answer' => strtoupper($validated['answer']),
             'explanation_id' => $validated['explanation_id'],
-            'explanation_en' => $validated['explanation_en'] ?: null,
+            'explanation_en' => ! empty($validated['explanation_en']) ? $validated['explanation_en'] : null,
             'is_active' => $request->boolean('is_active', true),
             'created_by' => Auth::id(),
         ]);
@@ -119,11 +119,11 @@ class StreakQuestionController extends Controller
 
         $streakQuestion->update([
             'category_id' => $validated['category_id'],
-            'category_en' => $validated['category_en'] ?: null,
+            'category_en' => ! empty($validated['category_en']) ? $validated['category_en'] : null,
             'difficulty_id' => $validated['difficulty_id'],
-            'difficulty_en' => $validated['difficulty_en'] ?: 'Advanced',
+            'difficulty_en' => ! empty($validated['difficulty_en']) ? $validated['difficulty_en'] : 'Advanced',
             'prompt_id' => $validated['prompt_id'],
-            'prompt_en' => $validated['prompt_en'] ?: null,
+            'prompt_en' => ! empty($validated['prompt_en']) ? $validated['prompt_en'] : null,
             'options_id_json' => [
                 'A' => $validated['option_a'],
                 'B' => $validated['option_b'],
@@ -134,7 +134,7 @@ class StreakQuestionController extends Controller
             'options_en_json' => $this->extractEnglishOptions($validated),
             'answer' => strtoupper($validated['answer']),
             'explanation_id' => $validated['explanation_id'],
-            'explanation_en' => $validated['explanation_en'] ?: null,
+            'explanation_en' => ! empty($validated['explanation_en']) ? $validated['explanation_en'] : null,
             'is_active' => $nextActive,
         ]);
 

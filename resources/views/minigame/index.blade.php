@@ -611,6 +611,78 @@
                                 </div>
                             </article>
 
+                            <!-- GAME 7: 60 DETIK SELAMATKAN HP-MU (LIVE ANDROID OS PANIC SIMULATOR) -->
+                            <article
+                                x-show="search === '' || '60 detik selamatkan hp panic simulator android malware apk aksesibilitas mode pesawat otp darurat'.includes(search.toLowerCase())"
+                                class="md:col-span-2 group relative rounded-[24px] bg-white border border-red-200/90 shadow-neutral hover:-translate-y-1.5 transition-all duration-300 overflow-hidden"
+                            >
+                                <div class="grid grid-cols-1 sm:grid-cols-12 items-stretch">
+                                    <div class="sm:col-span-5 relative min-h-[220px] sm:min-h-[240px] bg-[#0F172A] overflow-hidden border-b sm:border-b-0 sm:border-r border-slate-800 flex items-center justify-center p-5">
+                                        <!-- Mini Interactive-Style Phone Mockup Preview -->
+                                        <div class="w-[186px] rounded-[24px] border-[3px] border-slate-700 bg-[#090D16] p-2.5 shadow-xl">
+                                            <div class="flex items-center justify-between text-[9px] font-semibold text-slate-300 px-1 mb-2">
+                                                <span>09:41</span>
+                                                <span class="text-red-400 font-bold">OTP AKTIF</span>
+                                            </div>
+                                            <div class="rounded-xl bg-red-600/20 border border-red-500/40 p-2 mb-2">
+                                                <p class="text-[8px] font-bold uppercase tracking-wide text-red-300">
+                                                    {{ $isEn ? 'Live Drain Alert' : 'Saldo Terkuras' }}
+                                                </p>
+                                                <p class="font-heading font-extrabold text-sm text-white tabular-nums mt-0.5">
+                                                    Rp 4.850.000
+                                                </p>
+                                            </div>
+                                            <div class="grid grid-cols-4 gap-1.5">
+                                                <div class="rounded-lg bg-slate-800 p-1.5 flex items-center justify-center text-sky-400">
+                                                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.6.85 1 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                                                </div>
+                                                <div class="rounded-lg overflow-hidden bg-[#25D366] flex items-center justify-center">
+                                                    <img src="{{ asset('images/icons/wa-logo.jpg') }}" alt="WhatsApp" width="28" height="28" loading="lazy" class="w-full h-full object-cover">
+                                                </div>
+                                                <div class="rounded-lg bg-blue-600 p-1.5 flex items-center justify-center text-white">
+                                                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.58 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                                                </div>
+                                                <div class="rounded-lg overflow-hidden bg-[#00529C] flex items-center justify-center">
+                                                    <img src="{{ asset('images/icons/brimo-logo.jpg') }}" alt="BRImo" width="28" height="28" loading="lazy" class="w-full h-full object-cover">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <span class="absolute top-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-red-600 text-white px-3 py-1 text-[10px] font-heading font-extrabold uppercase tracking-wider">
+                                            {{ $isEn ? 'Live Android Sandbox' : 'Simulasi Layar HP Langsung' }}
+                                        </span>
+                                    </div>
+                                    <div class="sm:col-span-7 p-6 flex flex-col justify-between gap-4">
+                                        <div>
+                                            <span class="inline-flex items-center rounded-full bg-red-50 text-red-700 border border-red-200 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider">
+                                                {{ $isEn ? 'POST-BREACH DRILL' : 'LATIHAN TANGGAP DARURAT' }}
+                                            </span>
+                                            <h3 class="mt-2 font-heading font-extrabold text-lg sm:text-xl text-ink group-hover:text-red-600 transition-colors">
+                                                {{ $isEn ? '60 Seconds to Save Your Infected Phone' : '60 Detik Selamatkan HP-mu!' }}
+                                            </h3>
+                                            <p class="mt-1.5 text-xs text-muted leading-relaxed">
+                                                {{ $isEn
+                                                    ? 'Choose from 3 real-world emergency cases on a live interactive Android phone: infected .APK courier malware, hijacked WhatsApp account spamming family, or bank phishing on public Wi-Fi. Includes Beginner Guided Mode and Reduce Motion setting.'
+                                                    : 'Pilih 3 kasus darurat nyata di layar HP Android interaktif: HP terinfeksi file .APK kurir, akun WhatsApp dibajak untuk meminjam uang ke keluarga, atau terjebak link phishing m-Banking di Wi-Fi publik. Lengkap dengan Mode Panduan Pemula dan pengaturan Hemat Gerak.' }}
+                                            </p>
+                                        </div>
+                                        <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-gray-100">
+                                            <span class="text-[11px] font-semibold text-muted">
+                                                {{ $isEn ? '3 Emergency Cases · Guided Mode · Reduce Motion' : '3 Kasus Darurat · Mode Panduan Pemula · Hemat Gerak' }}
+                                            </span>
+                                            <a
+                                                href="{{ route('minigame.panic-simulator') }}"
+                                                class="inline-flex items-center gap-2 rounded-full bg-red-600 hover:bg-ink text-white font-heading font-extrabold text-xs px-6 py-3 transition-colors"
+                                            >
+                                                <span>{{ $isEn ? 'Launch Phone Simulator' : 'Mulai Simulasi HP Darurat' }}</span>
+                                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                    <polygon points="5 3 19 12 5 21 5 3" />
+                                                </svg>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </article>
+
                         </div>
                     </div>
 

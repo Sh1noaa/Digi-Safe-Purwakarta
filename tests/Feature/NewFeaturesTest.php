@@ -362,4 +362,114 @@ class NewFeaturesTest extends TestCase
         $this->assertStringContainsString('streakFreezeShiver', $widget);
         $this->assertStringNotContainsString('Tes Animasi Api', $widget);
     }
+
+    public function test_tentang_page_renders_verified_cyber_facts_section_before_developer_in_id_and_en(): void
+    {
+        // 1. Indonesian default
+        $idResponse = $this->get('/tentang');
+        $idResponse->assertOk()
+            ->assertSee('id="section-fakta-siber"', false)
+            ->assertSee('741.545+')
+            ->assertSee('5,2 Miliar+')
+            ->assertSee('80,66%')
+            ->assertSee('images/logo.png')
+            ->assertDontSee('Get Started');
+
+        $htmlId = $idResponse->getContent();
+        $this->assertLessThan(
+            strpos($htmlId, 'id="section-pengembang"'),
+            strpos($htmlId, 'id="section-fakta-siber"'),
+            'Cyber facts section must appear before developer section'
+        );
+
+        // 2. English + Dark mode
+        $user = User::create([
+            'username' => 'warga_en_dark',
+            'email' => 'warga.endark@gmail.com',
+            'password' => Hash::make('password123'),
+            'role' => 'user',
+            'nama_lengkap' => 'Warga EN Dark',
+            'locale' => 'en',
+            'theme' => 'dark',
+        ]);
+
+        $this->actingAs($user)
+            ->get('/tentang')
+            ->assertOk()
+            ->assertSee('Verified Field Data')
+            ->assertSee('741,545+')
+            ->assertSee('5.2 Billion+')
+            ->assertSee('80.66%')
+            ->assertSee('Spotting')
+            ->assertSee('Scam Defense');
+    }
+
+    public function test_panic_simulator_renders_interactive_android_os_motion_toggle_and_records_score(): void
+    {
+        // 1. Indonesian default view (3 cases + drag shade + beginner guide + motion toggle)
+        $this->get('/minigame/panic-simulator')
+            ->assertOk()
+            ->assertSee('60 Detik Selamatkan HP-mu!')
+            ->assertSee('Resi_JNE_Viewer')
+            ->assertSee('Update Layanan Sistem')
+            ->assertSee('Perangkat Tertaut')
+            ->assertSee('wa_hijack', false)
+            ->assertSee('phishing_bank', false)
+            ->assertSee('onStatusBarPointerDown', false)
+            ->assertSee('Panduan Pemula', false)
+            ->assertSee('1500017')
+            ->assertSee('panic-reduced-motion', false)
+            ->assertSee('toggleMotion()', false);
+
+        // 2. Minigame Hub links to panic simulator
+        $this->get('/minigame')
+            ->assertOk()
+            ->assertSee(route('minigame.panic-simulator'), false)
+            ->assertSee('60 Detik Selamatkan HP-mu!');
+
+        // 3. Authenticated English user + score persistence to skor_game
+        $user = User::create([
+            'username' => 'warga_panic',
+            'email' => 'warga.panic@gmail.com',
+            'password' => Hash::make('password123'),
+            'role' => 'user',
+            'nama_lengkap' => 'Warga Panic',
+            'locale' => 'en',
+            'theme' => 'dark',
+        ]);
+
+        $this->actingAs($user)
+            ->get('/minigame/panic-simulator')
+            ->assertOk()
+            ->assertSee('60 Seconds to Save Your Phone')
+            ->assertSee('Linked Devices')
+            ->assertSee('Airplane Mode');
+
+        $this->actingAs($user)
+            ->postJson('/minigame/panic-simulator/record', [
+                'mode' => 'extreme',
+                'won' => true,
+                'score' => 94,
+                'saved_balance' => 4400000,
+                'elapsed_seconds' => 28,
+                'steps_completed' => 5,
+                'mistakes' => 1,
+            ])
+            ->assertOk()
+            ->assertJson([
+                'ok' => true,
+                'saved' => true,
+            ]);
+
+        $record = DB::table('skor_game')
+            ->where('user_id', $user->id)
+            ->where('game_type', 'panic-simulator')
+            ->first();
+
+        $this->assertNotNull($record);
+        $this->assertSame(94, (int) $record->skor);
+        $this->assertSame(94, (int) $record->skor_tertinggi);
+        $this->assertSame(5, (int) $record->benar);
+        $this->assertSame(1, (int) $record->salah);
+    }
 }

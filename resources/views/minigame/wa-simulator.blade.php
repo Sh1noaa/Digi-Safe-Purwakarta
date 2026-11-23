@@ -209,7 +209,13 @@
                     <!-- Topbar Daftar Chat -->
                     <div class="px-4 py-3.5 bg-[#075E54] text-white flex items-center justify-between gap-2 shrink-0">
                         <div class="flex items-center gap-2.5">
-                            <span class="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center font-heading font-extrabold text-xs">WA</span>
+                            <img
+                                src="{{ asset('images/icons/wa-logo.jpg') }}"
+                                alt="WhatsApp"
+                                width="36"
+                                height="36"
+                                class="w-9 h-9 rounded-xl object-cover shrink-0 shadow-xs"
+                            >
                             <div>
                                 <h2 class="font-heading font-extrabold text-sm leading-none">Digi-Safe Chat Sim</h2>
                                 <span class="text-[10px] text-emerald-100/90" x-text="contacts.length + @js($isEn ? ' simulated contacts' : ' kontak simulasi aktif')"></span>
@@ -256,11 +262,23 @@
                                 :class="activeId === c.id ? '{{ $isDark ? 'bg-[#2A3942]' : 'bg-[#ECFDF5]' }}' : '{{ $isDark ? 'hover:bg-[#202C33]' : 'hover:bg-slate-50' }}'"
                                 class="w-full text-left px-3.5 py-3 flex items-start gap-3 transition-colors cursor-pointer"
                             >
-                                <span
-                                    class="w-11 h-11 rounded-full text-white font-heading font-extrabold text-xs flex items-center justify-center shrink-0 shadow-2xs"
-                                    :style="'background-color:' + c.avatar_bg"
-                                    x-text="c.initials"
-                                ></span>
+                                <template x-if="c.avatar_url">
+                                    <img
+                                        :src="c.avatar_url"
+                                        :alt="c.name"
+                                        width="44"
+                                        height="44"
+                                        loading="lazy"
+                                        class="w-11 h-11 rounded-full object-cover object-top bg-white border border-slate-200/80 shrink-0 shadow-2xs"
+                                    >
+                                </template>
+                                <template x-if="!c.avatar_url">
+                                    <span
+                                        class="w-11 h-11 rounded-full text-white font-heading font-extrabold text-xs flex items-center justify-center shrink-0 shadow-2xs"
+                                        :style="'background-color:' + c.avatar_bg"
+                                        x-text="c.initials"
+                                    ></span>
+                                </template>
 
                                 <div class="flex-1 min-w-0">
                                     <div class="flex items-center justify-between gap-2">
@@ -306,11 +324,22 @@
                             >
                                 &larr;
                             </button>
-                            <span
-                                class="w-10 h-10 rounded-full text-white font-heading font-extrabold text-xs flex items-center justify-center shrink-0 ring-2 ring-white/25"
-                                :style="activeContact ? 'background-color:' + activeContact.avatar_bg : ''"
-                                x-text="activeContact ? activeContact.initials : ''"
-                            ></span>
+                            <template x-if="activeContact && activeContact.avatar_url">
+                                <img
+                                    :src="activeContact.avatar_url"
+                                    :alt="activeContact.name"
+                                    width="40"
+                                    height="40"
+                                    class="w-10 h-10 rounded-full object-cover object-top bg-white shrink-0 ring-2 ring-white/30"
+                                >
+                            </template>
+                            <template x-if="!activeContact || !activeContact.avatar_url">
+                                <span
+                                    class="w-10 h-10 rounded-full text-white font-heading font-extrabold text-xs flex items-center justify-center shrink-0 ring-2 ring-white/25"
+                                    :style="activeContact ? 'background-color:' + activeContact.avatar_bg : ''"
+                                    x-text="activeContact ? activeContact.initials : ''"
+                                ></span>
+                            </template>
                             <div class="min-w-0">
                                 <h3 class="font-heading font-extrabold text-sm truncate" x-text="activeContact ? activeContact.name : ''"></h3>
                                 <p class="text-[11px] text-emerald-100/90 truncate">

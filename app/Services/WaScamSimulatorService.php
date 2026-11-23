@@ -731,6 +731,7 @@ class WaScamSimulatorService
                 'phone' => '+62 823-5519-8840',
                 'initials' => 'CS',
                 'avatar_bg' => '#0F172A',
+                'avatar_url' => asset('images/pfp/bri-logo.jpg'),
                 'category' => $t('Phishing Biaya Admin Bank', 'Bank Admin Fee Phishing'),
                 'difficulty' => $t('Tinggi', 'Hard'),
                 'preview' => $t(
@@ -1119,6 +1120,7 @@ class WaScamSimulatorService
                 'phone' => '+62 895-6102-7731',
                 'initials' => 'CL',
                 'avatar_bg' => '#7C3AED',
+                'avatar_url' => asset('images/pfp/woman-hrd.jpg'),
                 'category' => $t('Penipuan Kerja Paruh Waktu', 'Part-Time Job Task Scam'),
                 'difficulty' => $t('Menengah', 'Medium'),
                 'preview' => $t(
@@ -2497,6 +2499,7 @@ class WaScamSimulatorService
                 'phone' => '+62 859-3011-7749',
                 'initials' => 'BP',
                 'avatar_bg' => '#0D9488',
+                'avatar_url' => asset('images/pfp/bpjs-logo.jpg'),
                 'category' => $t('File .APK Tagihan BPJS', 'Fake BPJS Health .APK'),
                 'difficulty' => $t('Menengah', 'Medium'),
                 'preview' => $t(
@@ -2650,6 +2653,7 @@ class WaScamSimulatorService
                 'phone' => '+62 821-6640-9910',
                 'initials' => 'MK',
                 'avatar_bg' => '#D97706',
+                'avatar_url' => asset('images/pfp/man-mentor.jpg'),
                 'category' => $t('Investasi Bodong Titip Modal', 'Fake Crypto Investment Scam'),
                 'difficulty' => $t('Tinggi', 'Hard'),
                 'preview' => $t(
