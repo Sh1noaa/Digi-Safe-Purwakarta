@@ -13,6 +13,8 @@ use Illuminate\View\View;
 
 class ForumController extends Controller
 {
+
+    // pas halaman dibuka
     public function index(Request $request): View
     {
         JawabanForumVote::ensureTable();
@@ -42,6 +44,7 @@ class ForumController extends Controller
         ]);
     }
 
+    // mengirim ke database
     public function store(Request $request): JsonResponse
     {
         JawabanForumVote::ensureTable();

@@ -2,9 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Mail\AccountOtpMail;
 use App\Models\User;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
@@ -14,6 +16,7 @@ class ApiEndpointsTest extends TestCase
     {
         parent::setUp();
 
+        Schema::dropIfExists('account_otps');
         Schema::dropIfExists('api_tokens');
         Schema::dropIfExists('jawaban_forum_votes');
         Schema::dropIfExists('jawaban_forum');
@@ -128,11 +131,35 @@ class ApiEndpointsTest extends TestCase
 
     public function test_api_register_login_and_sync_admin_edukasi(): void
     {
-        // 1. Register user biasa via API
+        Mail::fake();
+        config([
+            'services.mail_relay.webhook_url' => null,
+            'services.mail_relay.brevo_api_key' => null,
+        ]);
+
+        // 1a. Minta kode OTP pendaftaran via API
+        $this->postJson('/api/auth/register/send-otp', [
+            'nama_lengkap' => 'Warga Uji',
+            'username' => 'warga_uji',
+            'email' => 'warga@test.id',
+        ])->assertOk()->assertJson(['ok' => true]);
+
+        $capturedOtp = null;
+        Mail::assertSent(AccountOtpMail::class, function (AccountOtpMail $mail) use (&$capturedOtp) {
+            $capturedOtp = $mail->otpCode;
+
+            return $mail->hasTo('warga@test.id')
+                && $mail->purpose === 'register'
+                && preg_match('/^\d{6}$/', $mail->otpCode) === 1;
+        });
+        $this->assertNotNull($capturedOtp);
+
+        // 1b. Register user biasa via API dengan kode OTP 6 digit
         $regResp = $this->postJson('/api/auth/register', [
             'nama_lengkap' => 'Warga Uji',
             'username' => 'warga_uji',
             'email' => 'warga@test.id',
+            'otp' => $capturedOtp,
             'password' => 'password123',
         ]);
 

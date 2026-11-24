@@ -8,6 +8,7 @@ import '../widgets/shared_widgets.dart';
 import 'auth_screens.dart';
 import 'leaderboard_screen.dart';
 import 'minigame_play_screens.dart';
+import 'panic_simulator_screen.dart';
 import 'password_checker_screen.dart';
 import 'profile_screens.dart';
 
@@ -104,6 +105,8 @@ class _MinigameHubScreenState extends State<MinigameHubScreen> {
     final isEn = state.isEn;
     final q = _search.trim().toLowerCase();
 
+    final showPanic = q.isEmpty ||
+        '60 detik selamatkan hp android malware apk panic simulator darurat mode pesawat whatsapp brimo'.contains(q);
     final showPhishing = q.isEmpty || 'phishing hunter analisis pesan email chat'.contains(q);
     final showDefender = q.isEmpty || 'cyber defender pertahanan sistem virus malware'.contains(q);
     final showLinkTrap = q.isEmpty || 'link or trap inspeksi tautan url domain'.contains(q);
@@ -304,7 +307,18 @@ class _MinigameHubScreenState extends State<MinigameHubScreen> {
               ),
             ],
 
-            const SizedBox(height: 28),
+            const SizedBox(height: 24),
+
+            // MINIGAME TERBARU: 60 DETIK SELAMATKAN HP-MU! (LIVE ANDROID OS SIMULATOR)
+            if (showPanic)
+              _PanicSimulatorFeaturedCard(
+                isDark: isDark,
+                isEn: isEn,
+                isAuthenticated: state.isAuthenticated,
+                onTap: () => Navigator.of(context)
+                    .push(MaterialPageRoute(builder: (_) => PanicSimulatorScreen(appState: state)))
+                    .then((_) => _loadData()),
+              ),
 
             // 3 KARTU MINIGAME (dengan ilustrasi UFO, Roket, Satelit)
             if (showPhishing)
@@ -744,6 +758,271 @@ class _MiniScoreBox extends StatelessWidget {
           const SizedBox(height: 4),
           Text(val, style: AppTheme.heading(isDark, size: 18, color: AppColors.sky)),
         ],
+      ),
+    );
+  }
+}
+
+class _PanicSimulatorFeaturedCard extends StatelessWidget {
+  final bool isDark;
+  final bool isEn;
+  final bool isAuthenticated;
+  final VoidCallback onTap;
+
+  const _PanicSimulatorFeaturedCard({
+    required this.isDark,
+    required this.isEn,
+    required this.isAuthenticated,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 24),
+        decoration: BoxDecoration(
+          color: AppColors.cardBg(isDark),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: const Color(0xFF1E63E9).withValues(alpha: isDark ? 0.55 : 0.35),
+            width: 1.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF0F172A).withValues(alpha: isDark ? 0.32 : 0.08),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Crafted Dark-Titanium Mini Android OS Preview Header
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+              decoration: const BoxDecoration(
+                color: Color(0xFF0F172A),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.lime,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          isEn ? 'NEW · ANDROID OS SIM' : 'BARU · SIMULATOR OS HP',
+                          style: AppTheme.heading(false, size: 9.5, color: AppColors.ink),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0x33DC2626),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0x88F87171)),
+                        ),
+                        child: Text(
+                          isEn ? '3 Emergency Cases' : '3 Kasus Darurat',
+                          style: AppTheme.heading(false, size: 9.5, color: const Color(0xFFFECACA)),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // Miniature Live Phone Stage
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF13203B),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFF334155)),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                isEn ? 'SIMULATED FUNDS AT RISK' : 'SALDO SIMULASI TERANCAM',
+                                style: AppTheme.heading(false, size: 8.5, color: const Color(0xFF94A3B8)),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Rp 4.850.000',
+                                style: AppTheme.heading(true, size: 17, color: Colors.white),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                isEn
+                                    ? 'Swipe Quick Settings, revoke Accessibility & freeze card.'
+                                    : 'Tarik Quick Settings, cabut Aksesibilitas & blokir kartu.',
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTheme.body(true, size: 10.5, color: const Color(0xFFCBD5E1), height: 1.35),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        // Authentic WA & BRImo icons with unclipped alert badges
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _PreviewAppChip(
+                              badge: '2',
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(11),
+                                child: Image.asset('assets/images/wa-logo.jpg', fit: BoxFit.cover),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            _PreviewAppChip(
+                              badge: '1',
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(11),
+                                child: Image.asset('assets/images/brimo-logo.jpg', fit: BoxFit.cover),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Card Body
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isEn ? '60 Seconds to Save Your Phone!' : '60 Detik Selamatkan HP-mu!',
+                    style: AppTheme.heading(isDark, size: 19),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    isEn
+                        ? 'Practice real emergency defense inside an interactive Android screen: malicious .APK breach, WhatsApp hijack, and public Wi-Fi phishing.'
+                        : 'Latihan penyelamatan darurat langsung di layar HP Android interaktif: virus .APK resi, WhatsApp dibajak, hingga jebakan Wi-Fi publik.',
+                    style: AppTheme.body(isDark, size: 12, color: AppColors.textSecondary(isDark), height: 1.5),
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      _FeaturePill(isDark: isDark, label: isEn ? 'Beginner Guide' : 'Panduan Pemula'),
+                      _FeaturePill(isDark: isDark, label: isEn ? 'Quick Settings Drag' : 'Tarik Quick Settings'),
+                      _FeaturePill(isDark: isDark, label: isEn ? 'Reduce Motion' : 'Kontrol Animasi'),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            // High-Contrast Action Footer
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E63E9),
+                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(22)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.smartphone_rounded, size: 17, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      isAuthenticated
+                          ? (isEn ? 'Launch Android Emergency Simulator' : 'Mainkan Simulator Darurat Sekarang')
+                          : (isEn ? 'Try Simulator Free (Guest Mode)' : 'Coba Simulasi Sekarang (Gratis)'),
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTheme.heading(false, size: 12.5, color: Colors.white),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  const Icon(Icons.arrow_forward_rounded, size: 17, color: AppColors.lime),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PreviewAppChip extends StatelessWidget {
+  final String badge;
+  final Widget child;
+
+  const _PreviewAppChip({required this.badge, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 40,
+      height: 40,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned.fill(child: child),
+          Positioned(
+            top: -5,
+            right: -5,
+            child: Container(
+              width: 18,
+              height: 18,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: const Color(0xFFDC2626),
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFF13203B), width: 2),
+              ),
+              child: Text(badge, style: AppTheme.heading(false, size: 9, color: Colors.white)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FeaturePill extends StatelessWidget {
+  final bool isDark;
+  final String label;
+
+  const _FeaturePill({required this.isDark, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.softBg(isDark),
+        borderRadius: BorderRadius.circular(99),
+        border: Border.all(color: AppColors.border(isDark)),
+      ),
+      child: Text(
+        label,
+        style: AppTheme.heading(isDark, size: 10, color: AppColors.textPrimary(isDark)),
       ),
     );
   }

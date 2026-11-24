@@ -16,6 +16,8 @@ class PanicSimulatorController extends Controller
         return view('minigame.panic-simulator');
     }
 
+
+    // menyimpan skor ke tabel
     public function recordResult(Request $request): JsonResponse
     {
         $validated = $request->validate([

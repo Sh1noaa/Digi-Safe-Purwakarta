@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../core/app_state.dart';
 import '../core/theme.dart';
@@ -891,18 +893,82 @@ class _RegisterEmailOnlySheet extends StatefulWidget {
 
 class _RegisterEmailOnlySheetState extends State<_RegisterEmailOnlySheet> {
   final _emailCtrl = TextEditingController();
+  final _otpCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   final _confirmPassCtrl = TextEditingController();
   bool _showPass = false;
+  bool _sendingOtp = false;
+  bool _otpSent = false;
   bool _submitting = false;
+  int _cooldown = 0;
+  Timer? _cooldownTimer;
+  String? _statusMsg;
   String? _errorMsg;
 
   @override
   void dispose() {
+    _cooldownTimer?.cancel();
     _emailCtrl.dispose();
+    _otpCtrl.dispose();
     _passCtrl.dispose();
     _confirmPassCtrl.dispose();
     super.dispose();
+  }
+
+  void _startCooldown(int seconds) {
+    _cooldownTimer?.cancel();
+    setState(() => _cooldown = math.max(0, seconds));
+    if (_cooldown <= 0) return;
+    _cooldownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      if (_cooldown <= 1) {
+        timer.cancel();
+        setState(() => _cooldown = 0);
+      } else {
+        setState(() => _cooldown -= 1);
+      }
+    });
+  }
+
+  Future<void> _sendOtp() async {
+    if (_sendingOtp || _cooldown > 0) return;
+    final email = _emailCtrl.text.trim();
+    if (email.isEmpty || !email.contains('@')) {
+      setState(() {
+        _errorMsg = widget.appState.isEn
+            ? 'Enter a valid Gmail / Email address first.'
+            : 'Masukkan alamat Gmail / Email yang valid terlebih dahulu.';
+        _statusMsg = null;
+      });
+      return;
+    }
+
+    setState(() {
+      _sendingOtp = true;
+      _errorMsg = null;
+      _statusMsg = null;
+    });
+
+    try {
+      final res = await widget.appState.sendRegisterOtp(email: email);
+      if (!mounted) return;
+      final cd = (res['cooldown'] as num?)?.toInt() ?? 20;
+      setState(() {
+        _otpSent = true;
+        _otpCtrl.clear();
+        _statusMsg = (res['message'] ?? (widget.appState.isEn ? '6-digit OTP sent to your email.' : 'Kode OTP 6 digit dikirim ke email kamu.')).toString();
+      });
+      _startCooldown(cd);
+    } catch (e) {
+      if (mounted) {
+        setState(() => _errorMsg = e.toString());
+      }
+    } finally {
+      if (mounted) setState(() => _sendingOtp = false);
+    }
   }
 
   int get _passwordStrength {
@@ -917,11 +983,18 @@ class _RegisterEmailOnlySheetState extends State<_RegisterEmailOnlySheet> {
 
   Future<void> _submit() async {
     final email = _emailCtrl.text.trim();
+    final otp = _otpCtrl.text.trim();
     final pass = _passCtrl.text;
     final accept = _confirmPassCtrl.text;
 
     if (email.isEmpty || !email.contains('@')) {
       setState(() => _errorMsg = widget.appState.isEn ? 'Enter a valid Gmail / Email address.' : 'Masukkan alamat Gmail / Email yang valid.');
+      return;
+    }
+    if (!RegExp(r'^\d{6}$').hasMatch(otp)) {
+      setState(() => _errorMsg = widget.appState.isEn
+          ? 'Please request and enter the 6-digit OTP code from your email.'
+          : 'Silakan kirim dan masukkan 6 digit kode OTP dari email kamu.');
       return;
     }
     if (pass.length < 8) {
@@ -939,7 +1012,7 @@ class _RegisterEmailOnlySheetState extends State<_RegisterEmailOnlySheet> {
     });
 
     try {
-      await widget.appState.registerEmailOnly(email: email, password: pass);
+      await widget.appState.registerEmailOnly(email: email, password: pass, otp: otp);
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
       if (mounted) setState(() => _errorMsg = e.toString());
@@ -956,7 +1029,7 @@ class _RegisterEmailOnlySheetState extends State<_RegisterEmailOnlySheet> {
     final s = _passwordStrength;
 
     return Container(
-      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.88),
+      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.90),
       padding: EdgeInsets.fromLTRB(22, 16, 22, MediaQuery.of(context).viewInsets.bottom + 24),
       decoration: BoxDecoration(
         color: AppColors.cardBg(isDark),
@@ -991,8 +1064,8 @@ class _RegisterEmailOnlySheetState extends State<_RegisterEmailOnlySheet> {
                       Text(state.tr('auth_register_title'), style: AppTheme.heading(isDark, size: 17.5)),
                       Text(
                         isEn
-                            ? 'Enter Gmail & Password first — customize profile next!'
-                            : 'Cukup Gmail & Password dulu — username & role di halaman berikutnya!',
+                            ? 'Verify Gmail with 6-digit OTP, then set up your profile.'
+                            : 'Verifikasi Gmail pakai OTP 6 digit, lalu atur profil kamu.',
                         style: AppTheme.body(isDark, size: 11, color: AppColors.textSecondary(isDark)),
                       ),
                     ],
@@ -1001,6 +1074,19 @@ class _RegisterEmailOnlySheetState extends State<_RegisterEmailOnlySheet> {
                 IconButton(onPressed: () => Navigator.pop(context, false), icon: const Icon(Icons.close_rounded)),
               ],
             ),
+            if (_statusMsg != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFECFDF5),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFF6EE7B7)),
+                ),
+                child: Text(_statusMsg!, style: AppTheme.body(false, size: 12, color: const Color(0xFF065F46), weight: FontWeight.w600)),
+              ),
+            ],
             if (_errorMsg != null) ...[
               const SizedBox(height: 12),
               Container(
@@ -1024,6 +1110,47 @@ class _RegisterEmailOnlySheetState extends State<_RegisterEmailOnlySheet> {
                 hint: 'nama@gmail.com',
                 icon: Icons.mail_outline_rounded,
               ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _otpCtrl,
+                    keyboardType: TextInputType.number,
+                    maxLength: 6,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    style: AppTheme.heading(isDark, size: 15).copyWith(letterSpacing: 4),
+                    decoration: _pillInputDecoration(
+                      isDark,
+                      label: isEn ? '6-Digit OTP' : 'Kode OTP 6 Digit',
+                      hint: '000000',
+                      icon: Icons.pin_outlined,
+                    ).copyWith(counterText: ''),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                SizedBox(
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: (_sendingOtp || _cooldown > 0) ? null : _sendOtp,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.cobalt,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                    child: _sendingOtp
+                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.lime))
+                        : Text(
+                            _cooldown > 0
+                                ? '${_cooldown}s'
+                                : (_otpSent ? (isEn ? 'Resend' : 'Ulang') : (isEn ? 'Send OTP' : 'Kirim OTP')),
+                            style: AppTheme.heading(false, size: 11.5, color: Colors.white),
+                          ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 12),
             TextField(
@@ -1089,7 +1216,7 @@ class _RegisterEmailOnlySheetState extends State<_RegisterEmailOnlySheet> {
                     : Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(isEn ? 'Continue to Profile Setup' : 'Lanjut Atur Profil', style: AppTheme.heading(false, size: 14, color: Colors.white)),
+                          Text(isEn ? 'Verify OTP & Create Account' : 'Verifikasi OTP & Buat Akun', style: AppTheme.heading(false, size: 14, color: Colors.white)),
                           const SizedBox(width: 8),
                           const Icon(Icons.arrow_forward_rounded, size: 17, color: AppColors.lime),
                         ],

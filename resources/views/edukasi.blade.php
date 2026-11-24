@@ -546,6 +546,7 @@
                                 selectedKategori: @js(old('kategori', 'Anti-Phishing')),
                                 selectedType: @js(old('preferred_type', 'teks'))
                             }"
+                            
                             action="{{ route('edukasi.request.store') }}"
                             method="POST"
                             class="space-y-4"

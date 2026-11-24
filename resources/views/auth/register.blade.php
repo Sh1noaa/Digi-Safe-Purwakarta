@@ -7,6 +7,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $isEn ? 'Register Account' : 'Daftar Akun' }} - Digi-Safe Purwakarta</title>
     <link rel="icon" type="image/png" href="{{ asset('images/favicon.png') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -17,7 +18,7 @@
 </head>
 
 <body
-    class="bg-white min-h-screen lg:h-screen lg:overflow-hidden py-2.5 sm:py-3 px-2.5 sm:px-5 flex flex-col justify-center antialiased selection:bg-lime selection:text-ink">
+    class="bg-white min-h-screen py-2.5 sm:py-4 px-2.5 sm:px-5 flex flex-col justify-center antialiased selection:bg-lime selection:text-ink">
 
     <section class="w-full max-w-[1420px] mx-auto">
         <div class="relative rounded-[24px] sm:rounded-[32px] border border-sky/25 shadow-neutral overflow-hidden py-4 sm:py-5 lg:py-6 px-4 sm:px-8 lg:px-10"
@@ -33,12 +34,19 @@
             <div x-data="{
                     nama_lengkap: @js(old('nama_lengkap', '')),
                     username: @js(old('username', '')),
-                    email: @js(old('email', '')),
+                    email: @js(old('email', session('otp_register_email', ''))),
+                    otp: @js(old('otp', '')),
                     password: '',
                     password_confirmation: '',
                     showPass: false,
                     showConfirm: false,
                     submitting: false,
+                    otpSent: {{ ($otpSentInitial ?? false) || $errors->has('otp') || old('otp') ? 'true' : 'false' }},
+                    sendingOtp: false,
+                    cooldown: 0,
+                    cooldownTimer: null,
+                    statusMessage: @js(session('status', '')),
+                    errorMessage: @js($errors->first() ?: ''),
                     strengthLevel() {
                         const p = this.password || '';
                         if (p.length === 0) return 0;
@@ -56,6 +64,69 @@
                     },
                     passwordsMatch() {
                         return this.password_confirmation.length > 0 && this.password === this.password_confirmation;
+                    },
+                    startCooldown(seconds) {
+                        this.cooldown = Math.max(0, Number(seconds) || 0);
+                        if (this.cooldownTimer) clearInterval(this.cooldownTimer);
+                        if (this.cooldown <= 0) return;
+                        this.cooldownTimer = setInterval(() => {
+                            this.cooldown--;
+                            if (this.cooldown <= 0) {
+                                clearInterval(this.cooldownTimer);
+                                this.cooldownTimer = null;
+                            }
+                        }, 1000);
+                    },
+                    async sendOtp() {
+                        if (this.sendingOtp || this.cooldown > 0) return;
+                        this.errorMessage = '';
+                        this.statusMessage = '';
+                        const targetEmail = (this.email || '').trim();
+                        if (!targetEmail) {
+                            this.errorMessage = @js($isEn ? 'Please enter your email address first before requesting OTP.' : 'Masukkan alamat email Anda terlebih dahulu sebelum meminta kode OTP.');
+                            return;
+                        }
+                        this.sendingOtp = true;
+                        try {
+                            const csrf = document.querySelector('meta[name=csrf-token]')?.content || '';
+                            const payload = {
+                                email: targetEmail,
+                                locale: @js(app()->getLocale()),
+                            };
+                            if ((this.nama_lengkap || '').trim().length >= 2) {
+                                payload.nama_lengkap = this.nama_lengkap.trim();
+                            }
+                            if ((this.username || '').trim().length >= 3) {
+                                payload.username = this.username.trim();
+                            }
+                            const res = await fetch('{{ route('register.otp.send') }}', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json',
+                                    'X-CSRF-TOKEN': csrf
+                                },
+                                body: JSON.stringify(payload)
+                            });
+                            const data = await res.json().catch(() => ({}));
+                            if (res.ok && data.ok) {
+                                this.otp = '';
+                                this.otpSent = true;
+                                this.statusMessage = data.message || @js($isEn ? '6-digit OTP code has been sent to your email.' : 'Kode OTP 6 digit telah dikirim ke email Anda.');
+                                this.startCooldown(data.cooldown || 20);
+                            } else {
+                                const firstErr = data.errors ? Object.values(data.errors)[0]?.[0] : null;
+                                this.errorMessage = firstErr || data.message || @js($isEn ? 'Unable to send OTP code.' : 'Gagal mengirim kode OTP.');
+                                if (data.retry_after) {
+                                    this.otpSent = true;
+                                    this.startCooldown(data.retry_after);
+                                }
+                            }
+                        } catch (_) {
+                            this.errorMessage = @js($isEn ? 'Network error. Please try again.' : 'Terjadi kesalahan jaringan. Silakan coba lagi.');
+                        } finally {
+                            this.sendingOtp = false;
+                        }
                     }
                 }" class="relative z-10 w-full max-w-6xl mx-auto">
                 <!-- Bar navigasi atas dengan Logo + Pilihan Bahasa ID/EN + Tombol Login -->
@@ -157,12 +228,23 @@
                             </div>
                         </div>
 
-                        @if ($errors->any())
-                            <div
-                                class="mt-4 max-w-md mx-auto flow-node border-red-300 bg-red-50/90 px-4 py-3 text-xs font-semibold text-red-600 text-center">
-                                {{ $errors->first() }}
-                            </div>
-                        @endif
+                        <div
+                            x-show="statusMessage !== ''"
+                            x-transition
+                            style="display: none;"
+                            role="status"
+                            class="mt-3 max-w-lg mx-auto flow-node border-emerald-300 bg-emerald-50/95 px-4 py-2.5 text-xs font-semibold text-emerald-800 text-center"
+                            x-text="statusMessage"
+                        ></div>
+
+                        <div
+                            x-show="errorMessage !== ''"
+                            x-transition
+                            style="display: none;"
+                            role="alert"
+                            class="mt-3 max-w-lg mx-auto flow-node border-red-300 bg-red-50/95 px-4 py-2.5 text-xs font-semibold text-red-700 text-center"
+                            x-text="errorMessage"
+                        ></div>
 
                         <form method="POST" action="{{ route('register.store') }}" @submit="submitting = true">
                             @csrf
@@ -251,11 +333,11 @@
                                         <label for="email"
                                             class="font-heading font-bold text-xs text-ink flex items-center gap-2">
                                             <span class="w-2 h-2 rounded-full bg-sky"></span>
-                                            <span>{{ $isEn ? 'Email Address' : 'Alamat Email' }}</span>
+                                            <span>{{ $isEn ? 'Email Address (OTP)' : 'Alamat Email (OTP)' }}</span>
                                         </label>
                                         <span class="text-[10px] font-mono text-muted">Node 03</span>
                                     </div>
-                                    <p class="text-[11px] text-muted mb-3">{{ $isEn ? 'Used for sign-in & OTP verification' : 'Digunakan untuk autentikasi masuk' }}</p>
+                                    <p class="text-[11px] text-muted mb-3">{{ $isEn ? 'We will send a 6-digit OTP to verify this email' : 'Kode OTP 6 digit akan dikirim ke email ini' }}</p>
 
                                     <div class="relative">
                                         <span
@@ -268,8 +350,32 @@
                                             </svg>
                                         </span>
                                         <input id="email" type="email" name="email" x-model="email" required
-                                            placeholder="{{ $isEn ? 'name@gmail.com' : 'nama@email.com' }}"
+                                            placeholder="{{ $isEn ? 'name@gmail.com' : 'nama@gmail.com' }}"
                                             class="w-full rounded-xl bg-slate-50 border border-slate-200 pl-10 pr-4 py-2.5 text-xs text-ink placeholder:text-gray-400 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15 focus:outline-none transition-all">
+                                    </div>
+
+                                    <div class="mt-2.5 flex items-center justify-between gap-2">
+                                        <button
+                                            type="button"
+                                            @click="sendOtp()"
+                                            :disabled="sendingOtp || cooldown > 0"
+                                            class="flex-1 rounded-xl bg-sky hover:bg-ink text-white font-heading font-bold text-[11px] px-3.5 py-2 min-h-[38px] inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                                        >
+                                            <span x-show="sendingOtp" class="w-3 h-3 border-2 border-lime border-t-transparent rounded-full animate-spin" style="display: none;"></span>
+                                            <span x-text="sendingOtp
+                                                ? @js($isEn ? 'Sending OTP...' : 'Mengirim OTP...')
+                                                : (cooldown > 0
+                                                    ? (@js($isEn ? 'Resend in ' : 'Kirim ulang (') + cooldown + @js($isEn ? 's' : 'd)'))
+                                                    : (otpSent ? @js($isEn ? 'Resend 6-Digit OTP' : 'Kirim Ulang OTP') : @js($isEn ? 'Send 6-Digit OTP' : 'Kirim Kode OTP')))"></span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            x-show="!otpSent"
+                                            @click="otpSent = true"
+                                            class="text-[10.5px] font-semibold text-sky hover:underline shrink-0 cursor-pointer"
+                                        >
+                                            {{ $isEn ? 'Have OTP?' : 'Punya OTP?' }}
+                                        </button>
                                     </div>
                                 </div>
 
@@ -362,18 +468,63 @@
 
                             </div>
 
-                            <div class="hidden md:block relative h-7 max-w-xl mx-auto">
-                                <svg class="w-full h-full overflow-visible" viewBox="0 0 600 28" fill="none">
+                            <div class="hidden md:block relative h-6 max-w-xl mx-auto">
+                                <svg class="w-full h-full overflow-visible" viewBox="0 0 600 24" fill="none">
                                     <circle cx="150" cy="0" r="3.5" fill="#FFFFFF" stroke="#3B82F6" stroke-width="2" />
                                     <circle cx="450" cy="0" r="3.5" fill="#FFFFFF" stroke="#3B82F6" stroke-width="2" />
-                                    <path d="M 150 3 C 150 18, 300 10, 300 26" stroke="#93C5FD" stroke-width="1.8" />
-                                    <path d="M 450 3 C 450 18, 300 10, 300 26" stroke="#93C5FD" stroke-width="1.8" />
-                                    <circle cx="300" cy="26" r="3.5" fill="#FFFFFF" stroke="#3B82F6" stroke-width="2" />
+                                    <path d="M 150 3 C 150 15, 300 9, 300 22" stroke="#93C5FD" stroke-width="1.8" />
+                                    <path d="M 450 3 C 450 15, 300 9, 300 22" stroke="#93C5FD" stroke-width="1.8" />
+                                    <circle cx="300" cy="22" r="3.5" fill="#FFFFFF" stroke="#3B82F6" stroke-width="2" />
                                 </svg>
                             </div>
 
+                            <!-- Node 05: Verifikasi Kode OTP 6 Digit -->
+                            <div class="mt-4 md:mt-0 max-w-lg mx-auto flow-node p-3.5 sm:p-4"
+                                :class="otpSent ? 'border-sky/60 ring-2 ring-sky/10' : ''">
+                                <div class="flex items-center justify-between gap-2 mb-2">
+                                    <label for="register-otp"
+                                        class="font-heading font-bold text-xs text-ink flex items-center gap-2">
+                                        <span class="w-5 h-5 rounded-full bg-lime text-ink text-[10px] font-extrabold inline-flex items-center justify-center">OTP</span>
+                                        <span>{{ $isEn ? '6-Digit Email Verification Code' : 'Kode Verifikasi OTP Email (6 Digit)' }}</span>
+                                    </label>
+                                    <span class="text-[10px] font-semibold text-muted">{{ $isEn ? 'Valid 10 mins' : 'Berlaku 10 menit' }}</span>
+                                </div>
+
+                                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                                    <input
+                                        id="register-otp"
+                                        type="text"
+                                        name="otp"
+                                        x-model="otp"
+                                        inputmode="numeric"
+                                        pattern="[0-9]{6}"
+                                        maxlength="6"
+                                        required
+                                        autocomplete="one-time-code"
+                                        placeholder="000000"
+                                        class="flex-1 rounded-xl bg-slate-50 border border-slate-200 px-4 py-2.5 text-center font-mono font-extrabold text-base tracking-[0.42em] text-ink placeholder:text-gray-300 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15 focus:outline-none transition-all"
+                                    >
+                                    <button
+                                        type="button"
+                                        @click="sendOtp()"
+                                        :disabled="sendingOtp || cooldown > 0"
+                                        class="shrink-0 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-ink font-heading font-bold text-[11px] px-4 py-2.5 min-h-[42px] inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                                    >
+                                        <span x-show="sendingOtp" class="w-3 h-3 border-2 border-sky border-t-transparent rounded-full animate-spin" style="display: none;"></span>
+                                        <span x-text="cooldown > 0
+                                            ? (@js($isEn ? 'Wait ' : 'Tunggu ') + cooldown + @js($isEn ? 's' : 'd'))
+                                            : (otpSent ? @js($isEn ? 'Resend OTP' : 'Kirim Ulang') : @js($isEn ? 'Get OTP' : 'Kirim OTP'))"></span>
+                                    </button>
+                                </div>
+                                <p class="mt-1.5 text-[11px] text-muted">
+                                    {{ $isEn
+                                        ? 'Click "Send 6-Digit OTP" above, then enter the code from your inbox or spam folder.'
+                                        : 'Klik "Kirim Kode OTP", lalu masukkan 6 digit kode dari kotak masuk atau folder spam email Anda.' }}
+                                </p>
+                            </div>
+
                             <!-- Tombol Daftar & Google -->
-                            <div class="mt-4 md:mt-0 flex flex-col items-center">
+                            <div class="mt-4 flex flex-col items-center">
                                 <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
                                     <div class="flow-node p-1.5 rounded-full">
                                         <button type="submit"

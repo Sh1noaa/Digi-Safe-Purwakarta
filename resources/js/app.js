@@ -302,6 +302,7 @@ document.addEventListener('alpine:init', () => {
             return a;
         },
 
+        // sembilan kartu
         renderCards() {
             const count = this.cards.length;
             if (count === 0) return;

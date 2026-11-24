@@ -18,6 +18,7 @@ class AccountOtpService
 {
     public const PURPOSE_PASSWORD_RESET = 'password_reset';
     public const PURPOSE_DELETE_ACCOUNT = 'delete_account';
+    public const PURPOSE_REGISTER = 'register';
 
     public const EXPIRY_MINUTES = 10;
     public const RESEND_COOLDOWN_SECONDS = 20;
@@ -55,11 +56,27 @@ class AccountOtpService
      */
     public static function issueAndSend(User $user, string $purpose, ?string $locale = null): array
     {
+        $recipientName = trim((string) ($user->nama_lengkap ?: $user->username ?: 'Pengguna Digi-Safe'));
+
+        return self::issueAndSendToEmail((string) $user->email, $recipientName, $purpose, $locale);
+    }
+
+    /**
+     * Generate a 6-digit OTP, store its hash, and deliver it to any target email address
+     * (dipakai untuk registrasi akun baru maupun aksi keamanan akun terdaftar).
+     *
+     * @return array{ok: bool, status: int, message: string, retry_after?: int, cooldown?: int, expires_in?: int, masked_email?: string}
+     */
+    public static function issueAndSendToEmail(string $rawEmail, string $recipientName, string $purpose, ?string $locale = null): array
+    {
         self::ensureTable();
 
         $locale = $locale ?: app()->getLocale();
         $isEn = $locale === 'en';
-        $email = Str::lower(trim((string) $user->email));
+        $email = Str::lower(trim($rawEmail));
+        $safeRecipientName = trim($recipientName) !== ''
+            ? trim($recipientName)
+            : ($isEn ? 'Digi-Safe Citizen' : 'Calon Warga Digi-Safe');
 
         // Batasi total pengiriman per jam untuk mencegah penyalahgunaan / pengurasan kuota email
         $sentLastHour = DB::table('account_otps')
@@ -76,7 +93,7 @@ class AccountOtpService
                 'cooldown' => 300,
                 'message' => $isEn
                     ? 'Hourly OTP request limit reached for this email. Please try again later.'
-                    : 'Batas permintaan OTP per jam untuk Gmail ini telah tercapai. Silakan coba beberapa saat lagi.',
+                    : 'Batas permintaan OTP per jam untuk email ini telah tercapai. Silakan coba beberapa saat lagi.',
             ];
         }
 
@@ -128,11 +145,10 @@ class AccountOtpService
         ]);
 
         try {
-            $recipientName = trim((string) ($user->nama_lengkap ?: $user->username ?: 'Pengguna Digi-Safe'));
             $mailable = new AccountOtpMail(
                 otpCode: $plainOtp,
                 purpose: $purpose,
-                recipientName: $recipientName,
+                recipientName: $safeRecipientName,
                 expiryMinutes: self::EXPIRY_MINUTES,
                 localeCode: $locale,
             );
@@ -165,7 +181,7 @@ class AccountOtpService
             'masked_email' => $masked,
             'message' => $isEn
                 ? "A 6-digit OTP code has been sent to {$masked}. Please check your inbox or spam folder."
-                : "Kode OTP 6 digit telah dikirim ke {$masked}. Silakan cek kotak masuk atau folder spam Gmail Anda.",
+                : "Kode OTP 6 digit telah dikirim ke {$masked}. Silakan cek kotak masuk atau folder spam email Anda.",
         ];
     }
 

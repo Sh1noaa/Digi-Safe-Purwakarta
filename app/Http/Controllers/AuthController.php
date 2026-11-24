@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ApiToken;
 use App\Models\User;
 use App\Rules\ValidRealEmail;
+use App\Services\AccountOtpService;
 use App\Services\SocialSchemaHelper;
 use App\Services\UploadValidationHelper;
 use Illuminate\Http\JsonResponse;
@@ -112,10 +113,86 @@ class AuthController extends Controller
 
     public function showRegister(): View
     {
-        return view('auth.register');
+        return view('auth.register', [
+            'otpSentInitial' => (bool) session('otp_register_sent', false),
+        ]);
     }
 
-    public function register(Request $request): RedirectResponse
+    /**
+     * Kirim kode OTP 6 digit ke alamat email pendaftar sebelum akun baru dibuat.
+     */
+    public function sendRegisterOtp(Request $request): JsonResponse|RedirectResponse
+    {
+        $requestedLocale = $request->input('locale');
+        if (in_array($requestedLocale, ['id', 'en'], true)) {
+            app()->setLocale($requestedLocale);
+            session(['locale' => $requestedLocale]);
+        }
+
+        $locale = app()->getLocale();
+        $isEn = $locale === 'en';
+
+        $mergeData = [
+            'email' => Str::lower(trim((string) $request->input('email', ''))),
+        ];
+        if ($request->filled('username')) {
+            $mergeData['username'] = Str::lower(trim((string) $request->input('username', '')));
+        }
+        $request->merge($mergeData);
+
+        $validated = $request->validate([
+            'nama_lengkap' => ['nullable', 'string', 'min:2', 'max:100'],
+            'username' => [
+                'nullable',
+                'string',
+                'min:3',
+                'max:50',
+                'alpha_dash',
+                Rule::notIn(self::RESERVED_USERNAMES),
+                'unique:users,username',
+            ],
+            'email' => ['required', 'string', 'max:100', new ValidRealEmail(checkDns: true), 'unique:users,email'],
+            'locale' => ['nullable', 'string', 'in:id,en'],
+        ], [
+            'nama_lengkap.min' => $isEn ? 'Display name must be at least 2 characters.' : 'Nickname / Nama lengkap minimal 2 karakter.',
+            'username.min' => $isEn ? 'Username must be at least 3 characters.' : 'Username minimal 3 karakter.',
+            'username.unique' => $isEn ? 'This username is already taken.' : 'Username sudah digunakan.',
+            'username.not_in' => $isEn ? 'This username is reserved by the system. Please choose another.' : 'Username ini dilindungi sistem. Gunakan username lain.',
+            'username.alpha_dash' => $isEn ? 'Username may only contain letters, numbers, dashes, and underscores.' : 'Username hanya boleh berisi huruf, angka, strip, dan garis bawah.',
+            'email.required' => $isEn ? 'Email address is required.' : 'Alamat email wajib diisi.',
+            'email.unique' => $isEn ? 'This email is already registered.' : 'Email sudah terdaftar.',
+        ]);
+
+        $email = $validated['email'];
+        $recipientName = trim((string) ($validated['nama_lengkap'] ?? $validated['username'] ?? ''));
+
+        $result = AccountOtpService::issueAndSendToEmail(
+            $email,
+            $recipientName,
+            AccountOtpService::PURPOSE_REGISTER,
+            $locale,
+        );
+
+        if ($result['ok']) {
+            session(['otp_register_email' => $email, 'otp_register_sent' => true]);
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json($result, $result['status']);
+        }
+
+        if (! $result['ok']) {
+            return back()->withErrors(['email' => $result['message']])->withInput($request->except(['password', 'password_confirmation']));
+        }
+
+        return back()
+            ->with('status', $result['message'])
+            ->with('otp_register_email', $email)
+            ->with('otp_register_sent', true)
+            ->withInput($request->except(['password', 'password_confirmation']));
+    }
+
+    public function register(Request $request): JsonResponse|RedirectResponse
     {
         $isEn = app()->getLocale() === 'en';
 
@@ -125,7 +202,7 @@ class AuthController extends Controller
             'email' => Str::lower(trim((string) $request->input('email', ''))),
         ]);
 
-        // validasi form registrasi (wajib email aktif & valid dengan cek MX domain + cegah username sistem)
+        // validasi form registrasi (wajib email aktif & valid dengan cek MX domain + cegah username sistem + wajib OTP 6 digit)
         $validated = $request->validate([
             'nama_lengkap' => ['required', 'string', 'min:2', 'max:100'],
             'username' => [
@@ -138,6 +215,7 @@ class AuthController extends Controller
                 'unique:users,username',
             ],
             'email' => ['required', 'string', 'max:100', new ValidRealEmail(checkDns: true), 'unique:users,email'],
+            'otp' => ['required', 'digits:6'],
             'password' => ['required', 'string', 'min:8', 'max:128', 'confirmed'],
         ], [
             'nama_lengkap.required' => $isEn ? 'Display name / full name is required.' : 'Nickname / Nama lengkap wajib diisi.',
@@ -149,11 +227,35 @@ class AuthController extends Controller
             'username.alpha_dash' => $isEn ? 'Username may only contain letters, numbers, dashes, and underscores.' : 'Username hanya boleh berisi huruf, angka, strip, dan garis bawah.',
             'email.required' => $isEn ? 'Email address is required.' : 'Alamat email wajib diisi.',
             'email.unique' => $isEn ? 'This email is already registered.' : 'Email sudah terdaftar.',
+            'otp.required' => $isEn ? 'Please enter the 6-digit OTP code sent to your email.' : 'Masukkan kode OTP 6 digit yang telah dikirim ke email Anda.',
+            'otp.digits' => $isEn ? 'OTP code must be exactly 6 digits.' : 'Kode OTP harus berupa 6 digit angka.',
             'password.required' => $isEn ? 'Password is required.' : 'Password wajib diisi.',
             'password.min' => $isEn ? 'Password must be at least 8 characters.' : 'Password minimal 8 karakter.',
             'password.max' => $isEn ? 'Password must not exceed 128 characters.' : 'Password maksimal 128 karakter.',
             'password.confirmed' => $isEn ? 'Password confirmation does not match.' : 'Konfirmasi password tidak cocok.',
         ]);
+
+        $verification = AccountOtpService::verifyAndConsume(
+            $validated['email'],
+            AccountOtpService::PURPOSE_REGISTER,
+            $validated['otp'],
+        );
+
+        if (! $verification['ok']) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'ok' => false,
+                    'message' => $verification['message'],
+                    'errors' => ['otp' => [$verification['message']]],
+                ], 422);
+            }
+
+            return back()
+                ->withErrors(['otp' => $verification['message']])
+                ->with('otp_register_email', $validated['email'])
+                ->with('otp_register_sent', true)
+                ->withInput($request->except(['password', 'password_confirmation']));
+        }
 
         // simpan user baru dengan role default user + preferensi bahasa/tema yang sedang aktif
         $user = User::create([
@@ -167,8 +269,19 @@ class AuthController extends Controller
             'privacy_settings' => ['has_local_password' => true],
         ]);
 
+        session()->forget(['otp_register_email', 'otp_register_sent']);
+
         Auth::login($user);
         $request->session()->regenerate();
+        \App\Services\SecurityActivityService::record($user, \App\Services\SecurityActivityService::EVENT_LOGIN, $request);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'ok' => true,
+                'message' => $isEn ? 'Account created and verified successfully!' : 'Akun baru berhasil diverifikasi dan dibuat!',
+                'redirect' => route('beranda'),
+            ]);
+        }
 
         return redirect()->intended(route('beranda'));
     }

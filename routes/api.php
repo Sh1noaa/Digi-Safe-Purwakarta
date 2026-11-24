@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\MinigameApiController;
 use App\Http\Controllers\Api\ProfileApiController;
 use App\Http\Controllers\Api\PublicContentApiController;
 use App\Http\Controllers\FollowController;
+use App\Http\Controllers\PanicSimulatorController;
 use App\Http\Controllers\SocialChatController;
 use Illuminate\Support\Facades\Route;
 
@@ -15,7 +16,8 @@ Route::middleware('api.optional')->group(function () {
     Route::get('/health', fn () => response()->json(['ok' => true, 'app' => 'Digi-Safe Purwakarta API']));
 
     Route::post('/auth/login', [AuthApiController::class, 'login'])->middleware('throttle:10,1');
-    Route::post('/auth/register', [AuthApiController::class, 'register'])->middleware('throttle:5,1');
+    Route::post('/auth/register/send-otp', [AuthApiController::class, 'sendRegisterOtp'])->middleware('throttle:20,1');
+    Route::post('/auth/register', [AuthApiController::class, 'register'])->middleware('throttle:10,1');
     Route::post('/auth/google', [AuthApiController::class, 'googleTokenLogin'])->middleware('throttle:10,1');
 
     Route::get('/beranda', [PublicContentApiController::class, 'beranda']);
@@ -51,6 +53,7 @@ Route::middleware('api.auth')->group(function () {
 
     Route::get('/minigame/{type}', [MinigameApiController::class, 'questions']);
     Route::post('/minigame/score', [MinigameApiController::class, 'saveScore'])->middleware('throttle:15,1');
+    Route::post('/minigame/panic-simulator/record', [PanicSimulatorController::class, 'recordResult'])->middleware('throttle:30,1');
 
     Route::post('/forum', [ForumApiController::class, 'store'])->middleware('throttle:20,1');
     Route::put('/forum/{forum}', [ForumApiController::class, 'update'])->middleware('throttle:20,1');

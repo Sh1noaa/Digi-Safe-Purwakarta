@@ -295,11 +295,20 @@ class AppState extends ChangeNotifier {
     return (needsOnboarding: !doneLocally && missingRole);
   }
 
-  /// Register dari halaman Login/Daftar APK hanya memerlukan Gmail/Email + Password.
+  /// Kirim kode OTP 6 digit ke email pendaftar sebelum pembuatan akun APK.
+  Future<Map<String, dynamic>> sendRegisterOtp({required String email}) async {
+    return await api.post('/auth/register/send-otp', {
+      'email': email.trim(),
+      'locale': locale,
+    });
+  }
+
+  /// Register dari halaman Login/Daftar APK memerlukan Gmail/Email + Password + OTP 6 digit.
   /// Username sementara dibuat aman lalu langsung disempurnakan di Onboarding Wizard berikutnya.
   Future<void> registerEmailOnly({
     required String email,
     required String password,
+    required String otp,
   }) async {
     final cleanEmail = email.trim();
     final localPart = cleanEmail.contains('@') ? cleanEmail.split('@').first : cleanEmail;
@@ -314,6 +323,7 @@ class AppState extends ChangeNotifier {
       'nama_lengkap': niceNick,
       'username': tempUsername,
       'email': cleanEmail,
+      'otp': otp.trim(),
       'password': password,
       'device_name': 'flutter_android',
     });

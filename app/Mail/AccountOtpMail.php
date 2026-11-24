@@ -24,10 +24,13 @@ class AccountOtpMail extends Mailable
     {
         $isEn = $this->localeCode === 'en';
         $isDelete = $this->purpose === 'delete_account';
+        $isRegister = $this->purpose === 'register';
 
         $subject = match (true) {
             $isDelete && $isEn => 'Account Deletion Code - Digi-Safe Purwakarta',
             $isDelete => 'Kode OTP Hapus Akun - Digi-Safe Purwakarta',
+            $isRegister && $isEn => 'Registration Verification Code - Digi-Safe Purwakarta',
+            $isRegister => 'Kode OTP Pendaftaran Akun - Digi-Safe Purwakarta',
             $isEn => 'Password Reset Code - Digi-Safe Purwakarta',
             default => 'Kode OTP Reset Password - Digi-Safe Purwakarta',
         };

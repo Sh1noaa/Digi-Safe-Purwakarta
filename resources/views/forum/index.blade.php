@@ -337,9 +337,8 @@
                                             :class="badgeColor(item.kategori)" x-text="categoryLabel(item.kategori)"></span>
                                     </div>
 
-                                    <!-- mengatasi blade <script> {{  }} -->
                                     <div class="mt-4">
-                                        <h3 @click="openModal(item)" <!-- mencegah ->
+                                        <h3 @click="openModal(item)"
                                             class="font-heading font-bold text-base text-ink hover:text-sky
                                             transition-colors cursor-pointer leading-snug"
                                             x-text="item.judul"

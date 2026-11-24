@@ -86,6 +86,39 @@ class AccountOtpSecurityTest extends TestCase
             $table->unsignedInteger('views')->default(0);
             $table->timestamp('created_at')->nullable();
         });
+
+        Schema::create('jawaban_forum', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('forum_id');
+            $table->unsignedBigInteger('user_id');
+            $table->text('jawaban');
+            $table->boolean('is_admin')->default(false);
+            $table->timestamp('created_at')->nullable();
+        });
+
+        Schema::create('badges', function (Blueprint $table) {
+            $table->id();
+            $table->string('nama_badge');
+        });
+
+        Schema::create('user_badges', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('user_id');
+            $table->unsignedBigInteger('badge_id');
+            $table->timestamp('diperoleh_pada')->nullable();
+        });
+
+        Schema::create('testimoni', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('user_id')->nullable();
+            $table->string('judul')->nullable();
+            $table->text('cerita');
+            $table->unsignedTinyInteger('rating')->default(5);
+            $table->string('mood')->nullable();
+            $table->boolean('is_anonymous')->default(false);
+            $table->string('status_approval')->default('approved');
+            $table->timestamp('created_at')->nullable();
+        });
     }
 
     public function test_forgot_password_page_and_login_link_render(): void
@@ -516,5 +549,117 @@ class AccountOtpSecurityTest extends TestCase
         $this->assertTrue((bool) data_get($googleUser->privacy_settings, 'google_onboarded'));
         $this->assertTrue((bool) data_get($googleUser->privacy_settings, 'has_local_password'));
         $this->assertTrue((bool) data_get($googleUser->privacy_settings, 'hide_email'));
+    }
+
+    public function test_user_can_register_via_email_otp_on_web_and_api(): void
+    {
+        Mail::fake();
+
+        // 1. Halaman register menampilkan kontrol OTP 6 digit
+        $this->get('/register')
+            ->assertOk()
+            ->assertSee('Kode Verifikasi OTP Email (6 Digit)')
+            ->assertSee('/register/send-otp');
+
+        // 2. Kirim OTP registrasi untuk email baru
+        $this->postJson('/register/send-otp', [
+            'nama_lengkap' => 'Warga Baru OTP',
+            'username' => 'warga_baru_otp',
+            'email' => 'warga.baru.otp@gmail.com',
+        ])->assertOk()->assertJson(['ok' => true]);
+
+        $webOtp = null;
+        Mail::assertSent(AccountOtpMail::class, function (AccountOtpMail $mail) use (&$webOtp) {
+            $webOtp = $mail->otpCode;
+            $html = $mail->render();
+
+            return $mail->hasTo('warga.baru.otp@gmail.com')
+                && $mail->purpose === 'register'
+                && $mail->envelope()->subject === 'Kode OTP Pendaftaran Akun - Digi-Safe Purwakarta'
+                && str_contains($html, 'Verifikasi pendaftaran akun')
+                && preg_match('/^\d{6}$/', $mail->otpCode) === 1;
+        });
+        $this->assertNotNull($webOtp);
+
+        // 3. Resend cooldown menolak spam dalam 20 detik
+        $this->postJson('/register/send-otp', [
+            'email' => 'warga.baru.otp@gmail.com',
+        ])->assertStatus(429)->assertJson(['ok' => false]);
+
+        // 4. Register tanpa OTP atau OTP salah ditolak
+        $this->postJson('/register', [
+            'nama_lengkap' => 'Warga Baru OTP',
+            'username' => 'warga_baru_otp',
+            'email' => 'warga.baru.otp@gmail.com',
+            'otp' => $webOtp === '000000' ? '111111' : '000000',
+            'password' => 'strongpass123',
+            'password_confirmation' => 'strongpass123',
+        ])->assertStatus(422)->assertJson(['ok' => false]);
+
+        $this->assertNull(User::where('email', 'warga.baru.otp@gmail.com')->first());
+
+        // 5. Register dengan OTP valid berhasil membuat akun, login, & menghabiskan OTP
+        $this->postJson('/register', [
+            'nama_lengkap' => 'Warga Baru OTP',
+            'username' => 'warga_baru_otp',
+            'email' => 'warga.baru.otp@gmail.com',
+            'otp' => $webOtp,
+            'password' => 'strongpass123',
+            'password_confirmation' => 'strongpass123',
+        ])->assertOk()->assertJson(['ok' => true]);
+
+        $this->assertAuthenticated();
+        $this->assertNotNull(User::where('email', 'warga.baru.otp@gmail.com')->first());
+        $this->assertSame(
+            0,
+            DB::table('account_otps')
+                ->where('email', 'warga.baru.otp@gmail.com')
+                ->where('purpose', 'register')
+                ->whereNull('consumed_at')
+                ->count()
+        );
+
+        // 6. Email yang sudah terdaftar tidak bisa diminta OTP pendaftaran lagi
+        $this->post('/logout');
+        $this->postJson('/register/send-otp', [
+            'email' => 'warga.baru.otp@gmail.com',
+        ])->assertStatus(422)->assertJsonValidationErrors(['email']);
+
+        // 7. Mobile API send-otp (EN) & register dengan OTP
+        $this->postJson('/api/auth/register/send-otp', [
+            'email' => 'mobile.otp.user@gmail.com',
+            'locale' => 'en',
+        ])->assertOk()->assertJson(['ok' => true, 'success' => true]);
+
+        $apiOtp = null;
+        Mail::assertSent(AccountOtpMail::class, function (AccountOtpMail $mail) use (&$apiOtp) {
+            if ($mail->hasTo('mobile.otp.user@gmail.com')) {
+                $apiOtp = $mail->otpCode;
+
+                return $mail->purpose === 'register'
+                    && $mail->envelope()->subject === 'Registration Verification Code - Digi-Safe Purwakarta';
+            }
+
+            return false;
+        });
+        $this->assertNotNull($apiOtp);
+
+        // API register gagal jika OTP salah
+        $this->postJson('/api/auth/register', [
+            'nama_lengkap' => 'Mobile OTP User',
+            'username' => 'mobile_otp_user',
+            'email' => 'mobile.otp.user@gmail.com',
+            'otp' => $apiOtp === '123456' ? '654321' : '123456',
+            'password' => 'mobilepass123',
+        ])->assertStatus(422)->assertJson(['ok' => false]);
+
+        // API register sukses dengan OTP benar
+        $this->postJson('/api/auth/register', [
+            'nama_lengkap' => 'Mobile OTP User',
+            'username' => 'mobile_otp_user',
+            'email' => 'mobile.otp.user@gmail.com',
+            'otp' => $apiOtp,
+            'password' => 'mobilepass123',
+        ])->assertCreated()->assertJsonPath('success', true)->assertJsonPath('user.username', 'mobile_otp_user');
     }
 }

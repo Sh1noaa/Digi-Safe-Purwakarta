@@ -93,35 +93,37 @@ class MainActivity : FlutterActivity() {
             .setNavigationBarColor(Color.parseColor("#FFFFFF"))
             .build()
 
-        val builder = CustomTabsIntent.Builder()
-            .setDefaultColorSchemeParams(lightColors)
-            .setColorSchemeParams(CustomTabsIntent.COLOR_SCHEME_DARK, darkColors)
-            .setInitialActivityHeightPx(initialPopupHeight, CustomTabsIntent.ACTIVITY_HEIGHT_ADJUSTABLE)
-            .setToolbarCornerRadiusDp(16)
-            .setShowTitle(true)
-            .setShareState(CustomTabsIntent.SHARE_STATE_OFF)
-            .setUrlBarHidingEnabled(true)
-
-        val customTabsIntent = builder.build()
-
         val preferredPkg = CustomTabsClient.getPackageName(
             this,
             listOf("com.android.chrome", "com.chrome.beta", "com.sec.android.app.sbrowser", "org.mozilla.firefox"),
             true
         )
-        if (!preferredPkg.isNullOrBlank()) {
-            customTabsIntent.intent.setPackage(preferredPkg)
-        }
 
         try {
+            val builder = CustomTabsIntent.Builder()
+                .setDefaultColorSchemeParams(lightColors)
+                .setColorSchemeParams(CustomTabsIntent.COLOR_SCHEME_DARK, darkColors)
+                .setInitialActivityHeightPx(initialPopupHeight, CustomTabsIntent.ACTIVITY_HEIGHT_ADJUSTABLE)
+                .setToolbarCornerRadiusDp(16)
+                .setShowTitle(true)
+                .setShareState(CustomTabsIntent.SHARE_STATE_OFF)
+                .setUrlBarHidingEnabled(true)
+
+            val customTabsIntent = builder.build()
+            if (!preferredPkg.isNullOrBlank()) {
+                customTabsIntent.intent.setPackage(preferredPkg)
+            }
             customTabsIntent.launchUrl(this, Uri.parse(url))
         } catch (_: Exception) {
             try {
-                CustomTabsIntent.Builder()
+                val fallbackTabs = CustomTabsIntent.Builder()
                     .setDefaultColorSchemeParams(lightColors)
                     .setShowTitle(true)
                     .build()
-                    .launchUrl(this, Uri.parse(url))
+                if (!preferredPkg.isNullOrBlank()) {
+                    fallbackTabs.intent.setPackage(preferredPkg)
+                }
+                fallbackTabs.launchUrl(this, Uri.parse(url))
             } catch (_: Exception) {
                 val fallback = Intent(Intent.ACTION_VIEW, Uri.parse(url))
                 startActivity(fallback)

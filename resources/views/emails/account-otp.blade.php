@@ -9,6 +9,7 @@
     @php
         $isEn = $localeCode === 'en';
         $isDelete = $purpose === 'delete_account';
+        $isRegister = $purpose === 'register';
 
         $appUrl = rtrim((string) config('app.url', ''), '/');
         $isPublicHttps = str_starts_with($appUrl, 'https://')
@@ -19,6 +20,8 @@
         $headingText = match (true) {
             $isDelete && $isEn => 'Confirm account deletion',
             $isDelete => 'Konfirmasi penghapusan akun',
+            $isRegister && $isEn => 'Verify your registration',
+            $isRegister => 'Verifikasi pendaftaran akun',
             $isEn => 'Reset your password',
             default => 'Atur ulang kata sandi',
         };
@@ -26,6 +29,8 @@
         $introText = match (true) {
             $isDelete && $isEn => 'We received a request to permanently delete your Digi-Safe Purwakarta account. Enter the verification code below to confirm this action.',
             $isDelete => 'Kami menerima permintaan penghapusan permanen untuk akun Digi-Safe Purwakarta Anda. Masukkan kode verifikasi berikut untuk mengonfirmasi tindakan ini.',
+            $isRegister && $isEn => 'Thank you for registering with Digi-Safe Purwakarta. Enter the 6-digit verification code below on the registration page to activate your new account.',
+            $isRegister => 'Terima kasih telah mendaftar di Digi-Safe Purwakarta. Masukkan kode verifikasi 6 digit berikut pada halaman pendaftaran untuk mengaktifkan akun baru Anda.',
             $isEn => 'We received a request to reset the password for your Digi-Safe Purwakarta account. Enter the verification code below on the password reset page.',
             default => 'Kami menerima permintaan untuk mengatur ulang kata sandi akun Digi-Safe Purwakarta Anda. Masukkan kode verifikasi berikut pada halaman reset password.',
         };
@@ -33,12 +38,14 @@
         $noteText = match (true) {
             $isDelete && $isEn => 'This action is permanent. Once confirmed, your profile, scores, forum discussions, and messages will be removed and cannot be restored. If you did not request this, change your password immediately.',
             $isDelete => 'Tindakan ini bersifat permanen. Setelah dikonfirmasi, profil, skor minigame, diskusi forum, dan pesan Anda akan dihapus dan tidak dapat dipulihkan. Jika Anda tidak meminta hal ini, segera ubah kata sandi akun Anda.',
+            $isRegister && $isEn => 'Do not share this code with anyone. If you did not attempt to register a Digi-Safe Purwakarta account, you can safely ignore this email.',
+            $isRegister => 'Jangan bagikan kode ini kepada siapa pun. Jika Anda tidak merasa mendaftar akun Digi-Safe Purwakarta, abaikan email ini.',
             $isEn => 'Do not share this code with anyone. If you did not request a password reset, you can ignore this email and your password will remain unchanged.',
             default => 'Jangan bagikan kode ini kepada siapa pun. Jika Anda tidak mengajukan permintaan reset kata sandi, abaikan email ini. Kata sandi akun Anda tetap aman.',
         };
 
-        $codeBorder = $isDelete ? '#FCA5A5' : '#CBD5E1';
-        $noteBorder = $isDelete ? '#DC2626' : '#CBD5E1';
+        $codeBorder = $isDelete ? '#FCA5A5' : ($isRegister ? '#93C5FD' : '#CBD5E1');
+        $noteBorder = $isDelete ? '#DC2626' : ($isRegister ? '#1E63E9' : '#CBD5E1');
         $noteColor = $isDelete ? '#991B1B' : '#475569';
     @endphp
 
